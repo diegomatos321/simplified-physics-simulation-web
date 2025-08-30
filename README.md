@@ -1,39 +1,8 @@
-# simplified-physics-simulation-web
+# Simplified Physics Simulation on the Web
 
-This template should help get you started developing with Vue 3 in Vite.
+This repository contains the final paper for a Bachelor's degree in Computer Science at the Federal University of Rio de Janeiro. It features an implementation of Position-Based Projection using Jakobsen's method and a 2D physics engine rendered with WebGL.
 
-## Recommended IDE Setup
+The physics engine can run in two modes:
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+- **SAT-based mode:** Powered by the Separating Axis Theorem (SAT) for collision detection. Collision resolution is handled by Jakobsen's method after calculating the Minimum Translation Vector (MTV) and correctly projecting the points/particles. This works very well in 2D.
+- **GJK/EPA-based mode:** Powered by the Gilbert–Johnson–Keerthi (GJK) algorithm for collision detection and the Expanding Polytope Algorithm (EPA) for calculating the MTV. Collision resolution is then performed in the same way as in SAT mode. This works very well in both 2D and 3D.
