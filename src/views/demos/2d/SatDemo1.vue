@@ -1,6 +1,6 @@
 <template>
-    <div class="about">
-        <h1>This is the Sat Demo page</h1>
+    <div class="container mx-auto">
+        <h1 class="text-3xl"><strong>Separate Axes Theorem (Demo 1)</strong></h1>
     </div>
 </template>
 
