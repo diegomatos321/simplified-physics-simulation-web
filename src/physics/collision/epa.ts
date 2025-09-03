@@ -1,3 +1,7 @@
+import type PolygonBody from "@/geometry/PolygonBody"
+import { support, tripleProduct } from "./utils"
+import * as twgl from "twgl.js"
+
 export function epa(A: PolygonBody, B: PolygonBody, simplex: twgl.v3.Vec3[]) {
     const TOLERANCE = 1e-6
     // loop to find the collision information
@@ -31,7 +35,7 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: twgl.v3.Vec3[]) {
     }
 }
 
-function findClosestEdge(simplex, vertex = twgl.v3.create(0, 0)) {
+function findClosestEdge(simplex: twgl.v3.Vec3[]) {
     // Edge closest = new Edge();
     const closest = {
         index: 0,

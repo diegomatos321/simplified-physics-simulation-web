@@ -10,7 +10,9 @@
 
 <script setup lang="ts">
 import { onBeforeMount, onMounted, ref } from 'vue'
-import PolygonBody from '../../../geometry/PolygonBody'
+import PolygonBody from '@/geometry/PolygonBody'
+import gjk from '@/physics/collision/gjk'
+import { epa } from '@/physics/collision/epa'
 import * as twgl from 'twgl.js'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
