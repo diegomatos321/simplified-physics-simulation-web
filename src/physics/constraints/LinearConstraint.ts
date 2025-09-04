@@ -1,5 +1,7 @@
 import type Particle from '../Particle'
 import IConstraint from './IConstraint'
+import vs from '@/render/shaders/2d_vs'
+import fs from '@/render/shaders/fill_color_vs'
 import * as twgl from 'twgl.js'
 
 export default class LinearConstraint extends IConstraint {
@@ -21,7 +23,7 @@ export default class LinearConstraint extends IConstraint {
             },
         })
 
-        this.programInfo = twgl.createProgramInfo(gl, ['vs', 'fs'])
+        this.programInfo = twgl.createProgramInfo(gl, [vs, fs])
 
         this.relax()
     }

@@ -25,6 +25,14 @@ const router = createRouter({
             // which is lazy-loaded when the route is visited.
             component: () => import('../views/examples/2d/SatDemo1.vue'),
         },
+        {
+            path: '/demos/2d/gjk_demo_1',
+            name: 'gjk_demo_1',
+            // route level code-splitting
+            // this generates a separate chunk (About.[hash].js) for this route
+            // which is lazy-loaded when the route is visited.
+            component: () => import('../views/examples/2d/GjkEpaDemo1.vue'),
+        },
     ],
 })
 

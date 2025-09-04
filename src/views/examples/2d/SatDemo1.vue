@@ -2,14 +2,17 @@
 
 <template>
     <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>Separate Axis Theorem (Demo 1)</strong></h1>
+        <h1 class="text-3xl"><strong>Separate Axis Theorem 2D - Demo 1</strong></h1>
 
-        <canvas ref="canvas"></canvas>
+        <canvas ref="canvas" width="600" height="600"></canvas>
     </div>
 </template>
 
 <script setup lang="ts">
+import PolygonBody from '@/geometry/PolygonBody'
+import sat from '@/physics/collision/sat'
 import { onBeforeMount, onMounted, ref } from 'vue'
+import * as twgl from 'twgl.js'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 let gl: WebGLRenderingContext | null = null
@@ -17,39 +20,14 @@ let gl: WebGLRenderingContext | null = null
 let isRunning = false
 let animationId: number
 
-const vs = `
-attribute vec2 a_position;
-
-uniform vec2 u_resolution;
-
-void main() {
-    // convert the position from pixels to 0.0 to 1.0
-    vec2 zeroToOne = a_position / u_resolution;
-
-    // convert from 0->1 to 0->2
-    vec2 zeroToTwo = zeroToOne * 2.0;
-
-    // convert from 0->2 to -1->+1 (clip space)
-    vec2 clipSpace = zeroToTwo - 1.0;
-
-    gl_Position = vec4(clipSpace * vec2(1,-1), 0, 1);
-    gl_PointSize = 5.0;
-}
-`
-
-const fs = `
-precision mediump float;
-
-// uniform sampler2D u_texture;
-uniform vec4 u_color;
-
-void main() {
-    gl_FragColor = u_color;
-}
-`
+let bodies: PolygonBody[] = []
+let lastTime = 0,
+    deltaTime = 0
 
 onMounted(() => {
-    if (!canvas.value || isRunning === false) return
+    if (!canvas.value) return
+
+    const startTime = Date.now()
 
     gl = canvas.value.getContext('webgl')
     if (!gl) {
@@ -57,11 +35,75 @@ onMounted(() => {
         return
     }
 
+    for (let i = 0; i < 10; i++) {
+        const x = Math.random() * canvas.value.width
+        const y = Math.random() * canvas.value.height
+
+        const body = new PolygonBody(gl, [
+            [x, y],
+            [x + 50, y],
+            [x, y + 50],
+        ])
+        bodies.push(body)
+    }
+
+    lastTime = Date.now() - startTime
     isRunning = true
     animationId = requestAnimationFrame(loop)
 })
 
-function loop() {
+function loop(time: number = 0) {
+    if (gl === null || isRunning === false) {
+        return
+    }
+
+    deltaTime = (time - lastTime) / 1000
+    lastTime = time
+
+    for (const body of bodies) {
+        body.update(deltaTime)
+    }
+
+    for (let i = 0; i < bodies.length; i++) {
+        const body1 = bodies[i]
+        for (let j = 0; j < bodies.length; j++) {
+            const body2 = bodies[j]
+
+            const hit = sat(body1, body2)
+            if (hit) {
+                body1.isOverlapping = true
+                body2.isOverlapping = true
+                // let mvp = epa(body1, body2, hit)
+
+                let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(hit.normal))
+                edge1.forEach((p) => {
+                    p.move(
+                        twgl.v3.add(
+                            p.position,
+                            twgl.v3.mulScalar(twgl.v3.negate(hit.normal), hit.depth),
+                        ),
+                    )
+                })
+
+                let edge2 = body2.getFarthestEdgeInDirection(hit.normal)
+                edge2.forEach((p) => {
+                    p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(hit.normal, hit.depth)))
+                })
+            } else {
+                body1.isOverlapping = false
+                body2.isOverlapping = false
+            }
+        }
+    }
+
+    // Rendering
+    twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement)
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+
+    for (const body of bodies) {
+        body.draw()
+    }
+
     animationId = requestAnimationFrame(loop)
 }
 

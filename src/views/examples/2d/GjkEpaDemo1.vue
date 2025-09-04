@@ -4,12 +4,12 @@
     <div class="container mx-auto">
         <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 1 2D</strong></h1>
 
-        <canvas ref="canvas"></canvas>
+        <canvas ref="canvas" width="600" height="600" style="border: 1px solid black"></canvas>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import PolygonBody from '@/geometry/PolygonBody'
 import gjk from '@/physics/collision/gjk'
 import { epa } from '@/physics/collision/epa'
@@ -21,43 +21,12 @@ let gl: WebGLRenderingContext | null = null
 let isRunning = false
 let animationId: number
 
-const vs = `
-attribute vec2 a_position;
-
-uniform vec2 u_resolution;
-
-void main() {
-    // convert the position from pixels to 0.0 to 1.0
-    vec2 zeroToOne = a_position / u_resolution;
-
-    // convert from 0->1 to 0->2
-    vec2 zeroToTwo = zeroToOne * 2.0;
-
-    // convert from 0->2 to -1->+1 (clip space)
-    vec2 clipSpace = zeroToTwo - 1.0;
-
-    gl_Position = vec4(clipSpace * vec2(1,-1), 0, 1);
-    gl_PointSize = 5.0;
-}
-`
-
-const fs = `
-precision mediump float;
-
-// uniform sampler2D u_texture;
-uniform vec4 u_color;
-
-void main() {
-    gl_FragColor = u_color;
-}
-`
-
 let bodies: PolygonBody[] = []
 let lastTime = 0,
     deltaTime = 0
 
 onMounted(() => {
-    if (!canvas.value || isRunning === false) return
+    if (!canvas.value) return
 
     gl = canvas.value.getContext('webgl')
     if (!gl) {
@@ -67,26 +36,25 @@ onMounted(() => {
 
     const startTime = Date.now()
 
-    const body1 = new PolygonBody(gl, [
-        [200, 100],
-        [250, 100],
-        [250, 150],
-        [200, 150],
-    ])
-    const body2 = new PolygonBody(gl, [
-        [140, 101],
-        [210, 100],
-        [160, 150],
-    ])
-    bodies.push(body1, body2)
+    for (let i = 0; i < 10; i++) {
+        const x = Math.random() * canvas.value.width
+        const y = Math.random() * canvas.value.height
+
+        const body = new PolygonBody(gl, [
+            [x, y],
+            [x + 50, y],
+            [x, y + 50],
+        ])
+        bodies.push(body)
+    }
 
     lastTime = Date.now() - startTime
     isRunning = true
     animationId = requestAnimationFrame(loop)
 })
 
-function loop(time: number) {
-    if (gl === null) {
+function loop(time: number = 0) {
+    if (gl === null || isRunning === false) {
         return
     }
 
@@ -97,24 +65,36 @@ function loop(time: number) {
         body.update(deltaTime)
     }
 
-    const hit = CollisionDetection_Gjk(body1, body2)
-    if (hit) {
-        body1.isOverlapping = true
-        let mvp = epa(body1, body2, hit)
+    for (let i = 0; i < bodies.length; i++) {
+        const body1 = bodies[i]
+        for (let j = 0; j < bodies.length; j++) {
+            const body2 = bodies[j]
 
-        let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(mvp.normal))
-        edge1.forEach((p) => {
-            p.move(
-                twgl.v3.add(p.position, twgl.v3.mulScalar(twgl.v3.negate(mvp.normal), mvp.depth)),
-            )
-        })
+            const hit = gjk(body1, body2)
+            if (hit) {
+                body1.isOverlapping = true
+                body2.isOverlapping = true
+                let mvp = epa(body1, body2, hit)
 
-        let edge2 = body2.getFarthestEdgeInDirection(mvp.normal)
-        edge2.forEach((p) => {
-            p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(mvp.normal, mvp.depth)))
-        })
-    } else {
-        body1.isOverlapping = false
+                let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(mvp.normal))
+                edge1.forEach((p) => {
+                    p.move(
+                        twgl.v3.add(
+                            p.position,
+                            twgl.v3.mulScalar(twgl.v3.negate(mvp.normal), mvp.depth),
+                        ),
+                    )
+                })
+
+                let edge2 = body2.getFarthestEdgeInDirection(mvp.normal)
+                edge2.forEach((p) => {
+                    p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(mvp.normal, mvp.depth)))
+                })
+            } else {
+                body1.isOverlapping = false
+                body2.isOverlapping = false
+            }
+        }
     }
 
     // Rendering
@@ -128,7 +108,8 @@ function loop(time: number) {
     animationId = requestAnimationFrame(loop)
 }
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
+    console.log('Clean up')
     isRunning = true
 
     if (animationId) {

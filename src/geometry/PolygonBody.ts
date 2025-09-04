@@ -71,7 +71,7 @@ export default class PolygonBody {
         }
     }
 
-    axes() {
+    axes(): twgl.v3.Vec3[] {
         const axes = []
         for (let i = 0; i < this.particles.length; i++) {
             const p1 = this.particles[i].position

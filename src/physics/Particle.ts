@@ -1,3 +1,5 @@
+import vs from "@/render/shaders/2d_vs";
+import fs from "@/render/shaders/fill_color_vs";
 import * as twgl from "twgl.js"
 
 export default class Particle {
@@ -26,7 +28,7 @@ export default class Particle {
             },
         });
 
-        this.programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]);
+        this.programInfo = twgl.createProgramInfo(gl, [vs, fs]);
     }
 
     update(dt: number): void {
