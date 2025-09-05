@@ -8,6 +8,7 @@ export default class RectangleBody extends PolygonBody {
         y: number,
         width: number,
         height: number,
+        texture: WebGLTexture,
         restitution: number = 1,
     ) {
         const w2 = width / 2
@@ -19,11 +20,6 @@ export default class RectangleBody extends PolygonBody {
             [x + w2, y + h2], // Top-right
             [x - w2, y + h2], // Top-left
         ]
-        super(gl, vertices, restitution)
-
-        // Add internal struts (diagonals) to maintain rigidity
-        // Without these, the rectangle would collapse into a parallelogram.
-        this.constraints.push(new LinearConstraint(gl, this.particles[0], this.particles[2]))
-        this.constraints.push(new LinearConstraint(gl, this.particles[1], this.particles[3]))
+        super(gl, vertices, texture, restitution)
     }
 }

@@ -39,6 +39,17 @@ onMounted(() => {
     }
 
     const startTime = Date.now()
+    // Create a checkerboard texture to visualize UV mapping
+    // const texture = twgl.createTexture(gl, {
+    //     min: gl.NEAREST,
+    //     mag: gl.NEAREST,
+    //     src: [255, 100, 255, 255, 192, 192, 192, 255, 192, 192, 192, 255, 255, 100, 255, 255],
+    // })
+    const texture = twgl.createTexture(gl, {
+        src: '/pizza-sprite.png',
+        min: gl.NEAREST,
+        mag: gl.NEAREST,
+    })
 
     for (let i = 0; i < 10; i++) {
         const x = Math.random() * canvas.value.width
@@ -47,13 +58,13 @@ onMounted(() => {
         const type = Math.random()
         let body
         if (type <= 0.25) {
-            body = new TriangleBody(gl, x, y, 50)
+            body = new TriangleBody(gl, x, y, 50, texture)
         } else if (type <= 0.5) {
-            body = new RectangleBody(gl, x, y, 100, 50)
+            body = new RectangleBody(gl, x, y, 100, 50, texture)
         } else if (type <= 0.75) {
-            body = new PentagonBody(gl, x, y, 50)
+            body = new PentagonBody(gl, x, y, 50, texture)
         } else {
-            body = new HexagonBody(gl, x, y, 50)
+            body = new HexagonBody(gl, x, y, 50, texture)
         }
 
         bodies.push(body)
@@ -80,7 +91,7 @@ function loop(time: number = 0) {
         const body1 = bodies[i]
         for (let j = 0; j < bodies.length; j++) {
             if (i == j) continue
-            
+
             const body2 = bodies[j]
 
             const hit = gjk(body1, body2)

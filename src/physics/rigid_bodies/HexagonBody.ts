@@ -7,6 +7,7 @@ export default class HexagonBody extends PolygonBody {
         x: number,
         y: number,
         size: number,
+        texture: WebGLTexture,
         restitution: number = 1,
     ) {
         const vertices = []
@@ -14,11 +15,6 @@ export default class HexagonBody extends PolygonBody {
             const angle = (i / 6) * 2 * Math.PI // Start from right
             vertices.push([x + size * Math.cos(angle), y + size * Math.sin(angle)])
         }
-        super(gl, vertices, restitution)
-
-        // Add internal struts by connecting opposite vertices.
-        this.constraints.push(new LinearConstraint(gl, this.particles[0], this.particles[3]))
-        this.constraints.push(new LinearConstraint(gl, this.particles[1], this.particles[4]))
-        this.constraints.push(new LinearConstraint(gl, this.particles[2], this.particles[5]))
+        super(gl, vertices, texture, restitution)
     }
 }

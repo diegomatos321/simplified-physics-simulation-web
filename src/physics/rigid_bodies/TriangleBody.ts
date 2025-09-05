@@ -6,6 +6,7 @@ export default class TriangleBody extends PolygonBody {
         x: number,
         y: number,
         size: number,
+        texture: WebGLTexture,
         restitution: number = 1,
     ) {
         const h = size * (Math.sqrt(3) / 2) // Height of equilateral triangle
@@ -14,7 +15,6 @@ export default class TriangleBody extends PolygonBody {
             [x - size / 2, y - (1 / 3) * h],
             [x + size / 2, y - (1 / 3) * h],
         ]
-        super(gl, vertices, restitution)
-        // No extra constraints needed. The outer ring is sufficient.
+        super(gl, vertices, texture, restitution)
     }
 }
