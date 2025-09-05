@@ -1,7 +1,7 @@
-import Particle from '../physics/Particle'
-import IConstraint from '../physics/constraints/IConstraint'
-import LinearConstraint from '../physics/constraints/LinearConstraint'
-import Projection from '../physics/Projection'
+import Particle from '@/physics/Particle'
+import IConstraint from '@/physics/constraints/IConstraint'
+import LinearConstraint from '@/physics/constraints/LinearConstraint'
+import Projection from '@/physics/Projection'
 import * as twgl from 'twgl.js'
 
 export default class PolygonBody {
@@ -10,26 +10,22 @@ export default class PolygonBody {
     public isOverlapping: boolean = false
 
     private gl: WebGLRenderingContext
-    private NUM_ITERATIONS: number = 5
+    private NUM_ITERATIONS: number = 10
 
-    constructor(gl: WebGLRenderingContext, vertex_positions: Array<number[]>) {
+    constructor(
+        gl: WebGLRenderingContext,
+        vertex_positions: Array<number[]>,
+        restitution: number = 0.5,
+    ) {
         this.gl = gl
 
-        this.particles = vertex_positions.map((v) => {
-            const p = new Particle(gl, twgl.v3.create(v[0], v[1]))
-            // p.gravity = twgl.v3.create(0,0)
-            return p
-        })
+        this.particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])))
 
+        // Create constraints for the outer edges
         for (let i = 0; i < this.particles.length; i++) {
             const p1 = this.particles[i]
             const p2 = this.particles[(i + 1) % this.particles.length]
-            this.constraints.push(new LinearConstraint(gl, p1, p2))
-
-            for (let j = i + 2; j < this.particles.length - 1; j++) {
-                const crossP1 = this.particles[j]
-                this.constraints.push(new LinearConstraint(gl, p1, crossP1))
-            }
+            this.constraints.push(new LinearConstraint(gl, p1, p2, restitution))
         }
     }
 
@@ -145,7 +141,8 @@ export default class PolygonBody {
     getFarthestEdgeInDirection(d: twgl.v3.Vec3): Particle[] {
         let max = Number.NEGATIVE_INFINITY
         let max2 = Number.NEGATIVE_INFINITY
-        let best = this.particles[0], best2 = this.particles[1]
+        let best = this.particles[0],
+            best2 = this.particles[1]
 
         for (const particle of this.particles) {
             let candidate = twgl.v3.dot(d, particle.position)

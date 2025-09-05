@@ -1,7 +1,7 @@
 import type Particle from '../Particle'
 import IConstraint from './IConstraint'
-import vs from '@/render/shaders/2d_vs'
-import fs from '@/render/shaders/fill_color_vs'
+import vs from "@/render/shaders/simple_2d.vert?raw";
+import fs from "@/render/shaders/fill_color.frag?raw";
 import * as twgl from 'twgl.js'
 
 export default class LinearConstraint extends IConstraint {

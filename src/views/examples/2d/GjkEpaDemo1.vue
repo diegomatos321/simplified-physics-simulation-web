@@ -10,10 +10,14 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import PolygonBody from '@/geometry/PolygonBody'
+import TriangleBody from '@/physics/rigid_bodies/TriangleBody'
+import type PolygonBody from '@/physics/rigid_bodies/PolygonBody'
 import gjk from '@/physics/collision/gjk'
 import { epa } from '@/physics/collision/epa'
 import * as twgl from 'twgl.js'
+import RectangleBody from '@/physics/rigid_bodies/RectangleBody'
+import PentagonBody from '@/physics/rigid_bodies/PentagonBody'
+import HexagonBody from '@/physics/rigid_bodies/HexagonBody'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 let gl: WebGLRenderingContext | null = null
@@ -40,11 +44,19 @@ onMounted(() => {
         const x = Math.random() * canvas.value.width
         const y = Math.random() * canvas.value.height
 
-        const body = new PolygonBody(gl, [
-            [x, y],
-            [x + 50, y],
-            [x, y + 50],
-        ])
+        // bodies.push(new RectangleBody(gl, x, y, 50, 50))
+        const type = Math.random()
+        let body
+        if (type <= 0.25) {
+            body = new TriangleBody(gl, x, y, 50)
+        } else if (type <= 0.5) {
+            body = new RectangleBody(gl, x, y, 100, 50)
+        } else if (type <= 0.75) {
+            body = new PentagonBody(gl, x, y, 50)
+        } else {
+            body = new HexagonBody(gl, x, y, 50)
+        }
+
         bodies.push(body)
     }
 
@@ -75,21 +87,22 @@ function loop(time: number = 0) {
                 body1.isOverlapping = true
                 body2.isOverlapping = true
                 let mvp = epa(body1, body2, hit)
+                if (mvp) {
+                    let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(mvp.normal))
+                    edge1.forEach((p) => {
+                        p.move(
+                            twgl.v3.add(
+                                p.position,
+                                twgl.v3.mulScalar(twgl.v3.negate(mvp.normal), mvp.depth),
+                            ),
+                        )
+                    })
 
-                let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(mvp.normal))
-                edge1.forEach((p) => {
-                    p.move(
-                        twgl.v3.add(
-                            p.position,
-                            twgl.v3.mulScalar(twgl.v3.negate(mvp.normal), mvp.depth),
-                        ),
-                    )
-                })
-
-                let edge2 = body2.getFarthestEdgeInDirection(mvp.normal)
-                edge2.forEach((p) => {
-                    p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(mvp.normal, mvp.depth)))
-                })
+                    let edge2 = body2.getFarthestEdgeInDirection(mvp.normal)
+                    edge2.forEach((p) => {
+                        p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(mvp.normal, mvp.depth)))
+                    })
+                }
             } else {
                 body1.isOverlapping = false
                 body2.isOverlapping = false

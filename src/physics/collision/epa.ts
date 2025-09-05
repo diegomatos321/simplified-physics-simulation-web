@@ -1,11 +1,12 @@
-import type PolygonBody from "@/geometry/PolygonBody"
-import { support, tripleProduct } from "./utils"
-import * as twgl from "twgl.js"
+import type PolygonBody from '@/geometry/PolygonBody'
+import { support, tripleProduct } from './utils'
+import * as twgl from 'twgl.js'
+import Collider from '../Collider'
 
-export function epa(A: PolygonBody, B: PolygonBody, simplex: twgl.v3.Vec3[]) {
+export function epa(A: PolygonBody, B: PolygonBody, simplex: twgl.v3.Vec3[]): Collider | undefined {
     const TOLERANCE = 1e-6
     // loop to find the collision information
-    while (true) {
+    for (let i = 0; i < 30; i++) {
         // obtain the feature (edge for 2D) closest to the
         // origin on the Minkowski Difference
         const e = findClosestEdge(simplex)
@@ -22,10 +23,7 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: twgl.v3.Vec3[]) {
             // if the difference is less than the tolerance then we can
             // assume that we cannot expand the simplex any further and
             // we have our solution
-            return {
-                normal: e.normal,
-                depth: d,
-            }
+            return new Collider(e.normal, d)
         } else {
             // we haven't reached the edge of the Minkowski Difference
             // so continue expanding by adding the new point to the simplex

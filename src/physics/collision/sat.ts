@@ -1,10 +1,8 @@
 import type PolygonBody from '@/geometry/PolygonBody'
 import * as twgl from 'twgl.js'
+import Collider from '../Collider'
 
-export default function sat(
-    shape1: PolygonBody,
-    shape2: PolygonBody,
-): false | { depth: number; normal: twgl.v3.Vec3 } {
+export default function sat(shape1: PolygonBody, shape2: PolygonBody): false | Collider {
     const axes1 = shape1.axes()
     const axes2 = shape2.axes()
 
@@ -37,5 +35,5 @@ export default function sat(
         }
     }
 
-    return { depth: overlap, normal: smallest }
+    return new Collider(smallest, overlap)
 }
