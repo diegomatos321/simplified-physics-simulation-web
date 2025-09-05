@@ -9,7 +9,11 @@
 </template>
 
 <script setup lang="ts">
-import PolygonBody from '@/geometry/PolygonBody'
+import TriangleBody from '@/physics/rigid_bodies/TriangleBody'
+import RectangleBody from '@/physics/rigid_bodies/RectangleBody'
+import PentagonBody from '@/physics/rigid_bodies/PentagonBody'
+import HexagonBody from '@/physics/rigid_bodies/HexagonBody'
+import type PolygonBody from '@/physics/rigid_bodies/PolygonBody'
 import sat from '@/physics/collision/sat'
 import { onBeforeMount, onMounted, ref } from 'vue'
 import * as twgl from 'twgl.js'
@@ -35,15 +39,22 @@ onMounted(() => {
         return
     }
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 2; i++) {
         const x = Math.random() * canvas.value.width
         const y = Math.random() * canvas.value.height
 
-        const body = new PolygonBody(gl, [
-            [x, y],
-            [x + 50, y],
-            [x, y + 50],
-        ])
+        const type = Math.random()
+        let body
+        if (type <= 0.25) {
+            body = new TriangleBody(gl, x, y, 50)
+        } else if (type <= 0.5) {
+            body = new RectangleBody(gl, x, y, 100, 50)
+        } else if (type <= 0.75) {
+            body = new PentagonBody(gl, x, y, 50)
+        } else {
+            body = new HexagonBody(gl, x, y, 50)
+        }
+
         bodies.push(body)
     }
 
@@ -67,27 +78,29 @@ function loop(time: number = 0) {
     for (let i = 0; i < bodies.length; i++) {
         const body1 = bodies[i]
         for (let j = 0; j < bodies.length; j++) {
+            if (i == j) continue
+
             const body2 = bodies[j]
 
             const hit = sat(body1, body2)
             if (hit) {
                 body1.isOverlapping = true
                 body2.isOverlapping = true
-                // let mvp = epa(body1, body2, hit)
 
                 let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(hit.normal))
                 edge1.forEach((p) => {
                     p.move(
                         twgl.v3.add(
                             p.position,
-                            twgl.v3.mulScalar(twgl.v3.negate(hit.normal), hit.depth),
+                            // twgl.v3.negate(hit.normal)
+                            twgl.v3.mulScalar(twgl.v3.negate(hit.normal), deltaTime),
                         ),
                     )
                 })
 
                 let edge2 = body2.getFarthestEdgeInDirection(hit.normal)
                 edge2.forEach((p) => {
-                    p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(hit.normal, hit.depth)))
+                    p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(hit.normal, deltaTime)))
                 })
             } else {
                 body1.isOverlapping = false

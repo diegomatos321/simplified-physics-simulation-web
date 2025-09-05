@@ -11,13 +11,13 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import TriangleBody from '@/physics/rigid_bodies/TriangleBody'
+import RectangleBody from '@/physics/rigid_bodies/RectangleBody'
+import PentagonBody from '@/physics/rigid_bodies/PentagonBody'
+import HexagonBody from '@/physics/rigid_bodies/HexagonBody'
 import type PolygonBody from '@/physics/rigid_bodies/PolygonBody'
 import gjk from '@/physics/collision/gjk'
 import { epa } from '@/physics/collision/epa'
 import * as twgl from 'twgl.js'
-import RectangleBody from '@/physics/rigid_bodies/RectangleBody'
-import PentagonBody from '@/physics/rigid_bodies/PentagonBody'
-import HexagonBody from '@/physics/rigid_bodies/HexagonBody'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 let gl: WebGLRenderingContext | null = null
@@ -44,7 +44,6 @@ onMounted(() => {
         const x = Math.random() * canvas.value.width
         const y = Math.random() * canvas.value.height
 
-        // bodies.push(new RectangleBody(gl, x, y, 50, 50))
         const type = Math.random()
         let body
         if (type <= 0.25) {
@@ -80,6 +79,8 @@ function loop(time: number = 0) {
     for (let i = 0; i < bodies.length; i++) {
         const body1 = bodies[i]
         for (let j = 0; j < bodies.length; j++) {
+            if (i == j) continue
+            
             const body2 = bodies[j]
 
             const hit = gjk(body1, body2)
