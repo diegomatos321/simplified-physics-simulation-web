@@ -21,7 +21,7 @@ export default class PolygonBody {
     protected uvs: number[] = []
     protected indices: number[] = []
 
-    protected NUM_ITERATIONS: number = 10
+    protected NUM_ITERATIONS: number = 5
 
     constructor(
         protected gl: WebGLRenderingContext,

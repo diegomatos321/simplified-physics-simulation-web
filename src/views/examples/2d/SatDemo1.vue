@@ -39,20 +39,26 @@ onMounted(() => {
         return
     }
 
-    for (let i = 0; i < 2; i++) {
+    const texture = twgl.createTexture(gl, {
+        src: '/pizza-sprite.png',
+        min: gl.NEAREST,
+        mag: gl.NEAREST,
+    })
+
+    for (let i = 0; i < 10; i++) {
         const x = Math.random() * canvas.value.width
         const y = Math.random() * canvas.value.height
 
         const type = Math.random()
         let body
         if (type <= 0.25) {
-            body = new TriangleBody(gl, x, y, 50)
+            body = new TriangleBody(gl, x, y, 50, texture)
         } else if (type <= 0.5) {
-            body = new RectangleBody(gl, x, y, 100, 50)
+            body = new RectangleBody(gl, x, y, 100, 50, texture)
         } else if (type <= 0.75) {
-            body = new PentagonBody(gl, x, y, 50)
+            body = new PentagonBody(gl, x, y, 50, texture)
         } else {
-            body = new HexagonBody(gl, x, y, 50)
+            body = new HexagonBody(gl, x, y, 50, texture)
         }
 
         bodies.push(body)
@@ -110,6 +116,9 @@ function loop(time: number = 0) {
     }
 
     // Rendering
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
     twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement)
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 

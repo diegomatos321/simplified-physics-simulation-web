@@ -123,6 +123,9 @@ function loop(time: number = 0) {
     }
 
     // Rendering
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
     twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement)
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
