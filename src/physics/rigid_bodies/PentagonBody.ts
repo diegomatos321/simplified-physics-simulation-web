@@ -1,5 +1,5 @@
-import LinearConstraint from '@/physics/constraints/LinearConstraint'
-import PolygonBody from './PolygonBody'
+import LinearConstraint from '@/physics/constraints/LinearConstraint';
+import PolygonBody from './PolygonBody';
 
 export default class PentagonBody extends PolygonBody {
     constructor(
@@ -10,11 +10,11 @@ export default class PentagonBody extends PolygonBody {
         texture: WebGLTexture,
         restitution: number = 1,
     ) {
-        const vertices = []
+        const vertices = [];
         for (let i = 0; i < 5; i++) {
-            const angle = (i / 5) * 2 * Math.PI + Math.PI / 2 // Start from top
-            vertices.push([x + size * Math.cos(angle), y + size * Math.sin(angle)])
+            const angle = (i / 5) * 2 * Math.PI + Math.PI / 2; // Start from top
+            vertices.push([x + size * Math.cos(angle), y + size * Math.sin(angle)]);
         }
-        super(gl, vertices, texture, restitution)
+        super(gl, vertices, texture, restitution);
     }
 }

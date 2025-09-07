@@ -1,4 +1,4 @@
-import * as twgl from 'twgl.js'
+import * as twgl from 'twgl.js';
 
 export default class Collider {
     constructor(

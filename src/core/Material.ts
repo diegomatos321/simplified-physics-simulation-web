@@ -1,4 +1,4 @@
-import * as twgl from 'twgl.js'
+import * as twgl from 'twgl.js';
 
 export class Material {
     constructor(
@@ -7,10 +7,10 @@ export class Material {
     ) {}
 
     apply(gl: WebGLRenderingContext) {
-        gl.useProgram(this.programInfo.program)
+        gl.useProgram(this.programInfo.program);
 
         twgl.setUniforms(this.programInfo, {
             ...this.uniforms,
-        })
+        });
     }
 }

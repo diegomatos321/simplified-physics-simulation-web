@@ -1,39 +1,39 @@
-import type PolygonBody from '@/physics/rigid_bodies/PolygonBody'
-import * as twgl from 'twgl.js'
-import Collider from '../Collider'
+import type PolygonBody from '@/physics/rigid_bodies/PolygonBody';
+import * as twgl from 'twgl.js';
+import Collider from '../Collider';
 
 export default function sat(shape1: PolygonBody, shape2: PolygonBody): false | Collider {
-    const axes1 = shape1.axes()
-    const axes2 = shape2.axes()
+    const axes1 = shape1.axes();
+    const axes2 = shape2.axes();
 
-    let overlap = Infinity
-    let smallest: twgl.v3.Vec3 = []
+    let overlap = Infinity;
+    let smallest: twgl.v3.Vec3 = [];
 
     for (const axis of axes1) {
-        const proj1 = shape1.project(axis)
-        const proj2 = shape2.project(axis)
+        const proj1 = shape1.project(axis);
+        const proj2 = shape2.project(axis);
 
-        let o = proj1.overlaps(proj2)
+        let o = proj1.overlaps(proj2);
         if (o <= 0) {
-            return false
+            return false;
         } else if (o < overlap) {
-            overlap = o
-            smallest = axis
+            overlap = o;
+            smallest = axis;
         }
     }
 
     for (const axis of axes2) {
-        const proj1 = shape1.project(axis)
-        const proj2 = shape2.project(axis)
+        const proj1 = shape1.project(axis);
+        const proj2 = shape2.project(axis);
 
-        let o = proj1.overlaps(proj2)
+        let o = proj1.overlaps(proj2);
         if (o <= 0) {
-            return false
+            return false;
         } else if (o < overlap) {
-            overlap = o
-            smallest = axis
+            overlap = o;
+            smallest = axis;
         }
     }
 
-    return new Collider(smallest, overlap)
+    return new Collider(smallest, overlap);
 }

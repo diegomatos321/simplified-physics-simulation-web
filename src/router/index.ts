@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +34,6 @@ const router = createRouter({
             component: () => import('../views/examples/2d/GjkEpaDemo1.vue'),
         },
     ],
-})
+});
 
-export default router
+export default router;

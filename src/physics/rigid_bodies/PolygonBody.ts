@@ -1,23 +1,23 @@
-import Particle from '@/physics/Particle'
-import IConstraint from '@/physics/constraints/IConstraint'
-import LinearConstraint from '@/physics/constraints/LinearConstraint'
-import Projection from '@/physics/Projection'
-import earcut from 'earcut'
-import vs from '@/shaders/main.vert?raw' // ?raw is a Vite feature that imports the file contents as a string.
-import fs from '@/shaders/main.frag?raw' // ?raw is a Vite feature that imports the file contents as a string.
-import { Mesh, type Renderable } from '@/core/Mesh'
-import { Material } from '@/core/Material'
-import * as twgl from 'twgl.js'
+import Particle from '@/physics/Particle';
+import IConstraint from '@/physics/constraints/IConstraint';
+import LinearConstraint from '@/physics/constraints/LinearConstraint';
+import Projection from '@/physics/Projection';
+import earcut from 'earcut';
+import vs from '@/shaders/main.vert?raw'; // ?raw is a Vite feature that imports the file contents as a string.
+import fs from '@/shaders/main.frag?raw'; // ?raw is a Vite feature that imports the file contents as a string.
+import { Mesh, type Renderable } from '@/core/Mesh';
+import { Material } from '@/core/Material';
+import * as twgl from 'twgl.js';
 
 export default class PolygonBody implements Renderable {
-    public particles: Array<Particle> = []
-    public constraints: Array<IConstraint> = []
-    public isOverlapping: boolean = false
+    public particles: Array<Particle> = [];
+    public constraints: Array<IConstraint> = [];
+    public isOverlapping: boolean = false;
 
-    public wireframe: boolean = false
+    public wireframe: boolean = false;
 
-    protected mesh: Mesh
-    protected NUM_ITERATIONS: number = 5
+    protected mesh: Mesh;
+    protected NUM_ITERATIONS: number = 5;
 
     constructor(
         protected gl: WebGLRenderingContext,
@@ -26,48 +26,48 @@ export default class PolygonBody implements Renderable {
         restitution: number = 0.5,
     ) {
         // 1. Setup Particles and Constraints (Physics)
-        this.particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])))
+        this.particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])));
 
         // Create constraints for the outer edges
         for (let i = 0; i < this.particles.length; i++) {
-            const p1 = this.particles[i]
-            const p2 = this.particles[(i + 1) % this.particles.length]
-            this.constraints.push(new LinearConstraint(gl, p1, p2, restitution))
+            const p1 = this.particles[i];
+            const p2 = this.particles[(i + 1) % this.particles.length];
+            this.constraints.push(new LinearConstraint(gl, p1, p2, restitution));
         }
 
         // Internal strut constraints for rigidity (connecting every other vertex)
         for (let i = 0; i < this.particles.length; i++) {
-            const p1 = this.particles[i]
-            const p2 = this.particles[(i + 2) % this.particles.length]
-            this.constraints.push(new LinearConstraint(gl, p1, p2))
+            const p1 = this.particles[i];
+            const p2 = this.particles[(i + 2) % this.particles.length];
+            this.constraints.push(new LinearConstraint(gl, p1, p2));
         }
 
         // 2a. Automatic UV Generation via Bounding Box
         let minX = Infinity,
             minY = Infinity,
             maxX = -Infinity,
-            maxY = -Infinity
+            maxY = -Infinity;
         for (const pos of vertex_positions) {
-            minX = Math.min(minX, pos[0])
-            minY = Math.min(minY, pos[1])
-            maxX = Math.max(maxX, pos[0])
-            maxY = Math.max(maxY, pos[1])
+            minX = Math.min(minX, pos[0]);
+            minY = Math.min(minY, pos[1]);
+            maxX = Math.max(maxX, pos[0]);
+            maxY = Math.max(maxY, pos[1]);
         }
         const uvs = vertex_positions
             .map(([x, y]) => [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)])
-            .flat()
+            .flat();
 
         // 2b. Automatic Triangulation with Earcut
-        const flattened_vertices = vertex_positions.flat()
-        const indices = earcut(flattened_vertices)
+        const flattened_vertices = vertex_positions.flat();
+        const indices = earcut(flattened_vertices);
 
         // 3. Setup webgl render variables
         const uniforms = {
             u_resolution: [gl.canvas.width, gl.canvas.height],
             u_texture: texture,
-        }
-        const programInfo = twgl.createProgramInfo(gl, [vs, fs])
-        const material = new Material(programInfo, uniforms)
+        };
+        const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+        const material = new Material(programInfo, uniforms);
 
         const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
             a_position: {
@@ -81,20 +81,20 @@ export default class PolygonBody implements Renderable {
                 drawType: gl.STATIC_DRAW,
             },
             indices: indices,
-        })
-        this.mesh = new Mesh(bufferInfo, material)
+        });
+        this.mesh = new Mesh(bufferInfo, material);
     }
 
     update(dt: number) {
         for (const particle of this.particles) {
-            particle.update(dt)
+            particle.update(dt);
         }
 
         for (let i = 0; i < this.NUM_ITERATIONS; i++) {
             for (const particle of this.particles) {
-                let x = Math.max(Math.min(particle.position[0], this.gl.canvas.width), 0)
-                let y = Math.max(Math.min(particle.position[1], this.gl.canvas.height), 0)
-                particle.move(twgl.v3.create(x, y))
+                let x = Math.max(Math.min(particle.position[0], this.gl.canvas.width), 0);
+                let y = Math.max(Math.min(particle.position[1], this.gl.canvas.height), 0);
+                particle.move(twgl.v3.create(x, y));
 
                 // particle.move(twgl.v3.create(
                 //     particle.position[0] * (1 - 0.5) + x * 0.5,
@@ -103,7 +103,7 @@ export default class PolygonBody implements Renderable {
             }
 
             for (const constraint of this.constraints) {
-                constraint.relax()
+                constraint.relax();
             }
         }
     }
@@ -112,121 +112,121 @@ export default class PolygonBody implements Renderable {
         if (this.wireframe === true) {
             for (const particle of this.particles) {
                 if (this.isOverlapping === true) {
-                    particle.color = [1, 0.2, 0.2, 1]
+                    particle.color = [1, 0.2, 0.2, 1];
                 } else {
-                    particle.color = [0, 0, 1, 1]
+                    particle.color = [0, 0, 1, 1];
                 }
-                particle.draw()
+                particle.draw();
             }
 
             for (const constraint of this.constraints) {
-                constraint.draw()
+                constraint.draw();
             }
         } else {
             const flattened_vertices = this.particles
                 .map((p) => [p.position[0], p.position[1]])
-                .flat()
+                .flat();
 
-            this.mesh.updateBufferInfo(gl, 'a_position', flattened_vertices)
-            this.mesh.draw(gl)
+            this.mesh.updateBufferInfo(gl, 'a_position', flattened_vertices);
+            this.mesh.draw(gl);
         }
     }
 
     axes(): twgl.v3.Vec3[] {
-        const axes = []
+        const axes = [];
         for (let i = 0; i < this.particles.length; i++) {
-            const p1 = this.particles[i].position
+            const p1 = this.particles[i].position;
 
-            const nextIndex = (i + 1) % this.particles.length
-            const p2 = this.particles[nextIndex].position
+            const nextIndex = (i + 1) % this.particles.length;
+            const p2 = this.particles[nextIndex].position;
 
-            const edge = twgl.v3.subtract(p1, p2)
-            const normal = twgl.v3.create(-edge[1], edge[0])
-            axes.push(normal)
+            const edge = twgl.v3.subtract(p1, p2);
+            const normal = twgl.v3.create(-edge[1], edge[0]);
+            axes.push(normal);
         }
 
-        return axes
+        return axes;
     }
 
     project(axis: twgl.v3.Vec3) {
-        let min = twgl.v3.dot(axis, this.particles[0].position)
-        let max = min
+        let min = twgl.v3.dot(axis, this.particles[0].position);
+        let max = min;
 
         for (let i = 1; i < this.particles.length; i++) {
-            const proj = twgl.v3.dot(axis, this.particles[i].position)
+            const proj = twgl.v3.dot(axis, this.particles[i].position);
             if (proj < min) {
-                min = proj
+                min = proj;
             } else if (proj > max) {
-                max = proj
+                max = proj;
             }
         }
 
-        return new Projection(min, max)
+        return new Projection(min, max);
     }
 
     // Centroid of a Polygon
     getCenter() {
-        let area = 0
-        let cx = 0
-        let cy = 0
+        let area = 0;
+        let cx = 0;
+        let cy = 0;
 
-        const n = this.particles.length
+        const n = this.particles.length;
         for (let i = 0; i < n; i++) {
-            const [x0, y0] = this.particles[i].position
-            const [x1, y1] = this.particles[(i + 1) % n].position
+            const [x0, y0] = this.particles[i].position;
+            const [x1, y1] = this.particles[(i + 1) % n].position;
 
-            const cross = x0 * y1 - x1 * y0
-            area += cross
-            cx += (x0 + x1) * cross
-            cy += (y0 + y1) * cross
+            const cross = x0 * y1 - x1 * y0;
+            area += cross;
+            cx += (x0 + x1) * cross;
+            cy += (y0 + y1) * cross;
         }
 
-        area *= 0.5
-        cx /= 6 * area
-        cy /= 6 * area
+        area *= 0.5;
+        cx /= 6 * area;
+        cy /= 6 * area;
 
-        return [cx, cy, 0]
+        return [cx, cy, 0];
     }
 
     getFarthestPointInDirection(d: twgl.v3.Vec3): Particle {
-        let max = Number.NEGATIVE_INFINITY
-        let best = this.particles[0]
+        let max = Number.NEGATIVE_INFINITY;
+        let best = this.particles[0];
 
         for (const particle of this.particles) {
-            let candidate = twgl.v3.dot(d, particle.position)
+            let candidate = twgl.v3.dot(d, particle.position);
             if (candidate > max) {
-                max = candidate
-                best = particle
+                max = candidate;
+                best = particle;
             }
         }
 
-        return best
+        return best;
     }
 
     getFarthestEdgeInDirection(d: twgl.v3.Vec3): Particle[] {
-        let max = Number.NEGATIVE_INFINITY
-        let max2 = Number.NEGATIVE_INFINITY
+        let max = Number.NEGATIVE_INFINITY;
+        let max2 = Number.NEGATIVE_INFINITY;
         let best = this.particles[0],
-            best2 = this.particles[1]
+            best2 = this.particles[1];
 
         for (const particle of this.particles) {
-            let candidate = twgl.v3.dot(d, particle.position)
+            let candidate = twgl.v3.dot(d, particle.position);
             if (candidate > max) {
-                max2 = max
-                best2 = best
+                max2 = max;
+                best2 = best;
 
-                max = candidate
-                best = particle
+                max = candidate;
+                best = particle;
             } else if (candidate > max2) {
-                max2 = candidate
-                best2 = particle
+                max2 = candidate;
+                best2 = particle;
             }
         }
 
         if (Math.abs(max - max2) < 0.01) {
-            return [best2, best]
+            return [best2, best];
         }
 
-        return [best]
+        return [best];
     }
 }
