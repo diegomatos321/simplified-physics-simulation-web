@@ -1,5 +1,5 @@
-import vs from '@/render/shaders/simple_2d.vert?raw'
-import fs from '@/render/shaders/fill_color.frag?raw'
+import vs from '@/shaders/main.frag?raw' // ?raw is a Vite feature that imports the file contents as a string.
+import fs from '@/shaders/main.frag?raw' // ?raw is a Vite feature that imports the file contents as a string.
 import * as twgl from 'twgl.js'
 
 export default class Particle {

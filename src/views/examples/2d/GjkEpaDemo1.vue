@@ -14,10 +14,12 @@ import TriangleBody from '@/physics/rigid_bodies/TriangleBody'
 import RectangleBody from '@/physics/rigid_bodies/RectangleBody'
 import PentagonBody from '@/physics/rigid_bodies/PentagonBody'
 import HexagonBody from '@/physics/rigid_bodies/HexagonBody'
-import type PolygonBody from '@/physics/rigid_bodies/PolygonBody'
+import PolygonBody from '@/physics/rigid_bodies/PolygonBody'
 import gjk from '@/physics/collision/gjk'
 import { epa } from '@/physics/collision/epa'
 import * as twgl from 'twgl.js'
+import Scene from '@/core/Scene'
+import Renderer from '@/core/Renderer'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 let gl: WebGLRenderingContext | null = null
@@ -25,7 +27,8 @@ let gl: WebGLRenderingContext | null = null
 let isRunning = false
 let animationId: number
 
-let bodies: PolygonBody[] = []
+const bodies: PolygonBody[] = []
+let renderer: Renderer
 let lastTime = 0,
     deltaTime = 0
 
@@ -39,12 +42,10 @@ onMounted(() => {
     }
 
     const startTime = Date.now()
-    // Create a checkerboard texture to visualize UV mapping
-    // const texture = twgl.createTexture(gl, {
-    //     min: gl.NEAREST,
-    //     mag: gl.NEAREST,
-    //     src: [255, 100, 255, 255, 192, 192, 192, 255, 192, 192, 192, 255, 255, 100, 255, 255],
-    // })
+
+    const scene = new Scene()
+    renderer = new Renderer(gl, scene)
+
     const texture = twgl.createTexture(gl, {
         src: '/pizza-sprite.png',
         min: gl.NEAREST,
@@ -68,6 +69,7 @@ onMounted(() => {
         }
 
         bodies.push(body)
+        scene.add(body)
     }
 
     lastTime = Date.now() - startTime
@@ -123,15 +125,7 @@ function loop(time: number = 0) {
     }
 
     // Rendering
-    gl.enable(gl.BLEND)
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-
-    twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement)
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
-    for (const body of bodies) {
-        body.draw()
-    }
+    renderer.render()
 
     animationId = requestAnimationFrame(loop)
 }

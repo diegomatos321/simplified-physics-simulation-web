@@ -3,24 +3,20 @@ import IConstraint from '@/physics/constraints/IConstraint'
 import LinearConstraint from '@/physics/constraints/LinearConstraint'
 import Projection from '@/physics/Projection'
 import earcut from 'earcut'
-import vs from '@/render/shaders/main.vert?raw'
-import fs from '@/render/shaders/main.frag?raw'
+import vs from '@/shaders/main.vert?raw' // ?raw is a Vite feature that imports the file contents as a string.
+import fs from '@/shaders/main.frag?raw' // ?raw is a Vite feature that imports the file contents as a string.
+import { Mesh, type Renderable } from '@/core/Mesh'
+import { Material } from '@/core/Material'
 import * as twgl from 'twgl.js'
 
-export default class PolygonBody {
+export default class PolygonBody implements Renderable {
     public particles: Array<Particle> = []
     public constraints: Array<IConstraint> = []
     public isOverlapping: boolean = false
 
     public wireframe: boolean = false
 
-    // protected gl: WebGLRenderingContext
-    protected bufferInfo: twgl.BufferInfo
-    protected programInfo: twgl.ProgramInfo
-
-    protected uvs: number[] = []
-    protected indices: number[] = []
-
+    protected mesh: Mesh
     protected NUM_ITERATIONS: number = 5
 
     constructor(
@@ -29,8 +25,6 @@ export default class PolygonBody {
         protected texture: WebGLTexture,
         restitution: number = 0.5,
     ) {
-        this.gl = gl
-
         // 1. Setup Particles and Constraints (Physics)
         this.particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])))
 
@@ -59,16 +53,23 @@ export default class PolygonBody {
             maxX = Math.max(maxX, pos[0])
             maxY = Math.max(maxY, pos[1])
         }
-        this.uvs = vertex_positions
+        const uvs = vertex_positions
             .map(([x, y]) => [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)])
             .flat()
 
         // 2b. Automatic Triangulation with Earcut
         const flattened_vertices = vertex_positions.flat()
-        this.indices = earcut(flattened_vertices)
+        const indices = earcut(flattened_vertices)
 
         // 3. Setup webgl render variables
-        this.bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+        const uniforms = {
+            u_resolution: [gl.canvas.width, gl.canvas.height],
+            u_texture: texture,
+        }
+        const programInfo = twgl.createProgramInfo(gl, [vs, fs])
+        const material = new Material(programInfo, uniforms)
+
+        const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
             a_position: {
                 numComponents: 2,
                 data: flattened_vertices,
@@ -76,13 +77,12 @@ export default class PolygonBody {
             },
             a_texcoord: {
                 numComponents: 2,
-                data: this.uvs,
+                data: uvs,
                 drawType: gl.STATIC_DRAW,
             },
-            indices: this.indices,
+            indices: indices,
         })
-
-        this.programInfo = twgl.createProgramInfo(gl, [vs, fs])
+        this.mesh = new Mesh(bufferInfo, material)
     }
 
     update(dt: number) {
@@ -108,7 +108,7 @@ export default class PolygonBody {
         }
     }
 
-    draw() {
+    draw(gl: WebGLRenderingContext) {
         if (this.wireframe === true) {
             for (const particle of this.particles) {
                 if (this.isOverlapping === true) {
@@ -127,23 +127,8 @@ export default class PolygonBody {
                 .map((p) => [p.position[0], p.position[1]])
                 .flat()
 
-            const uniforms = {
-                u_resolution: [this.gl.canvas.width, this.gl.canvas.height],
-                u_texture: this.texture,
-                // u_color: this.color,
-                // time: time * 0.001,
-            }
-
-            this.gl.useProgram(this.programInfo.program)
-            twgl.setAttribInfoBufferFromArray(
-                this.gl,
-                this.bufferInfo.attribs!.a_position,
-                flattened_vertices,
-            )
-
-            twgl.setBuffersAndAttributes(this.gl, this.programInfo, this.bufferInfo)
-            twgl.setUniforms(this.programInfo, uniforms)
-            twgl.drawBufferInfo(this.gl, this.bufferInfo, this.gl.TRIANGLES)
+            this.mesh.updateBufferInfo(gl, 'a_position', flattened_vertices)
+            this.mesh.draw(gl)
         }
     }
 
