@@ -5,42 +5,40 @@ import Projection from '@/physics/Projection';
 import earcut from 'earcut';
 import vs from '@/shaders/main.vert?raw'; // ?raw is a Vite feature that imports the file contents as a string.
 import fs from '@/shaders/main.frag?raw'; // ?raw is a Vite feature that imports the file contents as a string.
-import { Mesh, type Renderable } from '@/core/Mesh';
+import Mesh from '@/core/Mesh';
 import { Material } from '@/core/Material';
+import RigidBody from '../RigidBody';
 import * as twgl from 'twgl.js';
 
-export default class PolygonBody implements Renderable {
-    public particles: Array<Particle> = [];
-    public constraints: Array<IConstraint> = [];
-    public isOverlapping: boolean = false;
-
+export default class PolygonBody extends RigidBody {
     public wireframe: boolean = false;
 
     protected mesh: Mesh;
-    protected NUM_ITERATIONS: number = 5;
 
     constructor(
-        protected gl: WebGLRenderingContext,
-        vertex_positions: Array<number[]>,
+        gl: WebGLRenderingContext,
+        protected vertex_positions: Array<number[]>,
         protected texture: WebGLTexture,
-        restitution: number = 0.5,
+        protected restitution: number = 0.5,
     ) {
         // 1. Setup Particles and Constraints (Physics)
-        this.particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])));
+        const particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])));
+        const constraints: IConstraint[] = [];
 
         // Create constraints for the outer edges
-        for (let i = 0; i < this.particles.length; i++) {
-            const p1 = this.particles[i];
-            const p2 = this.particles[(i + 1) % this.particles.length];
-            this.constraints.push(new LinearConstraint(gl, p1, p2, restitution));
+        for (let i = 0; i < particles.length; i++) {
+            const p1 = particles[i];
+            const p2 = particles[(i + 1) % particles.length];
+            constraints.push(new LinearConstraint(gl, p1, p2, restitution));
         }
 
         // Internal strut constraints for rigidity (connecting every other vertex)
-        for (let i = 0; i < this.particles.length; i++) {
-            const p1 = this.particles[i];
-            const p2 = this.particles[(i + 2) % this.particles.length];
-            this.constraints.push(new LinearConstraint(gl, p1, p2));
+        for (let i = 0; i < particles.length; i++) {
+            const p1 = particles[i];
+            const p2 = particles[(i + 2) % particles.length];
+            constraints.push(new LinearConstraint(gl, p1, p2));
         }
+        super(particles, constraints, restitution);
 
         // 2a. Automatic UV Generation via Bounding Box
         let minX = Infinity,
@@ -85,43 +83,9 @@ export default class PolygonBody implements Renderable {
         this.mesh = new Mesh(bufferInfo, material);
     }
 
-    update(dt: number) {
-        for (const particle of this.particles) {
-            particle.update(dt);
-        }
-
-        for (let i = 0; i < this.NUM_ITERATIONS; i++) {
-            for (const particle of this.particles) {
-                let x = Math.max(Math.min(particle.position[0], this.gl.canvas.width), 0);
-                let y = Math.max(Math.min(particle.position[1], this.gl.canvas.height), 0);
-                particle.move(twgl.v3.create(x, y));
-
-                // particle.move(twgl.v3.create(
-                //     particle.position[0] * (1 - 0.5) + x * 0.5,
-                //     particle.position[1] * (1 - 0.5) + y * 0.5,
-                // ))
-            }
-
-            for (const constraint of this.constraints) {
-                constraint.relax();
-            }
-        }
-    }
-
     draw(gl: WebGLRenderingContext) {
         if (this.wireframe === true) {
-            for (const particle of this.particles) {
-                if (this.isOverlapping === true) {
-                    particle.color = [1, 0.2, 0.2, 1];
-                } else {
-                    particle.color = [0, 0, 1, 1];
-                }
-                particle.draw();
-            }
-
-            for (const constraint of this.constraints) {
-                constraint.draw();
-            }
+            super.draw(gl);
         } else {
             const flattened_vertices = this.particles
                 .map((p) => [p.position[0], p.position[1]])

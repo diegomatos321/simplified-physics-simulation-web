@@ -14,12 +14,10 @@ import TriangleBody from '@/physics/rigid_bodies/TriangleBody';
 import RectangleBody from '@/physics/rigid_bodies/RectangleBody';
 import PentagonBody from '@/physics/rigid_bodies/PentagonBody';
 import HexagonBody from '@/physics/rigid_bodies/HexagonBody';
-import PolygonBody from '@/physics/rigid_bodies/PolygonBody';
-import gjk from '@/physics/collision/gjk';
-import { epa } from '@/physics/collision/epa';
 import * as twgl from 'twgl.js';
-import Scene from '@/core/Scene';
+import World from '@/core/World';
 import Renderer from '@/core/Renderer';
+import Engine from '@/core/Engine';
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 let gl: WebGLRenderingContext | null = null;
@@ -27,8 +25,7 @@ let gl: WebGLRenderingContext | null = null;
 let isRunning = false;
 let animationId: number;
 
-const bodies: PolygonBody[] = [];
-let renderer: Renderer;
+let world: World;
 let lastTime = 0,
     deltaTime = 0;
 
@@ -43,8 +40,7 @@ onMounted(() => {
 
     const startTime = Date.now();
 
-    const scene = new Scene();
-    renderer = new Renderer(gl, scene);
+    world = new World(new Renderer(gl), new Engine([gl.canvas.width, gl.canvas.height]));
 
     const texture = twgl.createTexture(gl, {
         src: '/pizza-sprite.png',
@@ -68,8 +64,7 @@ onMounted(() => {
             body = new HexagonBody(gl, x, y, 50, texture);
         }
 
-        bodies.push(body);
-        scene.add(body);
+        world.add(body);
     }
 
     lastTime = Date.now() - startTime;
@@ -78,54 +73,15 @@ onMounted(() => {
 });
 
 function loop(time: number = 0) {
-    if (gl === null || isRunning === false) {
+    if (gl === null || isRunning === false || world === undefined) {
         return;
     }
 
     deltaTime = (time - lastTime) / 1000;
     lastTime = time;
 
-    for (const body of bodies) {
-        body.update(deltaTime);
-    }
-
-    for (let i = 0; i < bodies.length; i++) {
-        const body1 = bodies[i];
-        for (let j = 0; j < bodies.length; j++) {
-            if (i == j) continue;
-
-            const body2 = bodies[j];
-
-            const hit = gjk(body1, body2);
-            if (hit) {
-                body1.isOverlapping = true;
-                body2.isOverlapping = true;
-                let mvp = epa(body1, body2, hit);
-                if (mvp) {
-                    let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(mvp.normal));
-                    edge1.forEach((p) => {
-                        p.move(
-                            twgl.v3.add(
-                                p.position,
-                                twgl.v3.mulScalar(twgl.v3.negate(mvp.normal), mvp.depth),
-                            ),
-                        );
-                    });
-
-                    let edge2 = body2.getFarthestEdgeInDirection(mvp.normal);
-                    edge2.forEach((p) => {
-                        p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(mvp.normal, mvp.depth)));
-                    });
-                }
-            } else {
-                body1.isOverlapping = false;
-                body2.isOverlapping = false;
-            }
-        }
-    }
-
-    // Rendering
-    renderer.render();
+    world.update(deltaTime);
+    world.render(gl);
 
     animationId = requestAnimationFrame(loop);
 }

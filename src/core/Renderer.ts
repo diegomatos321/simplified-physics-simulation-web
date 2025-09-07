@@ -1,19 +1,18 @@
-import Scene from './Scene';
+import type Entity from './Entity';
 import * as twgl from 'twgl.js';
 
 export default class Renderer {
-    constructor(
-        private gl: WebGLRenderingContext,
-        private scene: Scene,
-    ) {
+    constructor(gl: WebGLRenderingContext) {
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     }
 
-    render() {
-        twgl.resizeCanvasToDisplaySize(this.gl.canvas as HTMLCanvasElement);
-        this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+    render(gl: WebGLRenderingContext, entities: Entity[]) {
+        twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-        this.scene.render(this.gl);
+        for (const entity of entities) {
+            entity.draw(gl);
+        }
     }
 }
