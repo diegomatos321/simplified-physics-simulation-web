@@ -8,7 +8,7 @@ import * as twgl from 'twgl.js';
 export default class Engine {
     public gravity: twgl.v3.Vec3 = twgl.v3.create(0, 98, 0);
 
-    protected NUM_ITERATIONS: number = 5;
+    protected NUM_ITERATIONS: number = 2;
 
     constructor(public worldBoundings: number[]) {}
 

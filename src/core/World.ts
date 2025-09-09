@@ -19,13 +19,13 @@ export default class World {
             }
         }
 
+        this.engine.collisionTest(this.entites);
+
         for (const entity of this.entites) {
             if (entity instanceof RigidBody) {
                 this.engine.satisfyConstraints(entity);
             }
         }
-
-        this.engine.collisionTest(this.entites);
 
         // Handle individual update method, case its implemented
         for (const entity of this.entites) {
