@@ -29,7 +29,7 @@ let world: World;
 let lastTime = 0,
     deltaTime = 0;
 
-onMounted(() => {
+onMounted(async () => {
     if (!canvas.value) return;
 
     gl = canvas.value.getContext('webgl');
@@ -38,11 +38,9 @@ onMounted(() => {
         return;
     }
 
-    const startTime = Date.now();
-
     world = new World(new Renderer(gl), new Engine([gl.canvas.width, gl.canvas.height]));
 
-    const texture = twgl.createTexture(gl, {
+    const { texture } = await twgl.createTextureAsync(gl, {
         src: '/pizza-sprite.png',
         min: gl.NEAREST,
         mag: gl.NEAREST,
@@ -67,7 +65,7 @@ onMounted(() => {
         world.add(body);
     }
 
-    lastTime = Date.now() - startTime;
+    lastTime = performance.now();
     isRunning = true;
     animationId = requestAnimationFrame(loop);
 });
@@ -88,7 +86,7 @@ function loop(time: number = 0) {
 
 onBeforeUnmount(() => {
     console.log('Clean up');
-    isRunning = true;
+    isRunning = false;
 
     if (animationId) {
         cancelAnimationFrame(animationId);
