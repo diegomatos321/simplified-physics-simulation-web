@@ -105,7 +105,8 @@ export default class PolygonBody extends RigidBody {
             const p2 = this.particles[nextIndex].position;
 
             const edge = twgl.v3.subtract(p1, p2);
-            const normal = twgl.v3.normalize(twgl.v3.create(-edge[1], edge[0]));
+            const perp = twgl.v3.create(-edge[1], edge[0])
+            const normal = twgl.v3.normalize(perp);
             axes.push(normal);
         }
 

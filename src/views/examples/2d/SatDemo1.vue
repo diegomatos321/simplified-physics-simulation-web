@@ -46,7 +46,7 @@ onMounted(async () => {
         mag: gl.NEAREST,
     });
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 10; i++) {
         const x = Math.random() * canvas.value.width;
         const y = Math.random() * canvas.value.height;
 
@@ -63,7 +63,7 @@ onMounted(async () => {
         }
 
         world.add(body);
-        console.log(body)
+        console.log(body);
     }
 
     lastTime = performance.now();

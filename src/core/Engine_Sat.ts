@@ -23,12 +23,12 @@ export default class EngineSat {
             if (particle.pinned) return;
 
             let tmp = twgl.v3.copy(particle.position);
-            let velocity = twgl.v3.subtract(particle.position, particle.oldPosition)
+            let velocity = twgl.v3.subtract(particle.position, particle.oldPosition);
             let damping = twgl.v3.mulScalar(twgl.v3.normalize(twgl.v3.negate(velocity)), this.dampingFactor);
-            
-            particle.position[0] = 2 * particle.position[0] - particle.oldPosition[0] + damping[0] * Math.pow(dt, 2)
-            particle.position[1] = 2 * particle.position[1] - particle.oldPosition[1] + (damping[1] + this.gravity[1]) * Math.pow(dt, 2)
-            
+
+            particle.position[0] = 2 * particle.position[0] - particle.oldPosition[0] + damping[0] * Math.pow(dt, 2);
+            particle.position[1] = 2 * particle.position[1] - particle.oldPosition[1] + (damping[1] + this.gravity[1]) * Math.pow(dt, 2);
+
             // console.log(damping)
             particle.oldPosition = tmp;
         }
@@ -81,7 +81,6 @@ export default class EngineSat {
     }
 
     public collisionSolver(body1: PolygonBody, body2: PolygonBody, hit: Collider) {
-        console.log(hit)
         body1.isOverlapping = true;
         body2.isOverlapping = true;
 

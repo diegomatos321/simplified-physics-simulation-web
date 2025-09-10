@@ -20,7 +20,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): twgl.v3.Vec3[] | fa
         simplex.push(a);
 
         // make sure that the last point we added actually passed the origin
-        if (twgl.v3.dot(a, d) <= 0) {
+        if (twgl.v3.dot(a, d) <= 1e-10) {
             return false;
         }
 
