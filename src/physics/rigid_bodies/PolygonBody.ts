@@ -17,9 +17,9 @@ export default class PolygonBody extends RigidBody {
 
     constructor(
         gl: WebGLRenderingContext,
-        protected vertex_positions: Array<number[]>,
-        protected texture: WebGLTexture,
-        protected restitution: number = 0.5,
+        vertex_positions: Array<number[]>,
+        texture: WebGLTexture,
+        restitution: number = 0.5,
     ) {
         // 1. Setup Particles and Constraints (Physics)
         const particles = vertex_positions.map((v) => new Particle(gl, twgl.v3.create(v[0], v[1])));
@@ -105,7 +105,7 @@ export default class PolygonBody extends RigidBody {
             const p2 = this.particles[nextIndex].position;
 
             const edge = twgl.v3.subtract(p1, p2);
-            const normal = twgl.v3.create(-edge[1], edge[0]);
+            const normal = twgl.v3.normalize(twgl.v3.create(-edge[1], edge[0]));
             axes.push(normal);
         }
 

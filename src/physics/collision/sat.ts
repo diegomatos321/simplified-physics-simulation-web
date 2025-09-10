@@ -22,18 +22,18 @@ export default function sat(shape1: PolygonBody, shape2: PolygonBody): false | C
         }
     }
 
-    for (const axis of axes2) {
-        const proj1 = shape1.project(axis);
-        const proj2 = shape2.project(axis);
+    // for (const axis of axes2) {
+    //     const proj1 = shape1.project(axis);
+    //     const proj2 = shape2.project(axis);
 
-        let o = proj1.overlaps(proj2);
-        if (o <= 0) {
-            return false;
-        } else if (o < overlap) {
-            overlap = o;
-            smallest = axis;
-        }
-    }
+    //     let o = proj1.overlaps(proj2);
+    //     if (o <= 0) {
+    //         return false;
+    //     } else if (o < overlap) {
+    //         overlap = o;
+    //         smallest = axis;
+    //     }
+    // }
 
     return new Collider(smallest, overlap);
 }

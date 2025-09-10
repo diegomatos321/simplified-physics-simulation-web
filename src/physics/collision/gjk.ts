@@ -1,4 +1,4 @@
-import type PolygonBody from '@/geometry/PolygonBody';
+import type PolygonBody from '@/physics/rigid_bodies/PolygonBody';
 import * as twgl from 'twgl.js';
 import { support, tripleProduct } from './utils';
 

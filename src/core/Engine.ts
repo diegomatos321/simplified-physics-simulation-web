@@ -7,8 +7,9 @@ import * as twgl from 'twgl.js';
 
 export default class Engine {
     public gravity: twgl.v3.Vec3 = twgl.v3.create(0, 98, 0);
+    public dampingFactor: number = 1;
 
-    protected NUM_ITERATIONS: number = 2;
+    protected NUM_ITERATIONS: number = 3;
 
     constructor(public worldBoundings: number[]) {}
 
@@ -20,13 +21,15 @@ export default class Engine {
     integrate(body: RigidBody, dt: number) {
         for (const particle of body.particles) {
             if (particle.pinned) return;
-
+            
             let tmp = twgl.v3.copy(particle.position);
-            particle.position[0] = 2 * particle.position[0] - particle.oldPosition[0];
-            particle.position[1] =
-                2 * particle.position[1] -
-                particle.oldPosition[1] +
-                this.gravity[1] * Math.pow(dt, 2);
+            let velocity = twgl.v3.subtract(particle.position, particle.oldPosition)
+            let damping = twgl.v3.mulScalar(twgl.v3.normalize(twgl.v3.negate(velocity)), this.dampingFactor);
+            
+            particle.position[0] = 2 * particle.position[0] - particle.oldPosition[0] + damping[0] * Math.pow(dt, 2)
+            particle.position[1] = 2 * particle.position[1] - particle.oldPosition[1] + (damping[1] + this.gravity[1]) * Math.pow(dt, 2)
+            
+            // console.log(damping)
             particle.oldPosition = tmp;
         }
     }
@@ -77,11 +80,11 @@ export default class Engine {
         }
     }
 
-    public collisionSolver(body1: PolygonBody, body2: PolygonBody, hit: twgl.v3.Vec3[]) {
+    public collisionSolver(body1: PolygonBody, body2: PolygonBody, simplex: twgl.v3.Vec3[]) {
         body1.isOverlapping = true;
         body2.isOverlapping = true;
 
-        let mvp = epa(body1, body2, hit);
+        let mvp = epa(body1, body2, simplex);
         if (mvp) {
             let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(mvp.normal));
             edge1.forEach((p) => {
