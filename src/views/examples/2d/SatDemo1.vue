@@ -10,10 +10,10 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import TriangleBody from '@/physics/rigid_bodies/TriangleBody';
-import RectangleBody from '@/physics/rigid_bodies/RectangleBody';
-import PentagonBody from '@/physics/rigid_bodies/PentagonBody';
-import HexagonBody from '@/physics/rigid_bodies/HexagonBody';
+import TriangleBody from '@/physics/polygons/TriangleBody';
+import RectangleBody from '@/physics/polygons/RectangleBody';
+import PentagonBody from '@/physics/polygons/PentagonBody';
+import HexagonBody from '@/physics/polygons/HexagonBody';
 import * as twgl from 'twgl.js';
 import World from '@/core/World';
 import Renderer from '@/core/Renderer';

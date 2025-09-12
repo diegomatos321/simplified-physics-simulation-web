@@ -1,6 +1,6 @@
-import type RigidBody from '@/physics/RigidBody';
+import type RigidBody from '@/physics/Body';
 import type Entity from './Entity';
-import PolygonBody from '@/physics/rigid_bodies/PolygonBody';
+import PolygonBody from '@/physics/polygons/PolygonBody';
 import * as twgl from 'twgl.js';
 import sat from '@/physics/collision/sat';
 import type Collider from '@/physics/Collider';

@@ -1,8 +1,8 @@
-import * as twgl from 'twgl.js';
+import type { vec3 } from 'gl-matrix';
 
 export default class Collider {
     constructor(
-        public normal: twgl.v3.Vec3,
+        public normal: vec3,
         public depth: number,
     ) {}
 }

@@ -1,18 +1,19 @@
-import type PolygonBody from '@/physics/rigid_bodies/PolygonBody';
-import * as twgl from 'twgl.js';
+import type PolygonBody from '@/physics/polygons/PolygonBody';
 import { support, tripleProduct } from './utils';
+import { vec3 } from 'gl-matrix';
 
-export default function gjk(A: PolygonBody, B: PolygonBody): twgl.v3.Vec3[] | false {
-    const simplex: twgl.v3.Vec3[] = [];
+export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
+    const simplex: vec3[] = [];
 
     // initial search direction equals to the difference of the shapes center
-    let d = twgl.v3.subtract(B.getCenter(), A.getCenter());
-    d = twgl.v3.normalize(d);
+    let d = vec3.subtract(vec3.create(), B.getCenter(), A.getCenter());
+    vec3.normalize(d, d);
+
     // get the first Minkowski Difference point
     simplex.push(support(A, B, d));
 
     // negate d for the next point
-    d = twgl.v3.negate(d);
+    vec3.negate(d, d);
 
     for (let i = 0; i < 30; i++) {
         let a = support(A, B, d);
@@ -20,7 +21,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): twgl.v3.Vec3[] | fa
         simplex.push(a);
 
         // make sure that the last point we added actually passed the origin
-        if (twgl.v3.dot(a, d) <= 1e-10) {
+        if (vec3.dot(a, d) <= 1e-10) {
             return false;
         }
 
@@ -34,7 +35,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): twgl.v3.Vec3[] | fa
     return false;
 }
 
-function containsOrigin(simplex: twgl.v3.Vec3[], d: twgl.v3.Vec3): boolean {
+function containsOrigin(simplex: vec3[], d: vec3): boolean {
     if (simplex.length == 3) {
         return triangleCase(simplex, d);
     } else if (simplex.length == 2) {
@@ -44,36 +45,36 @@ function containsOrigin(simplex: twgl.v3.Vec3[], d: twgl.v3.Vec3): boolean {
     return false;
 }
 
-function triangleCase(simplex: twgl.v3.Vec3[], d: twgl.v3.Vec3): boolean {
+function triangleCase(simplex: vec3[], d: vec3): boolean {
     // get the last point added to the simplex
     const [c, b, a] = simplex;
     // compute AO (same thing as -A)
-    const ao = twgl.v3.negate(a);
+    const ao = vec3.negate(vec3.create(), a);
 
     // compute the edges
-    const ab = twgl.v3.subtract(b, a);
-    const ac = twgl.v3.subtract(c, a);
+    const ab = vec3.subtract(vec3.create(), b, a);
+    const ac = vec3.subtract(vec3.create(), c, a);
 
     // compute the normals
     const abPerp = tripleProduct(ac, ab, ab);
     const acPerp = tripleProduct(ab, ac, ac);
 
     // is the origin in R4 region?
-    if (twgl.v3.dot(abPerp, ao) > 0) {
+    if (vec3.dot(abPerp, ao) > 0) {
         // remove point c
         simplex.splice(0, 1);
         // set the new direction to abPerp
-        twgl.v3.copy(abPerp, d);
+        vec3.copy(d, abPerp);
 
         return false;
     }
 
     // is the origin in R3?
-    if (twgl.v3.dot(acPerp, ao) > 0) {
+    if (vec3.dot(acPerp, ao) > 0) {
         // remove point b
         simplex.splice(1, 1);
         // set the new direction to acPerp
-        twgl.v3.copy(acPerp, d);
+        vec3.copy(d, acPerp);
 
         return false;
     }
@@ -82,17 +83,17 @@ function triangleCase(simplex: twgl.v3.Vec3[], d: twgl.v3.Vec3): boolean {
     return true;
 }
 
-function lineCase(simplex: twgl.v3.Vec3[], d: twgl.v3.Vec3): boolean {
+function lineCase(simplex: vec3[], d: vec3): boolean {
     // get the last point added to the simplex
     const [b, a] = simplex;
     // compute AO (same thing as -A)
-    const ao = twgl.v3.negate(a);
+    const ao = vec3.negate(vec3.create(), a);
     // compute AB
-    const ab = twgl.v3.subtract(b, a);
+    const ab = vec3.subtract(vec3.create(), b, a);
     // get the perp to AB in the direction of the origin
     const abPerp = tripleProduct(ab, ao, ab);
     // set the direction to abPerp
-    twgl.v3.copy(abPerp, d);
+    vec3.copy(d, abPerp);
 
     return false;
 }

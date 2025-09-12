@@ -4,92 +4,102 @@
     <div class="container mx-auto">
         <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 1 2D</strong></h1>
 
-        <canvas ref="canvas" width="600" height="600" style="border: 1px solid black"></canvas>
+        <div ref="sketchContainer"></div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import TriangleBody from '@/physics/rigid_bodies/TriangleBody';
-import RectangleBody from '@/physics/rigid_bodies/RectangleBody';
-import PentagonBody from '@/physics/rigid_bodies/PentagonBody';
-import HexagonBody from '@/physics/rigid_bodies/HexagonBody';
-import * as twgl from 'twgl.js';
-import World from '@/core/World';
-import Renderer from '@/core/Renderer';
+import p5 from 'p5';
+import TriangleBody from '@/physics/polygons/TriangleBody';
+import RectangleBody from '@/physics/polygons/RectangleBody';
+import PentagonBody from '@/physics/polygons/PentagonBody';
+import HexagonBody from '@/physics/polygons/HexagonBody';
 import Engine from '@/core/Engine';
+import type Body from '@/physics/Body';
 
-const canvas = ref<HTMLCanvasElement | null>(null);
-let gl: WebGLRenderingContext | null = null;
+const sketchContainer = ref<HTMLCanvasElement | null>(null);
+let sketchInstance: p5 | null = null;
+let engine = new Engine([600, 600]);
+let bodies: Body[] = [];
 
-let isRunning = false;
-let animationId: number;
+onMounted(() => {
+    if (!sketchContainer.value) return;
 
-let world: World;
-let lastTime = 0,
-    deltaTime = 0;
+    const sketch = (p: p5) => {
+        p.setup = () => setup(p);
+        p.draw = () => draw(p);
+    };
 
-onMounted(async () => {
-    if (!canvas.value) return;
+    sketchInstance = new p5(sketch);
+});
 
-    gl = canvas.value.getContext('webgl');
-    if (!gl) {
-        console.error('WebGL not supported');
-        return;
-    }
+function setup(p: p5) {
+    if (sketchContainer.value === null) return;
 
-    world = new World(new Renderer(gl), new Engine([gl.canvas.width, gl.canvas.height]));
-
-    const { texture } = await twgl.createTextureAsync(gl, {
-        src: '/pizza-sprite.png',
-        min: gl.NEAREST,
-        mag: gl.NEAREST,
-    });
+    p.createCanvas(600, 600).parent(sketchContainer.value);
 
     for (let i = 0; i < 10; i++) {
-        const x = Math.random() * canvas.value.width;
-        const y = Math.random() * canvas.value.height;
+        const x = Math.random() * p.width;
+        const y = Math.random() * p.height;
 
         const type = Math.random();
         let body;
         if (type <= 0.25) {
-            body = new TriangleBody(gl, x, y, 50, texture);
+            body = new TriangleBody(x, y, 50);
         } else if (type <= 0.5) {
-            body = new RectangleBody(gl, x, y, 100, 50, texture);
+            body = new RectangleBody(x, y, 100, 50);
         } else if (type <= 0.75) {
-            body = new PentagonBody(gl, x, y, 50, texture);
+            body = new PentagonBody(x, y, 50);
         } else {
-            body = new HexagonBody(gl, x, y, 50, texture);
+            body = new HexagonBody(x, y, 50);
         }
 
-        world.add(body);
+        bodies.push(body);
+    }
+}
+
+function draw(p: p5) {
+    p.background(220);
+
+    for (const body of bodies) {
+        engine.integrate(body, p.deltaTime / 1000);
     }
 
-    lastTime = performance.now();
-    isRunning = true;
-    animationId = requestAnimationFrame(loop);
-});
+    engine.collisionTest(bodies);
 
-function loop(time: number = 0) {
-    if (gl === null || isRunning === false || world === undefined) {
-        return;
+    for (const body of bodies) {
+        engine.satisfyConstraints(body);
     }
 
-    deltaTime = (time - lastTime) / 1000;
-    lastTime = time;
-
-    world.update(deltaTime);
-    world.render(gl);
-
-    animationId = requestAnimationFrame(loop);
+    // Draw constraints
+    for (const body of bodies) {
+        p.stroke(150, 200, 255);
+        p.strokeWeight(2);
+        for (let constraint of body.constraints) {
+            p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
+        }
+    
+        // Draw particles
+        p.noStroke();
+        p.fill(255, 100, 100);
+        for (let particle of body.particles) {
+            p.circle(particle.position[0], particle.position[1], 10);
+        }
+    }
 }
 
 onBeforeUnmount(() => {
     console.log('Clean up');
-    isRunning = false;
+    // isRunning = false;
 
-    if (animationId) {
-        cancelAnimationFrame(animationId);
+    // if (animationId) {
+    //     cancelAnimationFrame(animationId);
+    // }
+
+    if (sketchInstance) {
+        sketchInstance.remove();
+        sketchInstance = null;
     }
 });
 </script>

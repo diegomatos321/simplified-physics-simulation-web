@@ -1,20 +1,20 @@
-import type PolygonBody from '@/geometry/PolygonBody';
-import * as twgl from 'twgl.js';
+import type PolygonBody from '@/physics/polygons/PolygonBody';
+import { vec3 } from 'gl-matrix';
 
-export function support(shape1: PolygonBody, shape2: PolygonBody, d: twgl.v3.Vec3): twgl.v3.Vec3 {
+export function support(shape1: PolygonBody, shape2: PolygonBody, d: vec3): vec3 {
     const p1 = shape1.getFarthestPointInDirection(d);
-    const p2 = shape2.getFarthestPointInDirection(twgl.v3.negate(d));
+    const p2 = shape2.getFarthestPointInDirection(vec3.negate(vec3.create(), d));
 
     // perform the Minkowski Difference
-    const p3 = twgl.v3.subtract(p1.position, p2.position);
+    const p3 = vec3.subtract(vec3.create(), p1.position, p2.position);
 
     // p3 is now a point in Minkowski space on the edge of the Minkowski Difference
     return p3;
 }
 
-export function tripleProduct(a: twgl.v3.Vec3, b: twgl.v3.Vec3, c: twgl.v3.Vec3): twgl.v3.Vec3 {
-    let triple1 = twgl.v3.mulScalar(b, twgl.v3.dot(c, a));
-    let triple2 = twgl.v3.mulScalar(a, twgl.v3.dot(c, b));
+export function tripleProduct(a: vec3, b: vec3, c: vec3): vec3 {
+    let triple1 = vec3.scale(vec3.create(), b, vec3.dot(c, a));
+    let triple2 = vec3.scale(vec3.create(), a, vec3.dot(c, b));
 
-    return twgl.v3.subtract(triple1, triple2);
+    return vec3.subtract(vec3.create(), triple1, triple2);
 }

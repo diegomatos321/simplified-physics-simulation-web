@@ -2,15 +2,7 @@ import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import PolygonBody from './PolygonBody';
 
 export default class RectangleBody extends PolygonBody {
-    constructor(
-        gl: WebGLRenderingContext,
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        texture: WebGLTexture,
-        restitution: number = 1,
-    ) {
+    constructor(x: number, y: number, width: number, height: number, restitution: number = 1) {
         const w2 = width / 2;
         const h2 = height / 2;
 
@@ -20,6 +12,6 @@ export default class RectangleBody extends PolygonBody {
             [x + w2, y + h2], // Top-right
             [x - w2, y + h2], // Top-left
         ];
-        super(gl, vertices, texture, restitution);
+        super(vertices, restitution);
     }
 }

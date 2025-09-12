@@ -1,54 +1,21 @@
-import vs from '@/shaders/main.frag?raw'; // ?raw is a Vite feature that imports the file contents as a string.
-import fs from '@/shaders/main.frag?raw'; // ?raw is a Vite feature that imports the file contents as a string.
-import * as twgl from 'twgl.js';
+import { vec3 } from 'gl-matrix';
 
 export default class Particle {
-    public position: twgl.v3.Vec3;
-    public oldPosition: twgl.v3.Vec3;
+    public oldPosition: vec3 = vec3.create();
     public mass: number = 1;
     public pinned: boolean = false;
-    // color = [1, 0.2, 0.2, 1]
     public color = [0, 0, 1, 1];
 
-    // private gl: WebGLRenderingContext;
-    // private bufferInfo: twgl.BufferInfo;
-    // private programInfo: twgl.ProgramInfo;
-
-    constructor(gl: WebGLRenderingContext, position: twgl.v3.Vec3 = twgl.v3.create()) {
+    constructor(public position: vec3) {
         this.position = position;
-        this.oldPosition = twgl.v3.copy(position);
-
-        // this.bufferInfo = twgl.createBufferInfoFromArrays(gl, {
-        //     a_position: {
-        //         numComponents: 2,
-        //         data: [position[0], position[1]],
-        //         drawType: gl.DYNAMIC_DRAW,
-        //     },
-        // });
-
-        // this.programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+        vec3.copy(this.oldPosition, this.position);
     }
 
-    move(newPosition: twgl.v3.Vec3): void {
-        if (this.pinned) return;
+    move(vel: vec3): void {
+        if (this.pinned) {
+            return;
+        }
 
-        this.position[0] = newPosition[0];
-        this.position[1] = newPosition[1];
-    }
-
-    draw(): void {
-        // const uniforms = {
-        //     u_resolution: [this.gl.canvas.width, this.gl.canvas.height],
-        //     u_color: this.color,
-        //     // time: time * 0.001,
-        // };
-        // this.gl.useProgram(this.programInfo.program);
-        // twgl.setAttribInfoBufferFromArray(this.gl, this.bufferInfo.attribs!.a_position, [
-        //     this.position[0],
-        //     this.position[1],
-        // ]);
-        // twgl.setBuffersAndAttributes(this.gl, this.programInfo, this.bufferInfo);
-        // twgl.setUniforms(this.programInfo, uniforms);
-        // twgl.drawBufferInfo(this.gl, this.bufferInfo, this.gl.POINTS);
+        vec3.add(this.position, this.position, vel);
     }
 }

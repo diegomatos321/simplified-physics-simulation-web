@@ -1,4 +1,4 @@
-import * as twgl from 'twgl.js';
+import { vec3 } from 'gl-matrix';
 import type Particle from '../Particle';
 
 export default abstract class IConstraint {
@@ -8,17 +8,13 @@ export default abstract class IConstraint {
     public restitution: number;
     public restlength: number;
 
-    protected gl: WebGLRenderingContext;
-
-    constructor(gl: WebGLRenderingContext, p0: Particle, p1: Particle, restitution: number = 0.5) {
-        this.gl = gl;
+    constructor(p0: Particle, p1: Particle, restitution: number = 0.5) {
         this.p0 = p0;
         this.p1 = p1;
 
-        this.restlength = twgl.v3.distance(p0.position, p1.position);
+        this.restlength = vec3.distance(p0.position, p1.position);
         this.restitution = restitution;
     }
 
     abstract relax(): void;
-    abstract draw(): void;
 }

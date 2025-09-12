@@ -1,4 +1,4 @@
-import type PolygonBody from '@/physics/rigid_bodies/PolygonBody';
+import type PolygonBody from '@/physics/polygons/PolygonBody';
 import * as twgl from 'twgl.js';
 import Collider from '../Collider';
 
