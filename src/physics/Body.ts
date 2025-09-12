@@ -1,14 +1,15 @@
+import { vec3 } from 'gl-matrix';
+import Collider from './Collider';
 import type Particle from './Particle';
 import type IConstraint from './constraints/IConstraint';
+import earcut from 'earcut';
 
 export default class Body {
-    public isOverlapping: boolean = false;
-    public uvs: number[][] = []
-    public indices: number[] = []
-
+    public collider: Collider | undefined;
+    
     constructor(
-        public particles: Array<Particle> = [],
-        public constraints: Array<IConstraint> = [],
+        public particles: Particle[] = [],
+        public constraints: IConstraint[] = [],
         protected restitution: number = 0.5,
     ) {}
 
@@ -31,7 +32,32 @@ export default class Body {
     // }
 
     triangulation() {
-        
+        // Automatic UV Generation via Bounding Box
+        let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
+        for (const particle of this.particles) {
+            minX = Math.min(minX, particle.position[0]);
+            minY = Math.min(minY, particle.position[1]);
+            maxX = Math.max(maxX, particle.position[0]);
+            maxY = Math.max(maxY, particle.position[1]);
+        }
+        const uvs = this.particles.map((particle) => {
+            const x = particle.position[0];
+            const y = particle.position[1];
+            return [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)];
+        });
+
+        // Automatic Triangulation with Earcut
+        const flattened_vertices = this.particles.map((p) => [p.position[0], p.position[1]]).flat();
+        const indices = earcut(flattened_vertices);
+
+        return {
+            uvs,
+            indices,
+        };
     }
+
     convexHull() {}
 }

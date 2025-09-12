@@ -11,11 +11,11 @@ export default class Particle {
         vec3.copy(this.oldPosition, this.position);
     }
 
-    move(vel: vec3): void {
+    move(delta: vec3): void {
         if (this.pinned) {
             return;
         }
 
-        vec3.add(this.position, this.position, vel);
+        vec3.add(this.position, this.position, delta);
     }
 }

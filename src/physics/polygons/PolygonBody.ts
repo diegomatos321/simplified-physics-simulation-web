@@ -3,13 +3,13 @@ import IConstraint from '@/physics/constraints/IConstraint';
 import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import Projection from '@/physics/Projection';
 import Body from '../Body';
-import earcut from 'earcut'
+import earcut from 'earcut';
 import { vec3 } from 'gl-matrix';
 
 export default class PolygonBody extends Body {
     public wireframe: boolean = false;
 
-    constructor(vertex_positions: Array<number[]>, restitution: number = 0.5) {
+    constructor(vertex_positions: number[][], restitution: number = 0.5) {
         // 1. Setup Particles and Constraints (Physics)
         const particles = vertex_positions.map((v) => new Particle(vec3.fromValues(v[0], v[1], 0)));
         const constraints: IConstraint[] = [];
@@ -28,46 +28,6 @@ export default class PolygonBody extends Body {
             constraints.push(new LinearConstraint(p1, p2));
         }
         super(particles, constraints, restitution);
-
-        // // 2a. Automatic UV Generation via Bounding Box
-        let minX = Infinity,
-            minY = Infinity,
-            maxX = -Infinity,
-            maxY = -Infinity;
-        for (const pos of vertex_positions) {
-            minX = Math.min(minX, pos[0]);
-            minY = Math.min(minY, pos[1]);
-            maxX = Math.max(maxX, pos[0]);
-            maxY = Math.max(maxY, pos[1]);
-        }
-        this.uvs = vertex_positions.map(([x, y]) => [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)]);
-
-        // // 2b. Automatic Triangulation with Earcut
-        const flattened_vertices = vertex_positions.flat();
-        this.indices = earcut(flattened_vertices);
-
-        // // 3. Setup webgl render variables
-        // const uniforms = {
-        //     u_resolution: [gl.canvas.width, gl.canvas.height],
-        //     u_texture: texture,
-        // };
-        // const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
-        // const material = new Material(programInfo, uniforms);
-
-        // const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
-        //     a_position: {
-        //         numComponents: 2,
-        //         data: flattened_vertices,
-        //         drawType: gl.DYNAMIC_DRAW,
-        //     },
-        //     a_texcoord: {
-        //         numComponents: 2,
-        //         data: uvs,
-        //         drawType: gl.STATIC_DRAW,
-        //     },
-        //     indices: indices,
-        // });
-        // this.mesh = new Mesh(bufferInfo, material);
     }
 
     // draw(gl: WebGLRenderingContext) {

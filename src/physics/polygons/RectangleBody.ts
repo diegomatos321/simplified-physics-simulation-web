@@ -2,7 +2,7 @@ import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import PolygonBody from './PolygonBody';
 
 export default class RectangleBody extends PolygonBody {
-    constructor(x: number, y: number, width: number, height: number, restitution: number = 1) {
+    constructor(x: number, y: number, width: number, height: number, restitution: number = 0.5) {
         const w2 = width / 2;
         const h2 = height / 2;
 

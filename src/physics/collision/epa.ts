@@ -3,7 +3,7 @@ import { support, tripleProduct } from './utils';
 import Collider from '../Collider';
 import { vec3 } from 'gl-matrix';
 
-export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]): Collider | undefined {
+export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
     const TOLERANCE = 1e-6;
     // loop to find the collision information
     for (let i = 0; i < 30; i++) {
@@ -23,7 +23,7 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]): Collider |
             // if the difference is less than the tolerance then we can
             // assume that we cannot expand the simplex any further and
             // we have our solution
-            return new Collider(e.normal, d);
+            return { normal: e.normal, depth: d};
         } else {
             // we haven't reached the edge of the Minkowski Difference
             // so continue expanding by adding the new point to the simplex
