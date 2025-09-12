@@ -1,9 +1,10 @@
-import type Entity from '@/core/Entity';
 import type Particle from './Particle';
 import type IConstraint from './constraints/IConstraint';
 
-export default class Body implements Entity {
+export default class Body {
     public isOverlapping: boolean = false;
+    public uvs: number[][] = []
+    public indices: number[] = []
 
     constructor(
         public particles: Array<Particle> = [],
@@ -29,5 +30,8 @@ export default class Body implements Entity {
     //     }
     // }
 
+    triangulation() {
+        
+    }
     convexHull() {}
 }

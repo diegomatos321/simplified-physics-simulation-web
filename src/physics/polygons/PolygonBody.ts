@@ -3,6 +3,7 @@ import IConstraint from '@/physics/constraints/IConstraint';
 import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import Projection from '@/physics/Projection';
 import Body from '../Body';
+import earcut from 'earcut'
 import { vec3 } from 'gl-matrix';
 
 export default class PolygonBody extends Body {
@@ -29,23 +30,21 @@ export default class PolygonBody extends Body {
         super(particles, constraints, restitution);
 
         // // 2a. Automatic UV Generation via Bounding Box
-        // let minX = Infinity,
-        //     minY = Infinity,
-        //     maxX = -Infinity,
-        //     maxY = -Infinity;
-        // for (const pos of vertex_positions) {
-        //     minX = Math.min(minX, pos[0]);
-        //     minY = Math.min(minY, pos[1]);
-        //     maxX = Math.max(maxX, pos[0]);
-        //     maxY = Math.max(maxY, pos[1]);
-        // }
-        // const uvs = vertex_positions
-        //     .map(([x, y]) => [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)])
-        //     .flat();
+        let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
+        for (const pos of vertex_positions) {
+            minX = Math.min(minX, pos[0]);
+            minY = Math.min(minY, pos[1]);
+            maxX = Math.max(maxX, pos[0]);
+            maxY = Math.max(maxY, pos[1]);
+        }
+        this.uvs = vertex_positions.map(([x, y]) => [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)]);
 
         // // 2b. Automatic Triangulation with Earcut
-        // const flattened_vertices = vertex_positions.flat();
-        // const indices = earcut(flattened_vertices);
+        const flattened_vertices = vertex_positions.flat();
+        this.indices = earcut(flattened_vertices);
 
         // // 3. Setup webgl render variables
         // const uniforms = {

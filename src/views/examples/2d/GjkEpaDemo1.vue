@@ -22,6 +22,7 @@ const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600]);
 let bodies: Body[] = [];
+let texture: p5.Image
 
 onMounted(() => {
     if (!sketchContainer.value) return;
@@ -34,14 +35,16 @@ onMounted(() => {
     sketchInstance = new p5(sketch);
 });
 
-function setup(p: p5) {
+async function setup(p: p5) {
     if (sketchContainer.value === null) return;
 
-    p.createCanvas(600, 600).parent(sketchContainer.value);
+    p.createCanvas(600, 600, p.WEBGL).parent(sketchContainer.value);
+
+    texture = await p.loadImage("/pizza-sprite.png")
 
     for (let i = 0; i < 10; i++) {
-        const x = Math.random() * p.width;
-        const y = Math.random() * p.height;
+        const x = Math.random() * p.width - p.width/2;
+        const y = Math.random() * p.height - p.height/2;
 
         const type = Math.random();
         let body;
@@ -74,12 +77,26 @@ function draw(p: p5) {
 
     // Draw constraints
     for (const body of bodies) {
+        p.texture(texture)
+        p.textureMode(p.NORMAL);
+        p.noStroke()
+        p.beginShape(p.TRIANGLES)
+
+        for (let i = 0; i < body.indices.length; i++) {
+            const indice = body.indices[i]
+            const particle = body.particles[indice];
+            const uv = body.uvs[indice]
+            p.vertex(particle.position[0], particle.position[1], 0, uv[0], uv[1])
+        }
+
+        p.endShape()
+
         p.stroke(150, 200, 255);
         p.strokeWeight(2);
         for (let constraint of body.constraints) {
             p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
         }
-    
+
         // Draw particles
         p.noStroke();
         p.fill(255, 100, 100);

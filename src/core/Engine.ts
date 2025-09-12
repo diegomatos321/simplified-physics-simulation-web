@@ -41,9 +41,9 @@ export default class Engine {
     satisfyConstraints(body: Body) {
         for (let i = 0; i < this.NUM_ITERATIONS; i++) {
             for (const particle of body.particles) {
-                let x = Math.max(Math.min(particle.position[0], this.worldBoundings[0]), 0);
-                let y = Math.max(Math.min(particle.position[1], this.worldBoundings[1]), 0);
-                vec3.set(particle.position, x, y, 0)
+                let x = Math.max(Math.min(particle.position[0], this.worldBoundings[0]/2), -this.worldBoundings[0]/2);
+                let y = Math.max(Math.min(particle.position[1], this.worldBoundings[1]/2), -this.worldBoundings[1]/2);
+                vec3.set(particle.position, x, y, 0);
 
                 // particle.move(twgl.v3.create(
                 //     particle.position[0] * (1 - 0.5) + x * 0.5,
