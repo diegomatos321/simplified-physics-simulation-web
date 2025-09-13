@@ -61,20 +61,18 @@ export default class Engine {
     public narrowPhase(entites: Body[]) {
         for (let i = 0; i < entites.length; i++) {
             const bodyA = entites[i];
-            if (!(bodyA instanceof PolygonBody)) continue;
 
-            for (let j = 0; j < entites.length; j++) {
-                if (i == j) continue;
-
+            for (let j = i + 1; j < entites.length; j++) {
                 const bodyB = entites[j];
-                if (!(bodyB instanceof PolygonBody)) continue;
 
-                const hit = gjk(bodyA, bodyB);
+                const polygonA = bodyA.convexHull();
+                const polygonB = bodyB.convexHull();
+                const hit = gjk(polygonA, polygonB);
                 if (hit) {
-                    const mvp = epa(bodyA, bodyB, hit);
+                    const mvp = epa(polygonA, polygonB, hit);
                     if (mvp) {
-                        bodyA.collider = new Collider(bodyB, mvp.normal, mvp.depth);
-                        bodyB.collider = new Collider(bodyA, vec3.negate(vec3.create(), mvp.normal), mvp.depth);
+                        bodyA.colliders.push(new Collider(mvp.normal, mvp.depth));
+                        bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth));
                     }
                 }
             }

@@ -4,7 +4,20 @@
     <div class="container mx-auto">
         <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 1 2D</strong></h1>
 
-        <div ref="sketchContainer"></div>
+        <div class="flex">
+            <div ref="sketchContainer"></div>
+            <div>
+                <div>
+                    <label for="debug">Debug Mode</label>
+                    <input id="debug" name="debug" type="checkbox" v-model="debug" />
+                </div>
+
+                <div>
+                    <label for="pauseOnCollision">Pause on Collision</label>
+                    <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-model="pauseOnCollision" />
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -23,7 +36,10 @@ import { vec3 } from 'gl-matrix';
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600]);
-let debug = true;
+let debug = false,
+    isPaused = false,
+    pauseOnCollision = false,
+    skip = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
 
@@ -36,6 +52,7 @@ onMounted(() => {
     };
 
     sketchInstance = new p5(sketch);
+    window.addEventListener('keydown', handleKeyDown);
 });
 
 async function setup(p: p5) {
@@ -73,31 +90,40 @@ async function setup(p: p5) {
 function loop(p: p5) {
     p.background(220);
 
-    for (const entity of entities) {
-        engine.integrate(entity.body, p.deltaTime / 1000);
-    }
+    if (isPaused === false) {
+        for (const entity of entities) {
+            engine.integrate(entity.body, p.deltaTime / 1000);
+        }
 
-    const bodies = entities.map((e) => e.body);
-    engine.narrowPhase(bodies);
+        const bodies = entities.map((e) => e.body);
+        for (const body of bodies) {
+            body.colliders = []; // reset colliders
+        }
 
-    for (const body of bodies) {
-        if (body instanceof PolygonBody && body.collider) {
-            let edge = body.getFarthestEdgeInDirection(body.collider.normal);
-            for (const particle of edge) {
-                const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), body.collider.normal), 20);
-                const p2 = vec3.add(vec3.create(), particle.position, delta);
+        engine.narrowPhase(bodies);
 
-                if (debug) {
-                    p.noLoop();
-                } else {
+        for (const body of bodies) {
+            // pause on debug if has any collisions
+            if (body.colliders.length > 0 && pauseOnCollision && skip === false) {
+                isPaused = true;
+                break;
+            }
+
+            const bodyHull = body.convexHull();
+            for (const collider of body.colliders) {
+                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
+                for (const particle of edge) {
+                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), collider.depth);
+
                     particle.move(delta);
                 }
             }
         }
-    }
 
-    for (const body of bodies) {
-        engine.satisfyConstraints(body);
+        for (const body of bodies) {
+            engine.satisfyConstraints(body);
+        }
+        skip = false;
     }
 
     for (const entity of entities) {
@@ -109,15 +135,9 @@ function loop(p: p5) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
-            // Draw particles
-            // p.noStroke();
-            // p.fill(30, 144, 255);
-            // for (const particle of entity.body.particles) {
-            //     p.circle(particle.position[0], particle.position[1], 10);
-            // }
-
-            if (entity.body instanceof PolygonBody && entity.body.collider) {
-                let edge = entity.body.getFarthestEdgeInDirection(entity.body.collider.normal);
+            const bodyHull = entity.body.convexHull();
+            for (const collider of entity.body.colliders) {
+                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();
                     p.fill(255, 0, 0);
@@ -126,7 +146,7 @@ function loop(p: p5) {
                     p.stroke(255, 0, 0);
                     p.strokeWeight(1);
 
-                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), entity.body.collider.normal), 20);
+                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), 20);
                     const p2 = vec3.add(vec3.create(), particle.position, delta);
                     p.line(particle.position[0], particle.position[1], p2[0], p2[1]);
                 }
@@ -147,12 +167,6 @@ function loop(p: p5) {
             p.endShape();
         }
     }
-
-    for (const body of bodies) {
-        if (body instanceof PolygonBody && body.collider) {
-            body.collider = undefined
-        }
-    }
 }
 
 onBeforeUnmount(() => {
@@ -167,5 +181,14 @@ onBeforeUnmount(() => {
         sketchInstance.remove();
         sketchInstance = null;
     }
+
+    window.removeEventListener('keydown', handleKeyDown);
 });
+
+function handleKeyDown(e) {
+    if (e.code == 'Space') {
+        isPaused = !isPaused;
+        skip = !skip;
+    }
+}
 </script>

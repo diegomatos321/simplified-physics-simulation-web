@@ -43,6 +43,10 @@ export default class PolygonBody extends Body {
     //     }
     // }
 
+    convexHull(): PolygonBody {
+        return this;
+    }
+
     axes(): vec3[] {
         const axes = [];
         for (let i = 0; i < this.particles.length; i++) {

@@ -3,10 +3,11 @@ import Collider from './Collider';
 import type Particle from './Particle';
 import type IConstraint from './constraints/IConstraint';
 import earcut from 'earcut';
+import PolygonBody from './polygons/PolygonBody';
 
 export default class Body {
-    public collider: Collider | undefined;
-    
+    public colliders: Collider[] = [];
+
     constructor(
         public particles: Particle[] = [],
         public constraints: IConstraint[] = [],
@@ -59,5 +60,7 @@ export default class Body {
         };
     }
 
-    convexHull() {}
+    convexHull(): PolygonBody {
+        return new PolygonBody([]);
+    }
 }

@@ -4,7 +4,7 @@ import Collider from '../Collider';
 import { vec3 } from 'gl-matrix';
 
 export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
-    const TOLERANCE = 1e-6;
+    const TOLERANCE = 1e-8;
     // loop to find the collision information
     for (let i = 0; i < 30; i++) {
         // obtain the feature (edge for 2D) closest to the
@@ -23,7 +23,7 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
             // if the difference is less than the tolerance then we can
             // assume that we cannot expand the simplex any further and
             // we have our solution
-            return { normal: e.normal, depth: d};
+            return { normal: e.normal, depth: d };
         } else {
             // we haven't reached the edge of the Minkowski Difference
             // so continue expanding by adding the new point to the simplex
