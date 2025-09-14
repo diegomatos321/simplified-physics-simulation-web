@@ -23,6 +23,10 @@ export default class Engine {
             if (particle.pinned) return;
 
             const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
+            if (vec3.squaredLength(velocity) <= 1e-3) {
+                velocity[0] = 0;
+                velocity[1] = 0;
+            }
 
             vec3.copy(particle.oldPosition, particle.position);
 
@@ -65,8 +69,14 @@ export default class Engine {
             for (let j = i + 1; j < entites.length; j++) {
                 const bodyB = entites[j];
 
-                const polygonA = bodyA.convexHull();
-                const polygonB = bodyB.convexHull();
+                const convexHullA = bodyA.convexHull();
+                const convexHullB = bodyB.convexHull();
+
+                const polygonA = new PolygonBody([]);
+                polygonA.particles = convexHullA;
+                const polygonB = new PolygonBody([]);
+                polygonB.particles = convexHullB;
+
                 const hit = gjk(polygonA, polygonB);
                 if (hit) {
                     const mvp = epa(polygonA, polygonB, hit);

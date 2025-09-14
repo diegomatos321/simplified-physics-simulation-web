@@ -43,8 +43,9 @@ export default class PolygonBody extends Body {
     //     }
     // }
 
-    convexHull(): PolygonBody {
-        return this;
+    // The convex of a polygon is itself
+    convexHull(): Particle[] {
+        return this.particles;
     }
 
     axes(): vec3[] {

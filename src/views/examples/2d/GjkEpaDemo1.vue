@@ -109,7 +109,9 @@ function loop(p: p5) {
                 break;
             }
 
-            const bodyHull = body.convexHull();
+            const convexHull = body.convexHull();
+            const bodyHull = new PolygonBody([]);
+            bodyHull.particles = convexHull;
             for (const collider of body.colliders) {
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
@@ -135,7 +137,10 @@ function loop(p: p5) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
-            const bodyHull = entity.body.convexHull();
+            const convexHull = entity.body.convexHull();
+            const bodyHull = new PolygonBody([]);
+            bodyHull.particles = convexHull;
+
             for (const collider of entity.body.colliders) {
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
