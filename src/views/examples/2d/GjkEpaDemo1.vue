@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleKeyDown);
 });
 
-function handleKeyDown(e) {
+function handleKeyDown(e: KeyboardEvent) {
     if (e.code == 'Space') {
         isPaused = !isPaused;
         skip = !skip;

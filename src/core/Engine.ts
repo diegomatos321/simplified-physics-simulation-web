@@ -7,7 +7,6 @@ import Collider from '@/physics/Collider';
 
 export default class Engine {
     public gravity: vec3 = vec3.fromValues(0, 98, 0);
-    public dampingFactor: number = 20;
 
     protected NUM_ITERATIONS: number = 3;
 

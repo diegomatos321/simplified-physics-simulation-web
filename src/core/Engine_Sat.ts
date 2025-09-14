@@ -1,13 +1,11 @@
-import type RigidBody from '@/physics/Body';
-import type Entity from './Entity';
+import Body from '@/physics/Body';
 import PolygonBody from '@/physics/polygons/PolygonBody';
-import * as twgl from 'twgl.js';
 import sat from '@/physics/collision/sat';
-import type Collider from '@/physics/Collider';
+import { vec3 } from 'gl-matrix';
+import Collider from '@/physics/Collider';
 
 export default class EngineSat {
-    public gravity: twgl.v3.Vec3 = twgl.v3.create(0, 98, 0);
-    public dampingFactor: number = 1;
+    public gravity: vec3 = vec3.fromValues(0, 98, 0);
 
     protected NUM_ITERATIONS: number = 3;
 
@@ -18,19 +16,23 @@ export default class EngineSat {
      * @param body
      * @returns
      */
-    integrate(body: RigidBody, dt: number) {
+    integrate(body: Body, dt: number) {
         for (const particle of body.particles) {
             if (particle.pinned) return;
 
-            let tmp = twgl.v3.copy(particle.position);
-            let velocity = twgl.v3.subtract(particle.position, particle.oldPosition);
-            let damping = twgl.v3.mulScalar(twgl.v3.normalize(twgl.v3.negate(velocity)), this.dampingFactor);
+            const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
+            if (vec3.squaredLength(velocity) <= 1e-3) {
+                velocity[0] = 0;
+                velocity[1] = 0;
+            }
 
-            particle.position[0] = 2 * particle.position[0] - particle.oldPosition[0] + damping[0] * Math.pow(dt, 2);
-            particle.position[1] = 2 * particle.position[1] - particle.oldPosition[1] + (damping[1] + this.gravity[1]) * Math.pow(dt, 2);
+            vec3.copy(particle.oldPosition, particle.position);
 
-            // console.log(damping)
-            particle.oldPosition = tmp;
+            const acc = vec3.scale(vec3.create(), this.gravity, dt * dt);
+
+            // pos = pos + velocity + acc
+            vec3.add(particle.position, particle.position, velocity);
+            vec3.add(particle.position, particle.position, acc);
         }
     }
 
@@ -39,12 +41,12 @@ export default class EngineSat {
      * @param body
      * @returns
      */
-    satisfyConstraints(body: RigidBody) {
+    satisfyConstraints(body: Body) {
         for (let i = 0; i < this.NUM_ITERATIONS; i++) {
             for (const particle of body.particles) {
-                let x = Math.max(Math.min(particle.position[0], this.worldBoundings[0]), 0);
-                let y = Math.max(Math.min(particle.position[1], this.worldBoundings[1]), 0);
-                particle.move(twgl.v3.create(x, y));
+                let x = Math.max(Math.min(particle.position[0], this.worldBoundings[0] / 2), -this.worldBoundings[0] / 2);
+                let y = Math.max(Math.min(particle.position[1], this.worldBoundings[1] / 2), -this.worldBoundings[1] / 2);
+                vec3.set(particle.position, x, y, 0);
 
                 // particle.move(twgl.v3.create(
                 //     particle.position[0] * (1 - 0.5) + x * 0.5,
@@ -58,40 +60,27 @@ export default class EngineSat {
         }
     }
 
-    public collisionTest(entites: Entity[]) {
+    public narrowPhase(entites: Body[]) {
         for (let i = 0; i < entites.length; i++) {
-            const body1 = entites[i];
-            if (!(body1 instanceof PolygonBody)) continue;
+            const bodyA = entites[i];
 
-            for (let j = 0; j < entites.length; j++) {
-                if (i == j) continue;
+            for (let j = i + 1; j < entites.length; j++) {
+                const bodyB = entites[j];
 
-                const body2 = entites[j];
-                if (!(body2 instanceof PolygonBody)) continue;
+                const convexHullA = bodyA.convexHull();
+                const convexHullB = bodyB.convexHull();
 
-                const hit = sat(body1, body2);
+                const polygonA = new PolygonBody([]);
+                polygonA.particles = convexHullA;
+                const polygonB = new PolygonBody([]);
+                polygonB.particles = convexHullB;
+
+                const hit = sat(polygonA, polygonB);
                 if (hit) {
-                    this.collisionSolver(body1, body2, hit);
-                } else {
-                    body1.isOverlapping = false;
-                    body2.isOverlapping = false;
+                    bodyA.colliders.push(new Collider(hit.normal, hit.depth));
+                    bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), hit.normal), hit.depth));
                 }
             }
         }
-    }
-
-    public collisionSolver(body1: PolygonBody, body2: PolygonBody, hit: Collider) {
-        body1.isOverlapping = true;
-        body2.isOverlapping = true;
-
-        let edge1 = body1.getFarthestEdgeInDirection(twgl.v3.negate(hit.normal));
-        edge1.forEach((p) => {
-            p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(twgl.v3.negate(hit.normal), hit.depth)));
-        });
-
-        let edge2 = body2.getFarthestEdgeInDirection(hit.normal);
-        edge2.forEach((p) => {
-            p.move(twgl.v3.add(p.position, twgl.v3.mulScalar(hit.normal, hit.depth)));
-        });
     }
 }
