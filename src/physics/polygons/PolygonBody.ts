@@ -3,7 +3,6 @@ import IConstraint from '@/physics/constraints/IConstraint';
 import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import Projection from '@/physics/Projection';
 import Body from '../Body';
-import earcut from 'earcut';
 import { vec3 } from 'gl-matrix';
 
 export default class PolygonBody extends Body {

@@ -19,13 +19,13 @@ export default class Engine {
      */
     integrate(body: Body, dt: number) {
         for (const particle of body.particles) {
-            if (particle.pinned) return;
+            if (particle.pinned) continue;
 
             const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
-            if (vec3.squaredLength(velocity) <= 1e-3) {
-                velocity[0] = 0;
-                velocity[1] = 0;
-            }
+            // if (vec3.squaredLength(velocity) <= 1e-3) {
+            //     velocity[0] = 0;
+            //     velocity[1] = 0;
+            // }
 
             vec3.copy(particle.oldPosition, particle.position);
 

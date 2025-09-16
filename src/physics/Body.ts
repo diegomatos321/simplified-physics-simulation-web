@@ -1,9 +1,7 @@
-import { vec3 } from 'gl-matrix';
 import Collider from './Collider';
 import Particle from './Particle';
 import type IConstraint from './constraints/IConstraint';
 import earcut from 'earcut';
-import PolygonBody from './polygons/PolygonBody';
 
 export default class Body {
     public colliders: Collider[] = [];
