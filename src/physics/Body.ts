@@ -6,6 +6,9 @@ import earcut from 'earcut';
 export default class Body {
     public colliders: Collider[] = [];
 
+    // cache convex hull
+    public _convexHull: Particle[] | null = null;
+
     constructor(
         public particles: Particle[] = [],
         public constraints: IConstraint[] = [],
@@ -15,41 +18,29 @@ export default class Body {
     update(dt: number) {}
 
     draw() {}
-    // draw(gl: WebGLRenderingContext): void {
-    //     for (const particle of this.particles) {
-    //         if (this.isOverlapping === true) {
-    //             particle.color = [1, 0.2, 0.2, 1];
-    //         } else {
-    //             particle.color = [0, 0, 1, 1];
-    //         }
-    //         particle.draw();
-    //     }
-
-    //     for (const constraint of this.constraints) {
-    //         constraint.draw();
-    //     }
-    // }
 
     triangulation() {
+        const convexHull = this.convexHull()
+
         // Automatic UV Generation via Bounding Box
         let minX = Infinity,
             minY = Infinity,
             maxX = -Infinity,
             maxY = -Infinity;
-        for (const particle of this.particles) {
+        for (const particle of convexHull) {
             minX = Math.min(minX, particle.position[0]);
             minY = Math.min(minY, particle.position[1]);
             maxX = Math.max(maxX, particle.position[0]);
             maxY = Math.max(maxY, particle.position[1]);
         }
-        const uvs = this.particles.map((particle) => {
+        const uvs = convexHull.map((particle) => {
             const x = particle.position[0];
             const y = particle.position[1];
             return [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)];
         });
 
         // Automatic Triangulation with Earcut
-        const flattened_vertices = this.particles.map((p) => [p.position[0], p.position[1]]).flat();
+        const flattened_vertices = convexHull.map((p) => [p.position[0], p.position[1]]).flat();
         const indices = earcut(flattened_vertices);
 
         return {
@@ -60,6 +51,10 @@ export default class Body {
 
     // Compute the convex hull of the body using quickhull algorithm
     convexHull(): Particle[] {
+        if (this._convexHull) {
+            return this._convexHull;
+        }
+
         // The convex hull is not defined by less than 3 points
         if (this.particles.length < 3) {
             return this.particles;
@@ -94,6 +89,7 @@ export default class Body {
         convexHull.push(...this.quickhull(pmin, pmax, above, 'above'));
         convexHull.push(...this.quickhull(pmin, pmax, bellow, 'below'));
 
+        this._convexHull = convexHull;
         return convexHull;
     }
 

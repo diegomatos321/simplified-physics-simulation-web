@@ -5,7 +5,10 @@
         <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 1 2D</strong></h1>
 
         <div class="flex">
-            <div ref="sketchContainer"></div>
+            <div class="relative">
+                <div class="absolute">FPS {{ fps }}</div>
+                <div ref="sketchContainer"></div>
+            </div>
             <div>
                 <div>
                     <label for="debug">Debug Mode</label>
@@ -37,11 +40,10 @@ const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600]);
 let debug = false,
-    isPaused = false,
-    pauseOnCollision = false,
-    skip = false;
+    pauseOnCollision = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
+const fps = ref(0);
 
 onMounted(() => {
     if (!sketchContainer.value) return;
@@ -91,26 +93,37 @@ async function setup(p: p5) {
 function loop(p: p5) {
     p.background(220);
 
+    fps.value = Math.round(p.frameRate());
+
     engine.step(p.deltaTime / 1000);
 
     for (const entity of entities) {
         if (debug) {
             // Draw constraints
-            p.stroke(150, 200, 255);
+            p.stroke(0, 0, 0);
             p.strokeWeight(2);
             for (const constraint of entity.body.constraints) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
             for (const collider of entity.body.colliders) {
+                p.stroke(150, 200, 255);
+                p.strokeWeight(2);
                 const convexHull = entity.body.convexHull();
+                for (let i = 0; i < convexHull.length; i++) {
+                    const v1 = convexHull[i];
+                    const v2 = convexHull[(i + 1) % convexHull.length];
+                    p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
+                }
+
                 const bodyHull = new PolygonBody([]);
                 bodyHull.particles = convexHull;
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();
-                    p.fill(255, 0, 0);
-                    p.circle(particle.position[0], particle.position[1], 5);
+                    p.stroke(255, 0, 0);
+                    p.strokeWeight(5);
+                    p.point(particle.position[0], particle.position[1]);
 
                     p.stroke(255, 0, 0);
                     p.strokeWeight(1);
@@ -156,8 +169,8 @@ onBeforeUnmount(() => {
 
 function handleKeyDown(e: KeyboardEvent) {
     if (e.code == 'Space') {
-        isPaused = !isPaused;
-        skip = !skip;
+        engine.isPaused = !engine.isPaused;
+        engine.skip = !engine.skip;
     }
 }
 </script>

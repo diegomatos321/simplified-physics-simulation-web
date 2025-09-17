@@ -4,6 +4,12 @@ import gjk from '@/physics/collision/gjk';
 import { epa } from '@/physics/collision/epa';
 import { vec3 } from 'gl-matrix';
 import Collider from '@/physics/Collider';
+import sat from '@/physics/collision/sat';
+
+export enum Mode {
+    GjkEpa,
+    Sat,
+}
 
 export default class Engine {
     public gravity: vec3 = vec3.fromValues(0, 98, 0);
@@ -11,12 +17,15 @@ export default class Engine {
 
     // Debug states
     public isPaused: boolean = false;
-    public pauseOnCollision: boolean = false;
+    public pauseOnCollision: boolean = true;
     public skip: boolean = false;
 
     protected NUM_ITERATIONS: number = 3;
 
-    constructor(public worldBoundings: number[]) {}
+    constructor(
+        public worldBoundings: number[],
+        public engineMode: Mode = Mode.GjkEpa,
+    ) {}
 
     step(dt: number) {
         if (this.isPaused) {
@@ -27,7 +36,9 @@ export default class Engine {
             this.integrate(body, dt);
         }
 
+        // Reset body colliders and cached convex hull
         for (const body of this.bodies) {
+            body._convexHull = null;
             body.colliders = [];
         }
 
@@ -114,12 +125,20 @@ export default class Engine {
                 const polygonB = new PolygonBody([]);
                 polygonB.particles = convexHullB;
 
-                const hit = gjk(polygonA, polygonB);
-                if (hit) {
-                    const mvp = epa(polygonA, polygonB, hit);
-                    if (mvp) {
-                        bodyA.colliders.push(new Collider(mvp.normal, mvp.depth));
-                        bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth));
+                if (this.engineMode === Mode.GjkEpa) {
+                    const hit = gjk(polygonA, polygonB);
+                    if (hit) {
+                        const mvp = epa(polygonA, polygonB, hit);
+                        if (mvp) {
+                            bodyA.colliders.push(new Collider(mvp.normal, mvp.depth));
+                            bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth));
+                        }
+                    }
+                } else if (this.engineMode === Mode.Sat) {
+                    const hit = sat(polygonA, polygonB);
+                    if (hit) {
+                        bodyA.colliders.push(new Collider(hit.normal, hit.depth));
+                        bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), hit.normal), hit.depth));
                     }
                 }
             }

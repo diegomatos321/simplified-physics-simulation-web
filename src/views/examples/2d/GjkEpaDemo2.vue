@@ -6,7 +6,7 @@
 
         <div class="flex">
             <div class="relative">
-                <div class="absolute top-0 right-0">
+                <div class="absolute">
                     <p>FPS: {{ fps }}</p>
                 </div>
                 <div ref="sketchContainer"></div>
@@ -41,7 +41,7 @@ import PentagonBody from '@/physics/polygons/PentagonBody';
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600]);
-let debug = true,
+let debug = false,
     pauseOnCollision = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
@@ -66,7 +66,7 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
     {
-        let trelis1 = trelis(vec3.fromValues(-200, -200, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
+        let trelis1 = trelis(vec3.fromValues(0, 0, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
         trelis1.particles[0].pinned = true;
         // trelis1.particles[10].pinned = true;
         const { uvs, indices } = trelis1.triangulation();
@@ -79,7 +79,7 @@ async function setup(p: p5) {
     }
 
     {
-        let trelis1 = trelis(vec3.fromValues(0, 0, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
+        let trelis1 = trelis(vec3.fromValues(-250, 0, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
         // trelis1.particles[0].pinned = true;
         // trelis1.particles[10].pinned = true;
         const { uvs, indices } = trelis1.triangulation();
@@ -92,7 +92,7 @@ async function setup(p: p5) {
     }
 
     {
-        const pentagonPoly = new PentagonBody(50, -100, 50);
+        const pentagonPoly = new PentagonBody(0, -100, 50);
         const { uvs, indices } = pentagonPoly.triangulation();
         engine.bodies.push(pentagonPoly);
         entities.push({
@@ -120,23 +120,38 @@ function loop(p: p5) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
+            // Draw particles
             p.noStroke();
             p.fill(0, 0, 255);
             for (const particle of entity.body.particles) {
                 if (particle.pinned) {
-                    p.circle(particle.position[0], particle.position[1], 5);
+                    p.stroke(255, 0, 0);
+                    p.strokeWeight(5);
+                    p.point(particle.position[0], particle.position[1]);
                 }
             }
 
             for (const collider of entity.body.colliders) {
+                // Draw body convex shape
+                p.stroke(150, 200, 255);
+                p.strokeWeight(2);
                 const convexHull = entity.body.convexHull();
+                for (let i = 0; i < convexHull.length; i++) {
+                    const v1 = convexHull[i];
+                    const v2 = convexHull[(i + 1) % convexHull.length];
+                    p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
+                }
+
                 const bodyHull = new PolygonBody([]);
                 bodyHull.particles = convexHull;
+
+                // Draw points of collision and separation direction
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();
-                    p.fill(255, 0, 0);
-                    p.circle(particle.position[0], particle.position[1], 5);
+                    p.stroke(255, 0, 0);
+                    p.strokeWeight(5);
+                    p.point(particle.position[0], particle.position[1]);
 
                     p.stroke(255, 0, 0);
                     p.strokeWeight(1);
@@ -166,11 +181,6 @@ function loop(p: p5) {
 
 onBeforeUnmount(() => {
     console.log('Clean up');
-    // isRunning = false;
-
-    // if (animationId) {
-    //     cancelAnimationFrame(animationId);
-    // }
 
     if (sketchInstance) {
         sketchInstance.remove();

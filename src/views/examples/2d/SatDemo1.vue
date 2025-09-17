@@ -5,7 +5,12 @@
         <h1 class="text-3xl"><strong>SAT Implementation - Demo 1 2D</strong></h1>
 
         <div class="flex">
-            <div ref="sketchContainer"></div>
+            <div class="relative">
+                <div class="absolute">
+                    <p>FPS {{ fps }}</p>
+                </div>
+                <div ref="sketchContainer"></div>
+            </div>
             <div>
                 <div>
                     <label for="debug">Debug Mode</label>
@@ -32,16 +37,16 @@ import EngineSat from '@/core/Engine_Sat';
 import type Body from '@/physics/Body';
 import PolygonBody from '@/physics/polygons/PolygonBody';
 import { vec3 } from 'gl-matrix';
+import Engine, { Mode } from '@/core/Engine';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
-let engine = new EngineSat([600, 600]);
+let engine = new Engine([600, 600], Mode.Sat);
 let debug = false,
-    isPaused = false,
-    pauseOnCollision = false,
-    skip = false;
+    pauseOnCollision = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
+const fps = ref(0);
 
 onMounted(() => {
     if (!sketchContainer.value) return;
@@ -78,6 +83,7 @@ async function setup(p: p5) {
             body = new HexagonBody(x, y, 50);
         }
 
+        engine.bodies.push(body);
         const { uvs, indices } = body.triangulation();
         entities.push({
             uvs,
@@ -90,43 +96,9 @@ async function setup(p: p5) {
 function loop(p: p5) {
     p.background(220);
 
-    if (isPaused === false) {
-        for (const entity of entities) {
-            engine.integrate(entity.body, p.deltaTime / 1000);
-        }
+    fps.value = Math.round(p.frameRate());
 
-        const bodies = entities.map((e) => e.body);
-        for (const body of bodies) {
-            body.colliders = []; // reset colliders
-        }
-
-        engine.narrowPhase(bodies);
-
-        for (const body of bodies) {
-            // pause on debug if has any collisions
-            if (body.colliders.length > 0 && pauseOnCollision && skip === false) {
-                isPaused = true;
-                break;
-            }
-
-            const convexHull = body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
-            for (const collider of body.colliders) {
-                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
-                for (const particle of edge) {
-                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), collider.depth);
-
-                    particle.move(delta);
-                }
-            }
-        }
-
-        for (const body of bodies) {
-            engine.satisfyConstraints(body);
-        }
-        skip = false;
-    }
+    engine.step(p.deltaTime / 1000);
 
     for (const entity of entities) {
         if (debug) {
@@ -145,8 +117,9 @@ function loop(p: p5) {
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();
-                    p.fill(255, 0, 0);
-                    p.circle(particle.position[0], particle.position[1], 5);
+                    p.stroke(255, 0, 0);
+                    p.strokeWeight(5);
+                    p.point(particle.position[0], particle.position[1]);
 
                     p.stroke(255, 0, 0);
                     p.strokeWeight(1);
@@ -192,8 +165,8 @@ onBeforeUnmount(() => {
 
 function handleKeyDown(e: KeyboardEvent) {
     if (e.code == 'Space') {
-        isPaused = !isPaused;
-        skip = !skip;
+        engine.isPaused = !engine.isPaused;
+        engine.skip = !engine.skip;
     }
 }
 </script>
