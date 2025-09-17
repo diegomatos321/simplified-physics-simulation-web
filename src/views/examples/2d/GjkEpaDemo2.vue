@@ -2,10 +2,15 @@
 
 <template>
     <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 1 2D</strong></h1>
+        <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 2 2D</strong></h1>
 
         <div class="flex">
-            <div ref="sketchContainer"></div>
+            <div class="relative">
+                <div class="absolute top-0 right-0">
+                    <p>FPS: {{ fps }}</p>
+                </div>
+                <div ref="sketchContainer"></div>
+            </div>
             <div>
                 <div>
                     <label for="debug">Debug Mode</label>
@@ -37,11 +42,10 @@ const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600]);
 let debug = true,
-    isPaused = false,
-    pauseOnCollision = false,
-    skip = false;
+    pauseOnCollision = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
+const fps = ref(0);
 
 onMounted(() => {
     if (!sketchContainer.value) return;
@@ -62,20 +66,35 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
     {
-        let cloth = trelis(vec3.fromValues(0, -100, 0), vec3.fromValues(100, 100, 0), 10, 10);
-        // cloth.particles[0].pinned = true;
-        // cloth.particles[5].pinned = true;
-        const { uvs, indices } = cloth.triangulation();
+        let trelis1 = trelis(vec3.fromValues(-200, -200, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
+        trelis1.particles[0].pinned = true;
+        // trelis1.particles[10].pinned = true;
+        const { uvs, indices } = trelis1.triangulation();
+        engine.bodies.push(trelis1);
         entities.push({
             uvs,
             indices,
-            body: cloth,
+            body: trelis1,
         });
     }
 
     {
-        const pentagonPoly = new PentagonBody(50, 50, 50);
+        let trelis1 = trelis(vec3.fromValues(0, 0, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
+        // trelis1.particles[0].pinned = true;
+        // trelis1.particles[10].pinned = true;
+        const { uvs, indices } = trelis1.triangulation();
+        engine.bodies.push(trelis1);
+        entities.push({
+            uvs,
+            indices,
+            body: trelis1,
+        });
+    }
+
+    {
+        const pentagonPoly = new PentagonBody(50, -100, 50);
         const { uvs, indices } = pentagonPoly.triangulation();
+        engine.bodies.push(pentagonPoly);
         entities.push({
             uvs,
             indices,
@@ -87,58 +106,32 @@ async function setup(p: p5) {
 function loop(p: p5) {
     p.background(220);
 
-    if (isPaused === false) {
-        for (const entity of entities) {
-            engine.integrate(entity.body, p.deltaTime / 1000);
-        }
+    // show fps
+    fps.value = Math.round(p.frameRate());
 
-        const bodies = entities.map((e) => e.body);
-        for (const body of bodies) {
-            body.colliders = []; // reset colliders
-        }
-
-        engine.narrowPhase(bodies);
-
-        for (const body of bodies) {
-            // pause on debug if has any collisions
-            if (body.colliders.length > 0 && pauseOnCollision && skip === false) {
-                isPaused = true;
-                break;
-            }
-
-            const convexHull = body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
-            for (const collider of body.colliders) {
-                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
-                for (const particle of edge) {
-                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), collider.depth);
-
-                    particle.move(delta);
-                }
-            }
-        }
-
-        for (const body of bodies) {
-            engine.satisfyConstraints(body);
-        }
-        skip = false;
-    }
+    engine.step(p.deltaTime / 1000);
 
     for (const entity of entities) {
         if (debug) {
             // Draw constraints
-            p.stroke(150, 200, 255);
+            p.stroke(0, 0, 0);
             p.strokeWeight(2);
             for (const constraint of entity.body.constraints) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
-            const convexHull = entity.body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
+            p.noStroke();
+            p.fill(0, 0, 255);
+            for (const particle of entity.body.particles) {
+                if (particle.pinned) {
+                    p.circle(particle.position[0], particle.position[1], 5);
+                }
+            }
 
             for (const collider of entity.body.colliders) {
+                const convexHull = entity.body.convexHull();
+                const bodyHull = new PolygonBody([]);
+                bodyHull.particles = convexHull;
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();
@@ -226,8 +219,8 @@ function trelis(corner: vec3, size: vec3, nx: number, ny: number, stiff: boolean
 
 function handleKeyDown(e: KeyboardEvent) {
     if (e.code == 'Space') {
-        isPaused = !isPaused;
-        skip = !skip;
+        engine.isPaused = !engine.isPaused;
+        engine.skip = !engine.skip;
     }
 }
 </script>

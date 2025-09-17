@@ -78,6 +78,7 @@ async function setup(p: p5) {
             body = new HexagonBody(x, y, 50);
         }
 
+        engine.bodies.push(body);
         const { uvs, indices } = body.triangulation();
         entities.push({
             uvs,
@@ -90,43 +91,7 @@ async function setup(p: p5) {
 function loop(p: p5) {
     p.background(220);
 
-    if (isPaused === false) {
-        for (const entity of entities) {
-            engine.integrate(entity.body, p.deltaTime / 1000);
-        }
-
-        const bodies = entities.map((e) => e.body);
-        for (const body of bodies) {
-            body.colliders = []; // reset colliders
-        }
-
-        engine.narrowPhase(bodies);
-
-        for (const body of bodies) {
-            // pause on debug if has any collisions
-            if (body.colliders.length > 0 && pauseOnCollision && skip === false) {
-                isPaused = true;
-                break;
-            }
-
-            const convexHull = body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
-            for (const collider of body.colliders) {
-                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
-                for (const particle of edge) {
-                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), collider.depth);
-
-                    particle.move(delta);
-                }
-            }
-        }
-
-        for (const body of bodies) {
-            engine.satisfyConstraints(body);
-        }
-        skip = false;
-    }
+    engine.step(p.deltaTime / 1000);
 
     for (const entity of entities) {
         if (debug) {
@@ -137,11 +102,10 @@ function loop(p: p5) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
-            const convexHull = entity.body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
-
             for (const collider of entity.body.colliders) {
+                const convexHull = entity.body.convexHull();
+                const bodyHull = new PolygonBody([]);
+                bodyHull.particles = convexHull;
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();

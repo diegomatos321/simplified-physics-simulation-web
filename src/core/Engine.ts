@@ -7,10 +7,58 @@ import Collider from '@/physics/Collider';
 
 export default class Engine {
     public gravity: vec3 = vec3.fromValues(0, 98, 0);
+    public bodies: Body[] = [];
+
+    // Debug states
+    public isPaused: boolean = false;
+    public pauseOnCollision: boolean = false;
+    public skip: boolean = false;
 
     protected NUM_ITERATIONS: number = 3;
 
     constructor(public worldBoundings: number[]) {}
+
+    step(dt: number) {
+        if (this.isPaused) {
+            return;
+        }
+
+        for (const body of this.bodies) {
+            this.integrate(body, dt);
+        }
+
+        for (const body of this.bodies) {
+            body.colliders = [];
+        }
+
+        this.narrowPhase();
+
+        for (const body of this.bodies) {
+            // pause on debug if has any collisions
+            if (body.colliders.length > 0 && this.pauseOnCollision && this.skip === false) {
+                this.isPaused = true;
+                break;
+            }
+
+            for (const collider of body.colliders) {
+                const convexHull = body.convexHull();
+                const bodyHull = new PolygonBody([]);
+                bodyHull.particles = convexHull;
+                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
+                for (const particle of edge) {
+                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), collider.depth);
+
+                    particle.move(delta);
+                }
+            }
+        }
+
+        for (const body of this.bodies) {
+            this.satisfyConstraints(body);
+        }
+
+        this.skip = false;
+    }
 
     /**
      * Jakobson's particle phsyics through verlet integration
@@ -22,11 +70,6 @@ export default class Engine {
             if (particle.pinned) continue;
 
             const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
-            // if (vec3.squaredLength(velocity) <= 1e-3) {
-            //     velocity[0] = 0;
-            //     velocity[1] = 0;
-            // }
-
             vec3.copy(particle.oldPosition, particle.position);
 
             const acc = vec3.scale(vec3.create(), this.gravity, dt * dt);
@@ -48,11 +91,6 @@ export default class Engine {
                 let x = Math.max(Math.min(particle.position[0], this.worldBoundings[0] / 2), -this.worldBoundings[0] / 2);
                 let y = Math.max(Math.min(particle.position[1], this.worldBoundings[1] / 2), -this.worldBoundings[1] / 2);
                 vec3.set(particle.position, x, y, 0);
-
-                // particle.move(twgl.v3.create(
-                //     particle.position[0] * (1 - 0.5) + x * 0.5,
-                //     particle.position[1] * (1 - 0.5) + y * 0.5,
-                // ))
             }
 
             for (const constraint of body.constraints) {
@@ -61,12 +99,12 @@ export default class Engine {
         }
     }
 
-    public narrowPhase(entites: Body[]) {
-        for (let i = 0; i < entites.length; i++) {
-            const bodyA = entites[i];
+    public narrowPhase() {
+        for (let i = 0; i < this.bodies.length; i++) {
+            const bodyA = this.bodies[i];
 
-            for (let j = i + 1; j < entites.length; j++) {
-                const bodyB = entites[j];
+            for (let j = i + 1; j < this.bodies.length; j++) {
+                const bodyB = this.bodies[j];
 
                 const convexHullA = bodyA.convexHull();
                 const convexHullB = bodyB.convexHull();
