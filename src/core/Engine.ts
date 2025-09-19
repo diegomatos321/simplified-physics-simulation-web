@@ -17,7 +17,7 @@ export default class Engine {
 
     // Debug states
     public isPaused: boolean = false;
-    public pauseOnCollision: boolean = true;
+    public pauseOnCollision: boolean = false;
     public skip: boolean = false;
 
     protected NUM_ITERATIONS: number = 3;

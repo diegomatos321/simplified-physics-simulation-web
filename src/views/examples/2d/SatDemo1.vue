@@ -2,7 +2,8 @@
 
 <template>
     <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>SAT Implementation - Demo 1 2D</strong></h1>
+        <h1 class="text-3xl"><strong>SAT Engine</strong></h1>
+        <p>Polygons vs Polygons demo</p>
 
         <div class="flex">
             <div class="relative">
@@ -42,7 +43,7 @@ import Engine, { Mode } from '@/core/Engine';
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600], Mode.Sat);
-let debug = false,
+let debug = true,
     pauseOnCollision = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
@@ -103,17 +104,24 @@ function loop(p: p5) {
     for (const entity of entities) {
         if (debug) {
             // Draw constraints
-            p.stroke(150, 200, 255);
-            p.strokeWeight(2);
+            p.stroke(0, 0, 0);
+            p.strokeWeight(1);
             for (const constraint of entity.body.constraints) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }
 
-            const convexHull = entity.body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
-
             for (const collider of entity.body.colliders) {
+                p.stroke(150, 200, 255);
+                p.strokeWeight(2);
+                const convexHull = entity.body.convexHull();
+                for (let i = 0; i < convexHull.length; i++) {
+                    const v1 = convexHull[i];
+                    const v2 = convexHull[(i + 1) % convexHull.length];
+                    p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
+                }
+
+                const bodyHull = new PolygonBody([]);
+                bodyHull.particles = convexHull;
                 let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
                 for (const particle of edge) {
                     p.noStroke();

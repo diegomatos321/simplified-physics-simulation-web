@@ -2,7 +2,8 @@
 
 <template>
     <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>GJK/EPA Implementation - Demo 1 2D</strong></h1>
+        <h1 class="text-3xl"><strong>GJK/EPA Engine</strong></h1>
+        <p>Polygons vs Polygons demo</p>
 
         <div class="flex">
             <div class="relative">
@@ -39,7 +40,7 @@ import { vec3 } from 'gl-matrix';
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine([600, 600]);
-let debug = false,
+let debug = true,
     pauseOnCollision = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
@@ -101,7 +102,7 @@ function loop(p: p5) {
         if (debug) {
             // Draw constraints
             p.stroke(0, 0, 0);
-            p.strokeWeight(2);
+            p.strokeWeight(1);
             for (const constraint of entity.body.constraints) {
                 p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
             }

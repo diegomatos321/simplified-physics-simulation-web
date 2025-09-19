@@ -3,7 +3,7 @@
 <template>
     <div class="container mx-auto">
         <h1 class="text-3xl"><strong>GJK/EPA Implementation</strong></h1>
-        <p>Trelis body vs Polygon demo</p>
+        <p>Trelis body vs Polygon vs Cloth demo</p>
 
         <div class="flex">
             <div class="relative">
@@ -85,6 +85,17 @@ async function setup(p: p5) {
         uvs: triangulation2.uvs,
         indices: triangulation2.indices,
         body: trelis2,
+    });
+
+    let cloth = trelis(vec3.fromValues(-200, 0, 0), vec3.fromValues(100, 100, 0), 10, 10);
+    cloth.particles[0].pinned = true;
+    cloth.particles[10].pinned = true;
+    const triangulation4 = cloth.triangulation();
+    engine.bodies.push(cloth);
+    entities.push({
+        uvs: triangulation4.uvs,
+        indices: triangulation4.indices,
+        body: cloth,
     });
 
     const pentagonPoly = new PentagonBody(0, -100, 50);
