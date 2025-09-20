@@ -129,10 +129,8 @@ export default class Engine {
                     const hit = gjk(polygonA, polygonB);
                     if (hit) {
                         const mvp = epa(polygonA, polygonB, hit);
-                        if (mvp) {
-                            bodyA.colliders.push(new Collider(mvp.normal, mvp.depth));
-                            bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth));
-                        }
+                        bodyA.colliders.push(new Collider(mvp.normal, mvp.depth));
+                        bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth));
                     }
                 } else if (this.engineMode === Mode.Sat) {
                     const hit = sat(polygonA, polygonB);

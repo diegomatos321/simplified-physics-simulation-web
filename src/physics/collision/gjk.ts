@@ -7,7 +7,11 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
 
     // initial search direction equals to the difference of the shapes center
     let d = vec3.subtract(vec3.create(), B.getCenter(), A.getCenter());
-    vec3.normalize(d, d);
+    if (vec3.length(d) < 1e-8) {
+        vec3.set(d, 1, 0, 0); // Default direction if centers are identical
+    } else {
+        vec3.normalize(d, d);
+    }
 
     // get the first Minkowski Difference point
     simplex.push(support(A, B, d));
@@ -17,18 +21,29 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
 
     for (let i = 0; i < 30; i++) {
         let a = support(A, B, d);
-        // add a new point to the simplex because we haven't terminated yet
-        simplex.push(a);
 
         // make sure that the last point we added actually passed the origin
         if (vec3.dot(a, d) <= 1e-10) {
             return false;
         }
 
+        // // Check duplicate point (stuck case)
+        if (simplex.some((p) => vec3.sqrDist(p, a) < 1e-12)) {
+            return false;
+        }
+
+        // add a new point to the simplex because we haven't terminated yet
+        simplex.push(a);
+
         // otherwise we need to determine if the origin is in
         // the current simplex
         if (containsOrigin(simplex, d)) {
             return simplex;
+        }
+
+        // // If direction is degenerate, stop
+        if (vec3.sqrLen(d) < 1e-12) {
+            return false;
         }
     }
 
@@ -46,8 +61,10 @@ function containsOrigin(simplex: vec3[], d: vec3): boolean {
 }
 
 function triangleCase(simplex: vec3[], d: vec3): boolean {
-    // get the last point added to the simplex
-    const [c, b, a] = simplex;
+    const a = simplex[simplex.length - 1];
+    const b = simplex[simplex.length - 2];
+    const c = simplex[simplex.length - 3];
+
     // compute AO (same thing as -A)
     const ao = vec3.negate(vec3.create(), a);
 
@@ -59,22 +76,24 @@ function triangleCase(simplex: vec3[], d: vec3): boolean {
     const abPerp = tripleProduct(ac, ab, ab);
     const acPerp = tripleProduct(ab, ac, ac);
 
-    // is the origin in R4 region?
+    // Check if origin is in region outside AB
     if (vec3.dot(abPerp, ao) > 0) {
         // remove point c
         simplex.splice(0, 1);
         // set the new direction to abPerp
         vec3.copy(d, abPerp);
+        vec3.normalize(d, d);
 
         return false;
     }
 
-    // is the origin in R3?
+    // Check if origin is in region outside AC
     if (vec3.dot(acPerp, ao) > 0) {
         // remove point b
         simplex.splice(1, 1);
         // set the new direction to acPerp
         vec3.copy(d, acPerp);
+        vec3.normalize(d, d);
 
         return false;
     }
@@ -85,15 +104,24 @@ function triangleCase(simplex: vec3[], d: vec3): boolean {
 
 function lineCase(simplex: vec3[], d: vec3): boolean {
     // get the last point added to the simplex
-    const [b, a] = simplex;
+    const a = simplex[simplex.length - 1];
+    const b = simplex[simplex.length - 2];
+
     // compute AO (same thing as -A)
     const ao = vec3.negate(vec3.create(), a);
     // compute AB
     const ab = vec3.subtract(vec3.create(), b, a);
     // get the perp to AB in the direction of the origin
     const abPerp = tripleProduct(ab, ao, ab);
-    // set the direction to abPerp
-    vec3.copy(d, abPerp);
+    if (vec3.length(abPerp) <= 1e-10) {
+        // Degenerate lineCase direction, if ao is almost collinear with ab
+        // fall back to ao directly.
+        vec3.copy(d, ao);
+    } else {
+        // set the direction to abPerp
+        vec3.copy(d, abPerp);
+        vec3.normalize(d, d);
+    }
 
     return false;
 }

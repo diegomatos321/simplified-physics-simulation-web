@@ -1,10 +1,18 @@
 import type PolygonBody from '@/physics/polygons/PolygonBody';
 import { support, tripleProduct } from './utils';
-import Collider from '../Collider';
 import { vec3 } from 'gl-matrix';
 
 export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
-    const TOLERANCE = 1e-8;
+    // Ensure the simplex has a counter-clockwise winding
+    const ab = vec3.subtract(vec3.create(), simplex[1], simplex[0]);
+    const ac = vec3.subtract(vec3.create(), simplex[2], simplex[0]);
+    const cross = vec3.cross(vec3.create(), ab, ac);
+    // In 2D, the Z component of the cross product determines the winding
+    if (cross[2] > 0) {
+        // It's clockwise, reverse it to be counter-clockwise
+        simplex.reverse();
+    }
+
     const TOLERANCE = 1e-3;
     // loop to find the collision information
     for (let i = 0; i < 30; i++) {
@@ -32,6 +40,10 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
             simplex.splice(e.index, 0, p);
         }
     }
+
+    // Fallback if max iterations reached
+    const e = findClosestEdge(simplex);
+    return { normal: e.normal, depth: e.distance };
 }
 
 function findClosestEdge(simplex: vec3[]) {
@@ -62,7 +74,12 @@ function findClosestEdge(simplex: vec3[]) {
         vec3.normalize(n, n);
 
         // calculate the distance from the origin to the edge
-        const d = vec3.dot(n, a);
+        let d = vec3.dot(n, a);
+        // Ensure the normal points towards the origin and the distance is positive
+        if (d < 0) {
+            d = -d;
+            vec3.negate(n, n);
+        }
 
         // check the distance against the other distances
         if (d < closest.distance) {
