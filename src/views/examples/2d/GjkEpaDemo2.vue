@@ -34,10 +34,8 @@ import Engine from '@/core/Engine';
 import PolygonBody from '@/physics/polygons/PolygonBody';
 import Body from '@/physics/Body';
 import { vec3 } from 'gl-matrix';
-import Particle from '@/physics/Particle';
-import type IConstraint from '@/physics/constraints/IConstraint';
-import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import PentagonBody from '@/physics/polygons/PentagonBody';
+import TrellisBody from '@/physics/TrellisBody';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
@@ -67,7 +65,7 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    let trelis1 = trelis(vec3.fromValues(-50, 0, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
+    let trelis1 = new TrellisBody(vec3.fromValues(-50, 0, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
     trelis1.particles[0].pinned = true;
     // trelis1.particles[10].pinned = true;
     const triangulation1 = trelis1.triangulation();
@@ -78,7 +76,7 @@ async function setup(p: p5) {
         body: trelis1,
     });
 
-    let trelis2 = trelis(vec3.fromValues(-50, 200, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
+    let trelis2 = new TrellisBody(vec3.fromValues(-50, 200, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
     const triangulation2 = trelis2.triangulation();
     engine.bodies.push(trelis2);
     entities.push({
@@ -86,6 +84,7 @@ async function setup(p: p5) {
         indices: triangulation2.indices,
         body: trelis2,
     });
+    console.log(entities[entities.length - 1]);
 
     const pentagonPoly = new PentagonBody(0, -100, 50);
     const triangulation3 = pentagonPoly.triangulation();
@@ -183,43 +182,6 @@ onBeforeUnmount(() => {
 
     window.removeEventListener('keydown', handleKeyDown);
 });
-
-function trelis(corner: vec3, size: vec3, nx: number, ny: number, stiff: boolean = false, reinforce: boolean = false) {
-    let particles: Particle[] = [];
-    let constraints: IConstraint[] = [];
-
-    let dx = vec3.fromValues(size[0] / nx, 0, 0);
-    let dy = vec3.fromValues(0, size[1] / ny, 0);
-
-    let m = nx + 1;
-    for (let i = 0; i <= ny; i++) {
-        let q = vec3.scaleAndAdd(vec3.create(), corner, dy, i);
-        for (let j = 0; j <= nx; j++) {
-            let p = vec3.scaleAndAdd(vec3.create(), q, dx, j);
-            particles.push(new Particle(p));
-
-            let k = i * m + j;
-            if (j > 0) constraints.push(new LinearConstraint(particles[k], particles[k - 1]));
-            if (i > 0) constraints.push(new LinearConstraint(particles[k], particles[k - m]));
-            if (i > 0 && j > 0 && stiff) {
-                constraints.push(new LinearConstraint(particles[k - 1], particles[k - m]), new LinearConstraint(particles[k], particles[k - m - 1]));
-            }
-        }
-    }
-
-    if (nx > 1 && ny > 1 && reinforce) {
-        constraints.push(
-            new LinearConstraint(particles[0], particles[particles.length - 1]),
-            new LinearConstraint(particles[0], particles[m - 1]),
-            new LinearConstraint(particles[0], particles[particles.length - m]),
-            new LinearConstraint(particles[particles.length - m], particles[m - 1]),
-            new LinearConstraint(particles[m - 1], particles[particles.length - 1]),
-            new LinearConstraint(particles[particles.length - m], particles[particles.length - 1]),
-        );
-    }
-
-    return new Body(particles, constraints);
-}
 
 function handleKeyDown(e: KeyboardEvent) {
     if (e.code == 'Space') {
