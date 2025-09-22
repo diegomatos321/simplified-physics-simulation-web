@@ -23,7 +23,7 @@ export default class Engine {
     protected NUM_ITERATIONS: number = 3;
 
     constructor(
-        public worldBoundings: number[],
+        public worldBoundings: { top: [number, number]; right: [number, number] },
         public engineMode: Mode = Mode.GjkEpa,
     ) {}
 
@@ -83,7 +83,9 @@ export default class Engine {
             const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
             vec3.copy(particle.oldPosition, particle.position);
 
-            const acc = vec3.scale(vec3.create(), this.gravity, dt * dt);
+            const drag = vec3.fromValues(-10 * velocity[0], -10 * velocity[1], 0);
+            const acc = vec3.add(vec3.create(), drag, this.gravity);
+            vec3.scale(acc, acc, dt * dt);
 
             // pos = pos + velocity + acc
             vec3.add(particle.position, particle.position, velocity);
@@ -99,8 +101,8 @@ export default class Engine {
     satisfyConstraints(body: Body) {
         for (let i = 0; i < this.NUM_ITERATIONS; i++) {
             for (const particle of body.particles) {
-                let x = Math.max(Math.min(particle.position[0], this.worldBoundings[0] / 2), -this.worldBoundings[0] / 2);
-                let y = Math.max(Math.min(particle.position[1], this.worldBoundings[1] / 2), -this.worldBoundings[1] / 2);
+                let x = Math.max(Math.min(particle.position[0], this.worldBoundings.right[0]), this.worldBoundings.top[0]);
+                let y = Math.max(Math.min(particle.position[1], this.worldBoundings.right[1]), this.worldBoundings.top[1]);
                 vec3.set(particle.position, x, y, 0);
             }
 

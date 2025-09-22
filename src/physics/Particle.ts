@@ -7,7 +7,6 @@ export default class Particle {
     public color = [0, 0, 1, 1];
 
     constructor(public position: vec3) {
-        this.position = position;
         vec3.copy(this.oldPosition, this.position);
     }
 

@@ -20,7 +20,7 @@
 
                 <div>
                     <label for="pauseOnCollision">Pause on Collision</label>
-                    <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-model="pauseOnCollision" />
+                    <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
                 </div>
             </div>
         </div>
@@ -34,17 +34,16 @@ import Engine from '@/core/Engine';
 import PolygonBody from '@/physics/polygons/PolygonBody';
 import Body from '@/physics/Body';
 import { vec3 } from 'gl-matrix';
-import Particle from '@/physics/Particle';
-import type IConstraint from '@/physics/constraints/IConstraint';
-import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import PentagonBody from '@/physics/polygons/PentagonBody';
 import TrellisBody from '@/physics/TrellisBody';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
-let engine = new Engine([600, 600]);
-let debug = true,
-    pauseOnCollision = false;
+let engine = new Engine({
+    top: [-300, -300],
+    right: [300, 300],
+});
+let debug = false;
 let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
 const fps = ref(0);
@@ -195,6 +194,10 @@ onBeforeUnmount(() => {
 
     window.removeEventListener('keydown', handleKeyDown);
 });
+
+function OnPauseCollisionBtn() {
+    engine.pauseOnCollision = !engine.pauseOnCollision;
+}
 
 function handleKeyDown(e: KeyboardEvent) {
     if (e.code == 'Space') {
