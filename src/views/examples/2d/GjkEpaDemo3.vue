@@ -31,10 +31,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import p5 from 'p5';
 import Engine from '@/core/Engine';
-import PolygonBody from '@/physics/polygons/PolygonBody';
+import PolygonBody from '@/physics/PolygonBody';
 import Body from '@/physics/Body';
 import { vec3 } from 'gl-matrix';
-import PentagonBody from '@/physics/polygons/PentagonBody';
 import TrellisBody from '@/physics/TrellisBody';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
@@ -98,7 +97,7 @@ async function setup(p: p5) {
         body: cloth,
     });
 
-    const pentagonPoly = new PentagonBody(0, -100, 50);
+    const pentagonPoly = PolygonBody.PolygonBuilder(0, -100, 50, 5);
     const triangulation3 = pentagonPoly.triangulation();
     engine.bodies.push(pentagonPoly);
     entities.push({

@@ -1,4 +1,4 @@
-import type PolygonBody from '@/physics/polygons/PolygonBody';
+import type PolygonBody from '@/physics/PolygonBody';
 import { vec3 } from 'gl-matrix';
 
 export function support(shape1: PolygonBody, shape2: PolygonBody, d: vec3): vec3 {

@@ -1,5 +1,5 @@
 import Body from '@/physics/Body';
-import PolygonBody from '@/physics/polygons/PolygonBody';
+import PolygonBody from '@/physics/PolygonBody';
 import gjk from '@/physics/collision/gjk';
 import { epa } from '@/physics/collision/epa';
 import { vec3 } from 'gl-matrix';

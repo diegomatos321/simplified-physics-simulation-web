@@ -2,16 +2,15 @@ import Particle from '@/physics/Particle';
 import IConstraint from '@/physics/constraints/IConstraint';
 import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import Projection from '@/physics/Projection';
-import Body from '../Body';
+import Body from './Body';
 import { vec3 } from 'gl-matrix';
 import earcut from 'earcut';
 
 export default class PolygonBody extends Body {
     public wireframe: boolean = false;
 
-    constructor(vertex_positions: number[][], restitution: number = 0.5) {
-        // 1. Setup Particles and Constraints (Physics)
-        const particles = vertex_positions.map((v) => new Particle(vec3.fromValues(v[0], v[1], 0)));
+    constructor(particles: Particle[], restitution: number = 0.5) {
+        // 1. Setup Constrains
         const constraints: IConstraint[] = [];
 
         // Create constraints for the outer edges
@@ -27,7 +26,17 @@ export default class PolygonBody extends Body {
             const p2 = particles[(i + 2) % particles.length];
             constraints.push(new LinearConstraint(p1, p2));
         }
-        super(particles, constraints, restitution);
+        super(particles, constraints);
+    }
+
+    static PolygonBuilder(x: number, y: number, size: number, k: number, restitution: number = 0.5) {
+        const particles: Particle[] = [];
+        for (let i = 0; i < k; i++) {
+            const angle = (i / k) * 2 * Math.PI; // Start from right
+            particles.push(new Particle(vec3.fromValues(x + size * Math.cos(angle), y + size * Math.sin(angle), 0)));
+        }
+
+        return new PolygonBody(particles, restitution);
     }
 
     triangulation(): { uvs: [number, number][]; indices: number[] } {

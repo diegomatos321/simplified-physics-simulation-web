@@ -1,4 +1,4 @@
-import type PolygonBody from '@/physics/polygons/PolygonBody';
+import type PolygonBody from '@/physics/PolygonBody';
 import { support, tripleProduct } from './utils';
 import { vec3 } from 'gl-matrix';
 

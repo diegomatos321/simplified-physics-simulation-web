@@ -28,13 +28,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import p5 from 'p5';
-import TriangleBody from '@/physics/polygons/TriangleBody';
-import RectangleBody from '@/physics/polygons/RectangleBody';
-import PentagonBody from '@/physics/polygons/PentagonBody';
-import HexagonBody from '@/physics/polygons/HexagonBody';
+import TriangleBody from '@/physics/TriangleBody';
+import RectangleBody from '@/physics/RectangleBody';
 import Engine from '@/core/Engine';
 import type Body from '@/physics/Body';
-import PolygonBody from '@/physics/polygons/PolygonBody';
+import PolygonBody from '@/physics/PolygonBody';
 import { vec3 } from 'gl-matrix';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
@@ -43,8 +41,7 @@ let engine = new Engine({
     top: [-300, -300],
     right: [300, 300],
 });
-let debug = false,
-    pauseOnCollision = false;
+let debug = false;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
 const fps = ref(0);
@@ -79,9 +76,9 @@ async function setup(p: p5) {
         } else if (type <= 0.5) {
             body = new RectangleBody(x, y, 100, 50);
         } else if (type <= 0.75) {
-            body = new PentagonBody(x, y, 50);
+            body = PolygonBody.PolygonBuilder(x, y, 50, 5);
         } else {
-            body = new HexagonBody(x, y, 50);
+            body = PolygonBody.PolygonBuilder(x, y, 50, 6);
         }
 
         engine.bodies.push(body);

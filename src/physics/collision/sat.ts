@@ -1,4 +1,4 @@
-import type PolygonBody from '@/physics/polygons/PolygonBody';
+import type PolygonBody from '@/physics/PolygonBody';
 import { vec3 } from 'gl-matrix';
 
 export default function sat(shapeA: PolygonBody, shapeB: PolygonBody) {
