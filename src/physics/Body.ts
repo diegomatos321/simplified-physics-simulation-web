@@ -12,7 +12,6 @@ export default abstract class Body {
     constructor(
         public particles: Particle[] = [],
         public constraints: IConstraint[] = [],
-        protected restitution: number = 0.5,
     ) {}
 
     abstract triangulation(): {

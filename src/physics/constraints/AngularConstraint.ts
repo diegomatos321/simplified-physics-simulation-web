@@ -1,12 +1,11 @@
 import type Particle from '../Particle';
 import IConstraint from './IConstraint';
-import * as twgl from 'twgl.js';
 
 export default class AngularConstraint extends IConstraint {
     isActive = true;
 
-    constructor(gl: WebGLRenderingContext, p0: Particle, p1: Particle, restitution = 0.5) {
-        super(gl, p0, p1, restitution);
+    constructor(p0: Particle, p1: Particle, restitution = 0.5) {
+        super(p0, p1, restitution);
 
         this.relax();
     }
