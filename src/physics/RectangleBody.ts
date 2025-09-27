@@ -1,4 +1,3 @@
-import LinearConstraint from '@/physics/constraints/LinearConstraint';
 import PolygonBody from './PolygonBody';
 import Particle from './Particle';
 import { vec3 } from 'gl-matrix';

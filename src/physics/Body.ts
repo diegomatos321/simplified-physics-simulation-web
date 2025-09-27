@@ -2,9 +2,10 @@ import { vec3 } from 'gl-matrix';
 import Collider from './Collider';
 import Particle from './Particle';
 import type IConstraint from './constraints/IConstraint';
+import AABB from '@/core/AABB';
 
 export default abstract class Body {
-    public colliders: Collider[] = [];
+    // public colliders: Collider[] = [];
 
     // cache convex hull
     public _convexHull: Particle[] | null = null;
@@ -18,6 +19,33 @@ export default abstract class Body {
         uvs: [number, number][];
         indices: number[];
     };
+
+    public getAABB(): AABB {
+        let minX = Number.POSITIVE_INFINITY,
+            minY = Number.POSITIVE_INFINITY,
+            maxX = Number.NEGATIVE_INFINITY,
+            maxY = Number.NEGATIVE_INFINITY;
+
+        for (const particle of this.particles) {
+            const x = particle.position[0];
+            const y = particle.position[1];
+
+            if (x < minX) {
+                minX = x;
+            }
+            if (x > maxX) {
+                maxX = x;
+            }
+            if (y < minY) {
+                minY = y;
+            }
+            if (y > maxY) {
+                maxY = y;
+            }
+        }
+
+        return new AABB(vec3.fromValues(minX, minY, 0), vec3.fromValues(minX, minY, 0));
+    }
 
     // Compute the convex hull of the body using quickhull algorithm
     convexHull(): Particle[] {
