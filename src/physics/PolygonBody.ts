@@ -1,10 +1,10 @@
+import { vec3 } from 'gl-matrix';
+import earcut from 'earcut';
 import Particle from '@/physics/Particle';
 import IConstraint from '@/physics/constraints/IConstraint';
 import LinearConstraint from '@/physics/constraints/LinearConstraint';
-import Projection from '@/physics/Projection';
 import Body from './Body';
-import { vec3 } from 'gl-matrix';
-import earcut from 'earcut';
+import Projection from '@/physics/Projection';
 
 export default class PolygonBody extends Body {
     public wireframe: boolean = false;
@@ -47,21 +47,21 @@ export default class PolygonBody extends Body {
             maxX = -Infinity,
             maxY = -Infinity;
 
-        for (const particle of convexHull) {
+        for (const particle of convexHull.particles) {
             minX = Math.min(minX, particle.position[0]);
             minY = Math.min(minY, particle.position[1]);
             maxX = Math.max(maxX, particle.position[0]);
             maxY = Math.max(maxY, particle.position[1]);
         }
 
-        const uvs: [number, number][] = convexHull.map((particle) => {
+        const uvs: [number, number][] = convexHull.particles.map((particle) => {
             const x = particle.position[0];
             const y = particle.position[1];
 
             return [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)];
         }); // Automatic Triangulation with Earcut
 
-        const flattened_vertices = convexHull.map((p) => [p.position[0], p.position[1]]).flat();
+        const flattened_vertices = convexHull.particles.map((p) => [p.position[0], p.position[1]]).flat();
 
         const indices = earcut(flattened_vertices);
 
@@ -72,8 +72,8 @@ export default class PolygonBody extends Body {
     }
 
     // The convex of a polygon is itself
-    convexHull(): Particle[] {
-        return this.particles;
+    convexHull(): PolygonBody {
+        return this;
     }
 
     axes(): vec3[] {

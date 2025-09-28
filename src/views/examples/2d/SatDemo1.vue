@@ -1,4 +1,9 @@
-<style></style>
+<style>
+canvas {
+    will-change: transform;
+    transform: translateZ(0);
+}
+</style>
 
 <template>
     <div class="container mx-auto">
@@ -29,12 +34,12 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { vec3 } from 'gl-matrix';
 import p5 from 'p5';
-import TriangleBody from '@/physics/TriangleBody';
-import RectangleBody from '@/physics/RectangleBody';
 import type Body from '@/physics/Body';
 import PolygonBody from '@/physics/PolygonBody';
-import { vec3 } from 'gl-matrix';
+import TriangleBody from '@/physics/TriangleBody';
+import RectangleBody from '@/physics/RectangleBody';
 import Engine, { Mode } from '@/core/Engine';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
@@ -46,7 +51,7 @@ let engine = new Engine(
     },
     Mode.Sat,
 );
-let debug = false;
+let debug = true;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
 const fps = ref(0);
@@ -70,20 +75,20 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 50; i++) {
         const x = Math.random() * p.width - p.width / 2;
         const y = Math.random() * p.height - p.height / 2;
 
         const type = Math.random();
         let body;
         if (type <= 0.25) {
-            body = new TriangleBody(x, y, 50);
+            body = new TriangleBody(x, y, 20);
         } else if (type <= 0.5) {
-            body = new RectangleBody(x, y, 100, 50);
+            body = new RectangleBody(x, y, 20, 15);
         } else if (type <= 0.75) {
-            body = PolygonBody.PolygonBuilder(x, y, 50, 5);
+            body = PolygonBody.PolygonBuilder(x, y, 20, 5);
         } else {
-            body = PolygonBody.PolygonBuilder(x, y, 50, 6);
+            body = PolygonBody.PolygonBuilder(x, y, 20, 6);
         }
 
         engine.bodies.push(body);
@@ -103,43 +108,65 @@ function loop(p: p5) {
 
     engine.step(p.deltaTime / 1000);
 
-    for (const entity of entities) {
-        if (debug) {
-            // Draw constraints
-            p.stroke(0, 0, 0);
-            p.strokeWeight(1);
+    if (debug) {
+        // Batch all line draw constraints
+        p.stroke(0, 0, 0);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const entity of entities) {
             for (const constraint of entity.body.constraints) {
-                p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
+                // p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
+                p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
+                p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
             }
+        }
+        p.endShape();
 
-            for (const collider of entity.body.colliders) {
-                p.stroke(150, 200, 255);
-                p.strokeWeight(2);
-                const convexHull = entity.body.convexHull();
-                for (let i = 0; i < convexHull.length; i++) {
-                    const v1 = convexHull[i];
-                    const v2 = convexHull[(i + 1) % convexHull.length];
-                    p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
-                }
+        // Batch draw all convex hull in blue
+        p.stroke(150, 200, 255);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const colliderInfo of engine.collidersInfo) {
+            const body = engine.bodies[colliderInfo.bodyIndex];
+            const convexHull = body.convexHull();
 
-                const bodyHull = new PolygonBody([]);
-                bodyHull.particles = convexHull;
-                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
-                for (const particle of edge) {
-                    p.noStroke();
-                    p.stroke(255, 0, 0);
-                    p.strokeWeight(5);
-                    p.point(particle.position[0], particle.position[1]);
-
-                    p.stroke(255, 0, 0);
-                    p.strokeWeight(1);
-
-                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), 20);
-                    const p2 = vec3.add(vec3.create(), particle.position, delta);
-                    p.line(particle.position[0], particle.position[1], p2[0], p2[1]);
-                }
+            for (let i = 0; i < convexHull.particles.length; i++) {
+                const v1 = convexHull.particles[i];
+                const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
+                // p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
+                p.vertex(v1.position[0], v1.position[1]);
+                p.vertex(v2.position[0], v2.position[1]);
             }
-        } else {
+        }
+        p.endShape();
+
+        // Batch draw all contact points in red
+        p.stroke(255, 0, 0);
+        p.strokeWeight(2);
+        p.beginShape(p.POINTS);
+        for (const colliderInfo of engine.collidersInfo) {
+            // Draw object convex hull in blue
+            const body = engine.bodies[colliderInfo.bodyIndex];
+            const convexHull = body.convexHull();
+
+            // Draw the contact points and normal direction
+            // let edge = convexHull.getFarthestEdgeInDirection(vec3.negate(vec3.create(), colliderInfo.collider.normal));
+            for (const particle of colliderInfo.contactPoints) {
+                // p.point(particle.position[0], particle.position[1]);
+                p.vertex(particle.position[0], particle.position[1]);
+
+                // Draw direction of separation
+                // p.stroke(255, 0, 0);
+                // p.strokeWeight(1);
+
+                // const delta = vec3.scale(vec3.create(), colliderInfo.normal, 20);
+                // const p2 = vec3.add(vec3.create(), particle.position, delta);
+                // p.line(particle.position[0], particle.position[1], p2[0], p2[1]);
+            }
+        }
+        p.endShape();
+    } else {
+        for (const entity of entities) {
             p.texture(texture);
             p.textureMode(p.NORMAL);
             p.noStroke();

@@ -1,14 +1,15 @@
 import { vec3 } from 'gl-matrix';
-import Collider from './Collider';
 import Particle from './Particle';
 import type IConstraint from './constraints/IConstraint';
 import AABB from '@/core/AABB';
+import PolygonBody from './PolygonBody';
 
 export default abstract class Body {
     // public colliders: Collider[] = [];
 
     // cache convex hull
-    public _convexHull: Particle[] | null = null;
+    public _convexHull: PolygonBody | null = null;
+    public aabb: AABB | null = null;
 
     constructor(
         public particles: Particle[] = [],
@@ -21,6 +22,10 @@ export default abstract class Body {
     };
 
     public getAABB(): AABB {
+        if (this.aabb) {
+            return this.aabb;
+        }
+
         let minX = Number.POSITIVE_INFINITY,
             minY = Number.POSITIVE_INFINITY,
             maxX = Number.NEGATIVE_INFINITY,
@@ -44,18 +49,22 @@ export default abstract class Body {
             }
         }
 
-        return new AABB(vec3.fromValues(minX, minY, 0), vec3.fromValues(minX, minY, 0));
+        this.aabb = new AABB(vec3.fromValues(minX, minY, 0), vec3.fromValues(maxX, maxY, 0));
+        return this.aabb;
     }
 
     // Compute the convex hull of the body using quickhull algorithm
-    convexHull(): Particle[] {
+    convexHull(): PolygonBody {
         if (this._convexHull) {
             return this._convexHull;
         }
 
         // The convex hull is not defined by less than 3 points
         if (this.particles.length < 3) {
-            return this.particles;
+            // Initialize with empty particles to avoid constraints creation
+            this._convexHull = new PolygonBody([]);
+            this._convexHull.particles = this.particles;
+            return this._convexHull;
         }
 
         const candidates: Particle[] = this.particles.slice(); // A reference copy of the particles objects
@@ -91,8 +100,11 @@ export default abstract class Body {
         if (allColinear) {
             // ordenar por x então y e retornar extremos
             const sorted = candidates.slice().sort((a, b) => a.position[0] - b.position[0] || a.position[1] - b.position[1]);
+
             // retorne linha de um extremo ao outro (não repetir)
-            return [sorted[0], sorted[sorted.length - 1]];
+            this._convexHull = new PolygonBody([]);
+            this._convexHull.particles = [sorted[0], sorted[sorted.length - 1]];
+            return this._convexHull;
         }
 
         //  3. Init hull with pmin and pmax
@@ -118,8 +130,10 @@ export default abstract class Body {
         this.quickhull(pmin, pmax, above, convexHull);
         this.quickhull(pmin, pmax, bellow, convexHull);
 
-        this._convexHull = convexHull;
-        return convexHull;
+        // Initialize with empty particles to avoid constraints creation
+        this._convexHull = new PolygonBody([]);
+        this._convexHull.particles = convexHull;
+        return this._convexHull;
     }
 
     protected quickhull(p0: Particle, p1: Particle, candidates: Particle[], hull: Particle[]) {

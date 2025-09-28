@@ -1,9 +1,7 @@
 import Body from '@/physics/Body';
-import PolygonBody from '@/physics/PolygonBody';
 import gjk from '@/physics/collision/gjk';
 import { epa } from '@/physics/collision/epa';
 import { vec3 } from 'gl-matrix';
-import Collider from '@/physics/Collider';
 import sat from '@/physics/collision/sat';
 import ColliderInfo from './ColliderInfo';
 
@@ -42,6 +40,8 @@ export default class Engine {
 
         // Reset contact list
         this.contactPairs.length = 0;
+        this.collidersInfo.length = 0;
+
         // for (const body of this.bodies) {
         //     body._convexHull = null;
         //     body.colliders = [];
@@ -106,6 +106,10 @@ export default class Engine {
             for (let j = i + 1; j < this.bodies.length; j++) {
                 const bodyB = this.bodies[j];
 
+                // Invalidate aabb cache
+                bodyA.aabb = null;
+                bodyB.aabb = null;
+
                 const boundingBoxA = bodyA.getAABB();
                 const boundingBoxB = bodyB.getAABB();
 
@@ -124,38 +128,29 @@ export default class Engine {
             const bodyA = this.bodies[i];
             const bodyB = this.bodies[j];
 
+            // Invalidate convexhull cache
             bodyA._convexHull = null;
             bodyB._convexHull = null;
 
             const convexHullA = bodyA.convexHull();
             const convexHullB = bodyB.convexHull();
 
-            const polygonA = new PolygonBody([]);
-            polygonA.particles = convexHullA;
-            const polygonB = new PolygonBody([]);
-            polygonB.particles = convexHullB;
-
+            // The direction of the separation plane goes from A to B
+            // So the separation required for A is in the oppositive direction
             if (this.engineMode === Mode.GjkEpa) {
-                const hit = gjk(polygonA, polygonB);
+                const hit = gjk(convexHullA, convexHullB);
                 if (hit) {
-                    const mvp = epa(polygonA, polygonB, hit);
-                    this.collidersInfo.push(
-                        new ColliderInfo(i, new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth / 2)),
-                        new ColliderInfo(j, new Collider(mvp.normal, mvp.depth / 2)),
-                    );
-                    // bodyA.colliders.push(new Collider(mvp.normal, mvp.depth));
-                    // bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), mvp.normal), mvp.depth));
+                    const mvp = epa(convexHullA, convexHullB, hit);
+                    const colliderA = new ColliderInfo(i, vec3.negate(vec3.create(), mvp.normal), mvp.depth);
+                    const colliderB = new ColliderInfo(j, mvp.normal, mvp.depth);
+                    this.collidersInfo.push(colliderA, colliderB);
                 }
             } else if (this.engineMode === Mode.Sat) {
-                const hit = sat(polygonA, polygonB);
+                const hit = sat(convexHullA, convexHullB);
                 if (hit) {
-                    this.collidersInfo.push(
-                        new ColliderInfo(i, new Collider(vec3.negate(vec3.create(), hit.normal), hit.depth / 2)),
-                        new ColliderInfo(j, new Collider(hit.normal, hit.depth / 2)),
-                    );
-
-                    // bodyA.colliders.push(new Collider(hit.normal, hit.depth));
-                    // bodyB.colliders.push(new Collider(vec3.negate(vec3.create(), hit.normal), hit.depth));
+                    const colliderA = new ColliderInfo(i, vec3.negate(vec3.create(), hit.normal), hit.depth);
+                    const colliderB = new ColliderInfo(j, hit.normal, hit.depth);
+                    this.collidersInfo.push(colliderA, colliderB);
                 }
             }
         }
@@ -163,20 +158,23 @@ export default class Engine {
 
     public resolveCollisions() {
         for (const c of this.collidersInfo) {
+            const body = this.bodies[c.bodyIndex];
+
+            // The separation direction is pointing away from the colliding points
+            // We should look for the contact edges on the oppositive direction
+            const convexHull = body.convexHull();
+            let edge = convexHull.getFarthestEdgeInDirection(vec3.negate(vec3.create(), c.normal));
+            c.contactPoints = edge;
+
             if (this.pauseOnCollision && this.skip === false) {
                 this.isPaused = true;
-                break;
+                // Should not resolve collision, just pause the simulation
+                // however you need to calculate all the contact points for
+                // rendering debug
+                continue;
             }
-
-            const body = this.bodies[c.bodyIndex];
-            const collider = c.collider;
-
-            const convexHull = body.convexHull();
-            const bodyHull = new PolygonBody([]);
-            bodyHull.particles = convexHull;
-            let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
             for (const particle of edge) {
-                const delta = vec3.scale(vec3.create(), collider.normal, collider.depth);
+                const delta = vec3.scale(vec3.create(), c.normal, c.depth);
 
                 particle.move(delta);
             }
