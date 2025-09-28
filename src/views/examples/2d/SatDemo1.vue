@@ -115,56 +115,54 @@ function loop(p: p5) {
         p.beginShape(p.LINES);
         for (const entity of entities) {
             for (const constraint of entity.body.constraints) {
-                // p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
                 p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
                 p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
             }
         }
         p.endShape();
 
-        // Batch draw all convex hull in blue
-        p.stroke(150, 200, 255);
-        p.strokeWeight(1);
-        p.beginShape(p.LINES);
-        for (const colliderInfo of engine.collidersInfo) {
-            const body = engine.bodies[colliderInfo.bodyIndex];
-            const convexHull = body.convexHull();
+        // // Batch draw all convex hull in blue
+        // p.stroke(150, 200, 255);
+        // p.strokeWeight(1);
+        // p.beginShape(p.LINES);
+        // for (const colliderInfo of engine.collidersInfo) {
+        //     const body = engine.bodies[colliderInfo.bodyIndex];
+        //     const convexHull = body.convexHull();
 
-            for (let i = 0; i < convexHull.particles.length; i++) {
-                const v1 = convexHull.particles[i];
-                const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
-                // p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
-                p.vertex(v1.position[0], v1.position[1]);
-                p.vertex(v2.position[0], v2.position[1]);
-            }
-        }
-        p.endShape();
+        //     for (let i = 0; i < convexHull.particles.length; i++) {
+        //         const v1 = convexHull.particles[i];
+        //         const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
+        //         p.vertex(v1.position[0], v1.position[1]);
+        //         p.vertex(v2.position[0], v2.position[1]);
+        //     }
+        // }
+        // p.endShape();
 
-        // Batch draw all contact points in red
-        p.stroke(255, 0, 0);
-        p.strokeWeight(2);
-        p.beginShape(p.POINTS);
-        for (const colliderInfo of engine.collidersInfo) {
-            // Draw object convex hull in blue
-            const body = engine.bodies[colliderInfo.bodyIndex];
-            const convexHull = body.convexHull();
+        // // Batch draw all contact points in red
+        // p.stroke(255, 0, 0);
+        // p.strokeWeight(2);
+        // p.beginShape(p.POINTS);
+        // for (const colliderInfo of engine.collidersInfo) {
+        //     // Draw the contact points and normal direction
+        //     for (const particle of colliderInfo.contactPoints) {
+        //         p.vertex(particle.position[0], particle.position[1]);
+        //     }
+        // }
+        // p.endShape();
 
-            // Draw the contact points and normal direction
-            // let edge = convexHull.getFarthestEdgeInDirection(vec3.negate(vec3.create(), colliderInfo.collider.normal));
-            for (const particle of colliderInfo.contactPoints) {
-                // p.point(particle.position[0], particle.position[1]);
-                p.vertex(particle.position[0], particle.position[1]);
-
-                // Draw direction of separation
-                // p.stroke(255, 0, 0);
-                // p.strokeWeight(1);
-
-                // const delta = vec3.scale(vec3.create(), colliderInfo.normal, 20);
-                // const p2 = vec3.add(vec3.create(), particle.position, delta);
-                // p.line(particle.position[0], particle.position[1], p2[0], p2[1]);
-            }
-        }
-        p.endShape();
+        // // Batch draw all separation normals in red
+        // p.stroke(255, 0, 0);
+        // p.strokeWeight(1);
+        // p.beginShape(p.LINES);
+        // for (const colliderInfo of engine.collidersInfo) {
+        //     for (const particle of colliderInfo.contactPoints) {
+        //         const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
+        //         const p2 = vec3.add(vec3.create(), particle.position, delta);
+        //         p.vertex(particle.position[0], particle.position[1]);
+        //         p.vertex(p2[0], p2[1]);
+        //     }
+        // }
+        // p.endShape();
     } else {
         for (const entity of entities) {
             p.texture(texture);
