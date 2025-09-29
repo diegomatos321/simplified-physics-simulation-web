@@ -3,7 +3,7 @@
 <template>
     <div class="container mx-auto">
         <h1 class="text-3xl"><strong>GJK/EPA Implementation</strong></h1>
-        <p>Trelis body vs Polygon demo</p>
+        <p>Trelis body vs Polygon vs Cloth demo</p>
 
         <div class="flex">
             <div class="relative">
@@ -20,7 +20,7 @@
 
                 <div>
                     <label for="pauseOnCollision">Pause on Collision</label>
-                    <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
+                    <!-- <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" /> -->
                 </div>
             </div>
         </div>
@@ -30,20 +30,20 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import p5 from 'p5';
-import Engine from '@/core/Engine';
-import PolygonBody from '@/physics/PolygonBody';
-import Body from '@/physics/Body';
 import { vec3 } from 'gl-matrix';
+import type Body from '@/physics/Body';
+import PolygonBody from '@/physics/PolygonBody';
 import TrellisBody from '@/physics/TrellisBody';
+import Engine from '@/core/Engine';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine({
-    top: [-300, -300],
-    right: [300, 300],
+    top: [0, 0],
+    right: [600, 600],
 });
-let debug = false;
-let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
+let debug = true;
+let entities: { uvs: number[][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
 const fps = ref(0);
 
@@ -62,11 +62,11 @@ onMounted(() => {
 async function setup(p: p5) {
     if (sketchContainer.value === null) return;
 
-    p.createCanvas(600, 600, p.WEBGL).parent(sketchContainer.value);
+    p.createCanvas(600, 600).parent(sketchContainer.value);
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    let trelis1 = new TrellisBody(vec3.fromValues(-50, 0, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
+    let trelis1 = new TrellisBody(vec3.fromValues(130, 200, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
     trelis1.particles[0].pinned = true;
     // trelis1.particles[10].pinned = true;
     const triangulation1 = trelis1.triangulation();
@@ -77,7 +77,7 @@ async function setup(p: p5) {
         body: trelis1,
     });
 
-    let trelis2 = new TrellisBody(vec3.fromValues(-50, 200, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
+    let trelis2 = new TrellisBody(vec3.fromValues(50, 400, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
     const triangulation2 = trelis2.triangulation();
     engine.bodies.push(trelis2);
     entities.push({
@@ -85,9 +85,19 @@ async function setup(p: p5) {
         indices: triangulation2.indices,
         body: trelis2,
     });
-    console.log(entities[entities.length - 1]);
 
-    const pentagonPoly = PolygonBody.PolygonBuilder(0, -100, 50, 5);
+    let cloth = new TrellisBody(vec3.fromValues(250, 200, 0), vec3.fromValues(100, 100, 0), 10, 10);
+    cloth.particles[0].pinned = true;
+    cloth.particles[10].pinned = true;
+    const triangulation4 = cloth.triangulation();
+    engine.bodies.push(cloth);
+    entities.push({
+        uvs: triangulation4.uvs,
+        indices: triangulation4.indices,
+        body: cloth,
+    });
+
+    const pentagonPoly = PolygonBody.PolygonBuilder(200, 50, 50, 5);
     const triangulation3 = pentagonPoly.triangulation();
     engine.bodies.push(pentagonPoly);
     entities.push({
@@ -105,57 +115,63 @@ function loop(p: p5) {
 
     engine.step(p.deltaTime / 1000);
 
-    for (const entity of entities) {
-        if (debug) {
-            // Draw constraints
-            p.stroke(0, 0, 0);
-            p.strokeWeight(1);
+    if (debug) {
+        // Batch all line draw constraints
+        p.stroke(0, 0, 0);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const entity of entities) {
             for (const constraint of entity.body.constraints) {
-                p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
+                p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
+                p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
             }
+        }
+        p.endShape();
 
-            // Draw particles
-            p.noStroke();
-            p.fill(0, 0, 255);
-            for (const particle of entity.body.particles) {
-                if (particle.pinned) {
-                    p.stroke(255, 0, 0);
-                    p.strokeWeight(5);
-                    p.point(particle.position[0], particle.position[1]);
-                }
+        // Batch draw all convex hull in blue
+        p.stroke(150, 200, 255);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const colliderInfo of engine.collidersInfo) {
+            const body = engine.bodies[colliderInfo.bodyIndex];
+            const convexHull = body.convexHull();
+
+            for (let i = 0; i < convexHull.particles.length; i++) {
+                const v1 = convexHull.particles[i];
+                const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
+                p.vertex(v1.position[0], v1.position[1]);
+                p.vertex(v2.position[0], v2.position[1]);
             }
+        }
+        p.endShape();
 
-            for (const collider of entity.body.colliders) {
-                // Draw body convex shape
-                p.stroke(150, 200, 255);
-                p.strokeWeight(1);
-                const convexHull = entity.body.convexHull();
-                for (let i = 0; i < convexHull.length; i++) {
-                    const v1 = convexHull[i];
-                    const v2 = convexHull[(i + 1) % convexHull.length];
-                    p.line(v1.position[0], v1.position[1], v2.position[0], v2.position[1]);
-                }
-
-                const bodyHull = new PolygonBody([]);
-                bodyHull.particles = convexHull;
-
-                // Draw points of collision and separation direction
-                let edge = bodyHull.getFarthestEdgeInDirection(collider.normal);
-                for (const particle of edge) {
-                    p.noStroke();
-                    p.stroke(255, 0, 0);
-                    p.strokeWeight(5);
-                    p.point(particle.position[0], particle.position[1]);
-
-                    p.stroke(255, 0, 0);
-                    p.strokeWeight(1);
-
-                    const delta = vec3.scale(vec3.create(), vec3.negate(vec3.create(), collider.normal), 20);
-                    const p2 = vec3.add(vec3.create(), particle.position, delta);
-                    p.line(particle.position[0], particle.position[1], p2[0], p2[1]);
-                }
+        // Batch draw all contact points in red
+        p.stroke(255, 0, 0);
+        p.strokeWeight(2);
+        p.beginShape(p.POINTS);
+        for (const colliderInfo of engine.collidersInfo) {
+            // Draw the contact points and normal direction
+            for (const particle of colliderInfo.contactPoints) {
+                p.vertex(particle.position[0], particle.position[1]);
             }
-        } else {
+        }
+        p.endShape();
+
+        // Batch draw all separation normals in red
+        p.stroke(255, 0, 0);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const colliderInfo of engine.collidersInfo) {
+            for (const particle of colliderInfo.contactPoints) {
+                const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
+                const p2 = vec3.add(vec3.create(), particle.position, delta);
+                p.vertex(particle.position[0], particle.position[1]);
+                p.vertex(p2[0], p2[1]);
+            }
+        }
+        p.endShape();
+    } else {
+        for (const entity of entities) {
             p.texture(texture);
             p.textureMode(p.NORMAL);
             p.noStroke();
@@ -185,13 +201,13 @@ onBeforeUnmount(() => {
 });
 
 function OnPauseCollisionBtn() {
-    engine.pauseOnCollision = !engine.pauseOnCollision;
+    // engine.pauseOnCollision = !engine.pauseOnCollision;
 }
 
 function handleKeyDown(e: KeyboardEvent) {
-    if (e.code == 'Space') {
-        engine.isPaused = !engine.isPaused;
-        engine.skip = !engine.skip;
-    }
+    // if (e.code == 'Space') {
+    //     engine.isPaused = !engine.isPaused;
+    //     engine.skip = !engine.skip;
+    // }
 }
 </script>
