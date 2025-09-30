@@ -4,6 +4,7 @@ import { epa } from '@/physics/collision/epa';
 import { vec3 } from 'gl-matrix';
 import sat from '@/physics/collision/sat';
 import ColliderInfo from './ColliderInfo';
+import GridSpatialPartition from './GridSpatialPartition';
 
 export enum Mode {
     GjkEpa,
@@ -12,9 +13,8 @@ export enum Mode {
 
 export default class Engine {
     public gravity: vec3 = vec3.fromValues(0, 98, 0);
-    public bodies: Body[] = [];
 
-    public contactPairs: [number, number][] = [];
+    public contactPairs: [Body, Body][] = [];
     public collidersInfo: ColliderInfo[] = [];
 
     // Debug states
@@ -22,30 +22,29 @@ export default class Engine {
     public pauseOnCollision: boolean = false;
     public skip: boolean = false;
 
+    protected bodies: Body[] = [];
+    protected spatialPartition: GridSpatialPartition;
     protected NUM_ITERATIONS: number = 3;
 
     constructor(
         public worldBoundings: { top: [number, number]; right: [number, number] },
         public engineMode: Mode = Mode.GjkEpa,
-    ) {}
+    ) {
+        this.spatialPartition = new GridSpatialPartition(10, 10);
+    }
 
     step(dt: number) {
         if (this.isPaused) {
             return;
         }
 
-        for (const body of this.bodies) {
-            this.integrate(body, dt);
-        }
+        // for (const body of this.bodies) {
+        //     this.integrate(body, dt);
+        // }
 
         // Reset contact list
         this.contactPairs.length = 0;
         this.collidersInfo.length = 0;
-
-        // for (const body of this.bodies) {
-        //     body._convexHull = null;
-        //     body.colliders = [];
-        // }
 
         this.broadPhase();
         this.narrowPhase();
@@ -100,21 +99,27 @@ export default class Engine {
     }
 
     public broadPhase() {
-        for (let i = 0; i < this.bodies.length - 1; i++) {
-            const bodyA = this.bodies[i];
+        for (let i = 0; i < this.spatialPartition.nrows; i++) {
+            for (let j = 0; j < this.spatialPartition.ncols; j++) {
+                const bodies = this.spatialPartition.grid[i][j];
 
-            for (let j = i + 1; j < this.bodies.length; j++) {
-                const bodyB = this.bodies[j];
+                for (let ii = 0; ii < bodies.length - 1; ii++) {
+                    const bodyA = bodies[ii];
 
-                // Invalidate aabb cache
-                bodyA.aabb = null;
-                bodyB.aabb = null;
+                    for (let jj = ii + 1; jj < bodies.length; jj++) {
+                        const bodyB = bodies[jj];
 
-                const boundingBoxA = bodyA.getAABB();
-                const boundingBoxB = bodyB.getAABB();
+                        // Invalidate aabb cache
+                        bodyA.aabb = null;
+                        bodyB.aabb = null;
 
-                if (boundingBoxA.intersercts(boundingBoxB)) {
-                    this.contactPairs.push([i, j]);
+                        const boundingBoxA = bodyA.getAABB();
+                        const boundingBoxB = bodyB.getAABB();
+
+                        if (boundingBoxA.intersercts(boundingBoxB)) {
+                            this.contactPairs.push([bodyA, bodyB]);
+                        }
+                    }
                 }
             }
         }
@@ -122,11 +127,8 @@ export default class Engine {
 
     public narrowPhase() {
         for (const pair of this.contactPairs) {
-            const i = pair[0];
-            const j = pair[1];
-
-            const bodyA = this.bodies[i];
-            const bodyB = this.bodies[j];
+            const bodyA = pair[0];
+            const bodyB = pair[1];
 
             // Invalidate convexhull cache
             bodyA._convexHull = null;
@@ -141,15 +143,15 @@ export default class Engine {
                 const hit = gjk(convexHullA, convexHullB);
                 if (hit) {
                     const mvp = epa(convexHullA, convexHullB, hit);
-                    const colliderA = new ColliderInfo(i, vec3.negate(vec3.create(), mvp.normal), mvp.depth);
-                    const colliderB = new ColliderInfo(j, mvp.normal, mvp.depth);
+                    const colliderA = new ColliderInfo(bodyA, vec3.negate(vec3.create(), mvp.normal), mvp.depth);
+                    const colliderB = new ColliderInfo(bodyB, mvp.normal, mvp.depth);
                     this.collidersInfo.push(colliderA, colliderB);
                 }
             } else if (this.engineMode === Mode.Sat) {
                 const hit = sat(convexHullA, convexHullB);
                 if (hit) {
-                    const colliderA = new ColliderInfo(i, vec3.negate(vec3.create(), hit.normal), hit.depth);
-                    const colliderB = new ColliderInfo(j, hit.normal, hit.depth);
+                    const colliderA = new ColliderInfo(bodyA, vec3.negate(vec3.create(), hit.normal), hit.depth);
+                    const colliderB = new ColliderInfo(bodyB, hit.normal, hit.depth);
                     this.collidersInfo.push(colliderA, colliderB);
                 }
             }
@@ -158,11 +160,9 @@ export default class Engine {
 
     public resolveCollisions() {
         for (const c of this.collidersInfo) {
-            const body = this.bodies[c.bodyIndex];
-
             // The separation direction is pointing away from the colliding points
             // We should look for the contact edges on the oppositive direction
-            const convexHull = body.convexHull();
+            const convexHull = c.body.convexHull();
             let edge = convexHull.getFarthestEdgeInDirection(vec3.negate(vec3.create(), c.normal));
             c.contactPoints = edge;
 
@@ -179,5 +179,10 @@ export default class Engine {
                 particle.move(delta);
             }
         }
+    }
+
+    public addBody(body: Body) {
+        this.bodies.push(body);
+        this.spatialPartition.insert(body);
     }
 }

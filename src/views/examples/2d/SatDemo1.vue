@@ -86,7 +86,7 @@ async function setup(p: p5) {
             body = PolygonBody.PolygonBuilder(x, y, 20, 6);
         }
 
-        engine.bodies.push(body);
+        engine.addBody(body);
         const { uvs, indices } = body.triangulation();
         entities.push({
             uvs,
@@ -120,7 +120,8 @@ function loop(p: p5) {
         p.strokeWeight(1);
         p.beginShape(p.LINES);
         for (const colliderInfo of engine.collidersInfo) {
-            const body = engine.bodies[colliderInfo.bodyIndex];
+            // const body = engine.bodies[colliderInfo.bodyIndex];
+            const body = colliderInfo.body;
             const convexHull = body.convexHull();
 
             for (let i = 0; i < convexHull.particles.length; i++) {
