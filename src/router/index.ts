@@ -10,44 +10,15 @@ const router = createRouter({
             component: HomeView,
         },
         {
-            path: '/about',
-            name: 'about',
-            // route level code-splitting
-            // this generates a separate chunk (About.[hash].js) for this route
-            // which is lazy-loaded when the route is visited.
-            component: () => import('../views/AboutView.vue'),
-        },
-        {
-            path: '/demos/2d/sat_demo_1',
-            name: 'sat_demo_1',
-            // route level code-splitting
-            // this generates a separate chunk (About.[hash].js) for this route
-            // which is lazy-loaded when the route is visited.
-            component: () => import('../views/examples/2d/SatDemo1.vue'),
-        },
-        {
-            path: '/demos/2d/gjk_demo_1',
-            name: 'gjk_demo_1',
-            // route level code-splitting
-            // this generates a separate chunk (About.[hash].js) for this route
-            // which is lazy-loaded when the route is visited.
-            component: () => import('../views/examples/2d/GjkEpaDemo1.vue'),
-        },
-        {
-            path: '/demos/2d/gjk_demo_2',
-            name: 'gjk_demo_2',
-            // route level code-splitting
-            // this generates a separate chunk (About.[hash].js) for this route
-            // which is lazy-loaded when the route is visited.
-            component: () => import('../views/examples/2d/GjkEpaDemo2.vue'),
-        },
-        {
-            path: '/demos/2d/jelly-car',
-            name: 'jelly-car',
-            // route level code-splitting
-            // this generates a separate chunk (About.[hash].js) for this route
-            // which is lazy-loaded when the route is visited.
-            component: () => import('../views/examples/2d/JellyCar.vue'),
+            path: '/demos',
+            name: 'demos',
+            children: [
+                {
+                    path: 'polygon-chaos',
+                    name: 'polygon_chaos',
+                    component: () => import('../views/examples/2d/PolygonChaos.vue'),
+                },
+            ],
         },
     ],
 });

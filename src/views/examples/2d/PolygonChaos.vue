@@ -2,7 +2,7 @@
 
 <template>
     <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>SAT Engine</strong></h1>
+        <h1 class="text-3xl"><strong>Polygon Chaos</strong></h1>
         <p>Polygons vs Polygons demo</p>
 
         <div class="flex">
@@ -54,6 +54,7 @@ import PolygonBody from '@/physics/PolygonBody';
 import TriangleBody from '@/physics/TriangleBody';
 import RectangleBody from '@/physics/RectangleBody';
 import Engine, { BroadPhaseMode, CollisionDetectionMode } from '@/core/Engine';
+import { vec3 } from 'gl-matrix';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
@@ -135,49 +136,49 @@ function loop(p: p5) {
         }
         p.endShape();
 
-        // // Batch draw all convex hull in blue
-        // p.stroke(150, 200, 255);
-        // p.strokeWeight(1);
-        // p.beginShape(p.LINES);
-        // for (const colliderInfo of engine.collidersInfo) {
-        //     // const body = engine.bodies[colliderInfo.bodyIndex];
-        //     const body = colliderInfo.body;
-        //     const convexHull = body.convexHull();
+        // Batch draw all convex hull in blue
+        p.stroke(150, 200, 255);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const colliderInfo of engine.collidersInfo) {
+            // const body = engine.bodies[colliderInfo.bodyIndex];
+            const body = colliderInfo.body;
+            const convexHull = body.convexHull();
 
-        //     for (let i = 0; i < convexHull.particles.length; i++) {
-        //         const v1 = convexHull.particles[i];
-        //         const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
-        //         p.vertex(v1.position[0], v1.position[1]);
-        //         p.vertex(v2.position[0], v2.position[1]);
-        //     }
-        // }
-        // p.endShape();
+            for (let i = 0; i < convexHull.particles.length; i++) {
+                const v1 = convexHull.particles[i];
+                const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
+                p.vertex(v1.position[0], v1.position[1]);
+                p.vertex(v2.position[0], v2.position[1]);
+            }
+        }
+        p.endShape();
 
-        // // Batch draw all contact points in red
-        // p.stroke(255, 0, 0);
-        // p.strokeWeight(2);
-        // p.beginShape(p.POINTS);
-        // for (const colliderInfo of engine.collidersInfo) {
-        //     // Draw the contact points and normal direction
-        //     for (const particle of colliderInfo.contactPoints) {
-        //         p.vertex(particle.position[0], particle.position[1]);
-        //     }
-        // }
-        // p.endShape();
+        // Batch draw all contact points in red
+        p.stroke(255, 0, 0);
+        p.strokeWeight(2);
+        p.beginShape(p.POINTS);
+        for (const colliderInfo of engine.collidersInfo) {
+            // Draw the contact points and normal direction
+            for (const particle of colliderInfo.contactPoints) {
+                p.vertex(particle.position[0], particle.position[1]);
+            }
+        }
+        p.endShape();
 
-        // // Batch draw all separation normals in red
-        // p.stroke(255, 0, 0);
-        // p.strokeWeight(1);
-        // p.beginShape(p.LINES);
-        // for (const colliderInfo of engine.collidersInfo) {
-        //     for (const particle of colliderInfo.contactPoints) {
-        //         const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
-        //         const p2 = vec3.add(vec3.create(), particle.position, delta);
-        //         p.vertex(particle.position[0], particle.position[1]);
-        //         p.vertex(p2[0], p2[1]);
-        //     }
-        // }
-        // p.endShape();
+        // Batch draw all separation normals in red
+        p.stroke(255, 0, 0);
+        p.strokeWeight(1);
+        p.beginShape(p.LINES);
+        for (const colliderInfo of engine.collidersInfo) {
+            for (const particle of colliderInfo.contactPoints) {
+                const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
+                const p2 = vec3.add(vec3.create(), particle.position, delta);
+                p.vertex(particle.position[0], particle.position[1]);
+                p.vertex(p2[0], p2[1]);
+            }
+        }
+        p.endShape();
     } else {
         p.texture(texture);
         p.textureMode(p.NORMAL);

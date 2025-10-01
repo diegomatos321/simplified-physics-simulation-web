@@ -3,22 +3,25 @@ import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
-    <header>
-        <div class="container mx-auto flex px-4 py-2 gap-4">
+    <header class="mb-8">
+        <div class="container mx-auto flex px-4 py-2 justify-between">
             <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="32" height="32" />
 
-            <nav class="flex gap-2">
-                <RouterLink to="/">Home</RouterLink>
-                <RouterLink to="/about">About</RouterLink>
-                <RouterLink to="/demos/2d/sat_demo_1">Sat Demo 1</RouterLink>
-                <RouterLink to="/demos/2d/gjk_demo_1">Gjk Epa Demo 1</RouterLink>
-                <RouterLink to="/demos/2d/gjk_demo_2">Gjk Epa Demo 2</RouterLink>
-                <RouterLink to="/demos/2d/gjk_demo_3">Gjk Epa Demo 3</RouterLink>
-            </nav>
+            <div><a href="https://www.devdiegomatos.com.br">Autor: Diego V. S. de Matos</a></div>
         </div>
     </header>
 
-    <RouterView />
+    <div class="grid grid-cols-4">
+        <aside class="col-span-1">
+            <li>
+                <RouterLink to="/">Home</RouterLink>
+            </li>
+            <li>
+                <RouterLink to="/demos/polygon-chaos">Polygon Chaos</RouterLink>
+            </li>
+        </aside>
+        <main class="col-span-3 p-4">
+            <RouterView />
+        </main>
+    </div>
 </template>
-
-<style scoped></style>
