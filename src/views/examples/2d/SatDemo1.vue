@@ -70,29 +70,35 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    for (let i = 0; i < 120; i++) {
-        const x = Math.random() * p.width;
-        const y = Math.random() * p.height;
+    const cellsize = 50;
+    const nrows = 600 / cellsize;
+    const ncols = 600 / cellsize;
+    for (let i = 0; i < nrows - 1; i++) {
+        for (let j = 0; j < ncols - 1; j++) {
+            const x = 50 + j * cellsize;
+            const y = 50 + i * cellsize;
+            // const x = 50 + (i % 20) * 50;
 
-        const type = Math.random();
-        let body;
-        if (type <= 0.25) {
-            body = new TriangleBody(x, y, 20);
-        } else if (type <= 0.5) {
-            body = new RectangleBody(x, y, 20, 15);
-        } else if (type <= 0.75) {
-            body = PolygonBody.PolygonBuilder(x, y, 20, 5);
-        } else {
-            body = PolygonBody.PolygonBuilder(x, y, 20, 6);
+            const type = Math.random();
+            let body;
+            if (type <= 0.25) {
+                body = new TriangleBody(x, y, 20);
+            } else if (type <= 0.5) {
+                body = new RectangleBody(x, y, 20, 15);
+            } else if (type <= 0.75) {
+                body = PolygonBody.PolygonBuilder(x, y, 20, 5);
+            } else {
+                body = PolygonBody.PolygonBuilder(x, y, 20, 6);
+            }
+
+            engine.addBody(body);
+            const { uvs, indices } = body.triangulation();
+            entities.push({
+                uvs,
+                indices,
+                body,
+            });
         }
-
-        engine.addBody(body);
-        const { uvs, indices } = body.triangulation();
-        entities.push({
-            uvs,
-            indices,
-            body,
-        });
     }
 }
 
@@ -115,49 +121,49 @@ function loop(p: p5) {
         }
         p.endShape();
 
-        // Batch draw all convex hull in blue
-        p.stroke(150, 200, 255);
-        p.strokeWeight(1);
-        p.beginShape(p.LINES);
-        for (const colliderInfo of engine.collidersInfo) {
-            // const body = engine.bodies[colliderInfo.bodyIndex];
-            const body = colliderInfo.body;
-            const convexHull = body.convexHull();
+        // // Batch draw all convex hull in blue
+        // p.stroke(150, 200, 255);
+        // p.strokeWeight(1);
+        // p.beginShape(p.LINES);
+        // for (const colliderInfo of engine.collidersInfo) {
+        //     // const body = engine.bodies[colliderInfo.bodyIndex];
+        //     const body = colliderInfo.body;
+        //     const convexHull = body.convexHull();
 
-            for (let i = 0; i < convexHull.particles.length; i++) {
-                const v1 = convexHull.particles[i];
-                const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
-                p.vertex(v1.position[0], v1.position[1]);
-                p.vertex(v2.position[0], v2.position[1]);
-            }
-        }
-        p.endShape();
+        //     for (let i = 0; i < convexHull.particles.length; i++) {
+        //         const v1 = convexHull.particles[i];
+        //         const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
+        //         p.vertex(v1.position[0], v1.position[1]);
+        //         p.vertex(v2.position[0], v2.position[1]);
+        //     }
+        // }
+        // p.endShape();
 
-        // Batch draw all contact points in red
-        p.stroke(255, 0, 0);
-        p.strokeWeight(2);
-        p.beginShape(p.POINTS);
-        for (const colliderInfo of engine.collidersInfo) {
-            // Draw the contact points and normal direction
-            for (const particle of colliderInfo.contactPoints) {
-                p.vertex(particle.position[0], particle.position[1]);
-            }
-        }
-        p.endShape();
+        // // Batch draw all contact points in red
+        // p.stroke(255, 0, 0);
+        // p.strokeWeight(2);
+        // p.beginShape(p.POINTS);
+        // for (const colliderInfo of engine.collidersInfo) {
+        //     // Draw the contact points and normal direction
+        //     for (const particle of colliderInfo.contactPoints) {
+        //         p.vertex(particle.position[0], particle.position[1]);
+        //     }
+        // }
+        // p.endShape();
 
-        // Batch draw all separation normals in red
-        p.stroke(255, 0, 0);
-        p.strokeWeight(1);
-        p.beginShape(p.LINES);
-        for (const colliderInfo of engine.collidersInfo) {
-            for (const particle of colliderInfo.contactPoints) {
-                const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
-                const p2 = vec3.add(vec3.create(), particle.position, delta);
-                p.vertex(particle.position[0], particle.position[1]);
-                p.vertex(p2[0], p2[1]);
-            }
-        }
-        p.endShape();
+        // // Batch draw all separation normals in red
+        // p.stroke(255, 0, 0);
+        // p.strokeWeight(1);
+        // p.beginShape(p.LINES);
+        // for (const colliderInfo of engine.collidersInfo) {
+        //     for (const particle of colliderInfo.contactPoints) {
+        //         const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
+        //         const p2 = vec3.add(vec3.create(), particle.position, delta);
+        //         p.vertex(particle.position[0], particle.position[1]);
+        //         p.vertex(p2[0], p2[1]);
+        //     }
+        // }
+        // p.endShape();
     } else {
         p.texture(texture);
         p.textureMode(p.NORMAL);

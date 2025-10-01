@@ -30,7 +30,9 @@ export default class Engine {
         public worldBoundings: { top: [number, number]; right: [number, number] },
         public engineMode: Mode = Mode.GjkEpa,
     ) {
-        this.spatialPartition = new GridSpatialPartition(10, 10);
+        const worldWidth = worldBoundings.right[0] - worldBoundings.top[0];
+        const worldHeight = worldBoundings.right[1] - worldBoundings.top[1];
+        this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, 50);
     }
 
     step(dt: number) {
@@ -38,9 +40,12 @@ export default class Engine {
             return;
         }
 
-        // for (const body of this.bodies) {
-        //     this.integrate(body, dt);
-        // }
+        this.spatialPartition.clear();
+
+        for (const body of this.bodies) {
+            this.integrate(body, dt);
+            this.spatialPartition.insert(body);
+        }
 
         // Reset contact list
         this.contactPairs.length = 0;
@@ -110,8 +115,8 @@ export default class Engine {
                         const bodyB = bodies[jj];
 
                         // Invalidate aabb cache
-                        bodyA.aabb = null;
-                        bodyB.aabb = null;
+                        // bodyA.aabb = null;
+                        // bodyB.aabb = null;
 
                         const boundingBoxA = bodyA.getAABB();
                         const boundingBoxB = bodyB.getAABB();
@@ -126,6 +131,7 @@ export default class Engine {
     }
 
     public narrowPhase() {
+        // console.log(this.contactPairs);
         for (const pair of this.contactPairs) {
             const bodyA = pair[0];
             const bodyB = pair[1];
