@@ -40,9 +40,7 @@ export default class Engine {
     protected spatialPartition: GridSpatialPartition = new GridSpatialPartition(0, 0, 1);
     protected NUM_ITERATIONS: number = 3;
 
-    constructor(
-        public config: Config,
-    ) {
+    constructor(public config: Config) {
         if (config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
             const worldWidth = config.worldBoundings.right[0] - config.worldBoundings.top[0];
             const worldHeight = config.worldBoundings.right[1] - config.worldBoundings.top[1];
@@ -240,9 +238,10 @@ export default class Engine {
                 continue;
             }
             for (const particle of edge) {
-                const delta = vec3.scale(vec3.create(), c.normal, c.depth);
+                const correction = vec3.scale(vec3.create(), c.normal, c.depth / edge.length);
+                vec3.scale(correction, correction, 1 / particle.mass);
 
-                particle.move(delta);
+                particle.move(correction);
             }
         }
     }
