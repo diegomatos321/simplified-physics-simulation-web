@@ -6,13 +6,16 @@
         <p>Polygons vs Polygons demo</p>
 
         <div class="flex">
-            <div class="relative">
-                <div class="absolute">
-                    <p>FPS {{ fps }}</p>
-                </div>
-                <div ref="sketchContainer"></div>
-            </div>
+            <div ref="sketchContainer"></div>
             <div>
+                <p>Debug info</p>
+                <p>FPS: {{ fps }}</p>
+                <p>Entities:</p>
+                <p>Particles:</p>
+                <p>Constraints:</p>
+                <p>Collision Tests:</p>
+
+                <p>Config</p>
                 <div>
                     <label for="debug">Debug Mode</label>
                     <input id="debug" name="debug" type="checkbox" v-model="debug" />
@@ -22,6 +25,22 @@
                     <label for="pauseOnCollision">Pause on Collision</label>
                     <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
                 </div>
+
+                <div>
+                    <label for="gridSpatialPartition">gridSpatialPartition</label>
+                    <input type="radio" id="gridSpatialPartition" name="broadPhaseMode" value="gridSpatialPartition" />
+
+                    <label for="naive">naive</label>
+                    <input type="radio" id="naive" name="broadPhaseMode" value="naive" />
+                </div>
+
+                <div>
+                    <label for="sat">sat</label>
+                    <input type="radio" id="sat" name="collisionDetection" value="sat" />
+
+                    <label for="gjkepa">GJK/EPA</label>
+                    <input type="radio" id="gjkepa" name="collisionDetection" value="gjkepa" />
+                </div>
             </div>
         </div>
     </div>
@@ -29,23 +48,23 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { vec3 } from 'gl-matrix';
 import p5 from 'p5';
 import type Body from '@/physics/Body';
 import PolygonBody from '@/physics/PolygonBody';
 import TriangleBody from '@/physics/TriangleBody';
 import RectangleBody from '@/physics/RectangleBody';
-import Engine, { Mode } from '@/core/Engine';
+import Engine, { BroadPhaseMode, CollisionDetectionMode } from '@/core/Engine';
 
 const sketchContainer = ref<HTMLCanvasElement | null>(null);
 let sketchInstance: p5 | null = null;
-let engine = new Engine(
-    {
+let engine = new Engine({
+    worldBoundings: {
         top: [0, 0],
         right: [600, 600],
     },
-    Mode.Sat,
-);
+    BroadPhase: BroadPhaseMode.GridSpatialPartition,
+    CollisionDetection: CollisionDetectionMode.Sat,
+});
 let debug = true;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
@@ -70,35 +89,30 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    const cellsize = 50;
-    const nrows = 600 / cellsize;
-    const ncols = 600 / cellsize;
-    for (let i = 0; i < nrows - 1; i++) {
-        for (let j = 0; j < ncols - 1; j++) {
-            const x = 50 + j * cellsize;
-            const y = 50 + i * cellsize;
-            // const x = 50 + (i % 20) * 50;
+    const totalEntities = 10;
+    for (let i = 0; i < totalEntities; i++) {
+        const x = Math.random() * p.width;
+        const y = Math.random() * p.height;
 
-            const type = Math.random();
-            let body;
-            if (type <= 0.25) {
-                body = new TriangleBody(x, y, 20);
-            } else if (type <= 0.5) {
-                body = new RectangleBody(x, y, 20, 15);
-            } else if (type <= 0.75) {
-                body = PolygonBody.PolygonBuilder(x, y, 20, 5);
-            } else {
-                body = PolygonBody.PolygonBuilder(x, y, 20, 6);
-            }
-
-            engine.addBody(body);
-            const { uvs, indices } = body.triangulation();
-            entities.push({
-                uvs,
-                indices,
-                body,
-            });
+        const type = Math.random();
+        let body;
+        if (type <= 0.25) {
+            body = new TriangleBody(x, y, 25);
+        } else if (type <= 0.5) {
+            body = new RectangleBody(x, y, 25, 15);
+        } else if (type <= 0.75) {
+            body = PolygonBody.PolygonBuilder(x, y, 25, 5);
+        } else {
+            body = PolygonBody.PolygonBuilder(x, y, 25, 6);
         }
+
+        engine.addBody(body);
+        const { uvs, indices } = body.triangulation();
+        entities.push({
+            uvs,
+            indices,
+            body,
+        });
     }
 }
 

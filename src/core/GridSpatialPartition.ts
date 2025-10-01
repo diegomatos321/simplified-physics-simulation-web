@@ -23,7 +23,6 @@ export default class GridSpatialPartition {
     }
 
     public insert(body: Body): void {
-        body.aabb = null;
         const aabb = body.getAABB();
         const cells = this.cellsForAABB(aabb);
         for (const [gx, gy] of cells) {
@@ -53,7 +52,7 @@ export default class GridSpatialPartition {
         for (let gy = gy0; gy <= gy1; gy++) {
             for (let gx = gx0; gx <= gx1; gx++) {
                 if (gx < 0 || gx >= this.ncols || gy < 0 || gy >= this.nrows) {
-                    continue
+                    continue;
                 }
                 out.push([gx, gy]);
             }
