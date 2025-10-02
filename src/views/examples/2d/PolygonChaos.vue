@@ -1,45 +1,72 @@
-<style></style>
+<style>
+canvas {
+    border-radius: 12px;
+    width: 100% !important;
+    height: 100% !important;
+}
+</style>
 
 <template>
-    <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>Polygon Chaos</strong></h1>
-        <p>Polygons vs Polygons demo</p>
+    <div style="max-width: 1000px" class="mx-auto space-y-4">
+        <div>
+            <h1 class="text-3xl"><strong>Polygon Chaos</strong></h1>
+            <p>Polygons vs Polygons demo</p>
+        </div>
 
-        <div class="flex">
-            <div ref="sketchContainer"></div>
-            <div>
-                <p>Debug info</p>
-                <p>FPS: {{ fps }}</p>
-                <p>Entities:</p>
-                <p>Particles:</p>
-                <p>Constraints:</p>
-                <p>Collision Tests:</p>
+        <div class="w-full flex flex-col md:flex-row gap-6">
+            <div class="md:w-2/3" ref="sketchContainer"></div>
+            <div class="md:w-1/3 border border-slate-200 rounded p-4 space-y-2">
+                <div class="flex justify-between">
+                    <p>FPS</p>
+                    <p>{{ fps }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Entities</p>
+                    <p>{{ totalEntities }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Particles</p>
+                    <p>{{ engine.particlesCount }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Constraints</p>
+                    <p>{{ engine.constraintsCount }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Collision Tests</p>
+                    <p>{{ engine.collisionsTests }}</p>
+                </div>
 
-                <p>Config</p>
-                <div>
+                <hr class="my-4 border-slate-200" />
+                <div class="flex justify-between">
                     <label for="debug">Debug Mode</label>
                     <input id="debug" name="debug" type="checkbox" v-model="debug" />
                 </div>
 
-                <div>
+                <div class="flex justify-between">
                     <label for="pauseOnCollision">Pause on Collision</label>
                     <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
                 </div>
 
-                <div>
-                    <label for="gridSpatialPartition">gridSpatialPartition</label>
-                    <input type="radio" id="gridSpatialPartition" name="broadPhaseMode" value="gridSpatialPartition" />
-
-                    <label for="naive">naive</label>
-                    <input type="radio" id="naive" name="broadPhaseMode" value="naive" />
+                <div class="flex justify-between">
+                    <label for="broadPhaseMode">Broad Phase</label>
+                    <select style="max-width: 100px" name="broadPhaseMode" id="broadPhaseMode" class="border border-slate-200 rounded">
+                        <option value="gridSpatialPartition">Grid Spatial Partition</option>
+                        <option value="naive">Naive</option>
+                    </select>
                 </div>
 
-                <div>
-                    <label for="sat">sat</label>
-                    <input type="radio" id="sat" name="collisionDetection" value="sat" />
+                <div class="flex justify-between">
+                    <label for="collisionDetectionMode">Collision Detection</label>
+                    <select style="max-width: 100px" name="collisionDetectionMode" id="collisionDetectionMode" class="border border-slate-200 rounded">
+                        <option value="gjk">GJK/EPA</option>
+                        <option value="sat">Sat</option>
+                    </select>
+                </div>
 
-                    <label for="gjkepa">GJK/EPA</label>
-                    <input type="radio" id="gjkepa" name="collisionDetection" value="gjkepa" />
+                <div class="flex flex-wrap justify-between mt-4">
+                    <button class="w-full px-4 py-2 border rounded" @click="start">Start</button>
+                    <!-- <button class="px-4 py-2 border rounded">Reset</button> -->
                 </div>
             </div>
         </div>
@@ -56,22 +83,23 @@ import RectangleBody from '@/physics/RectangleBody';
 import Engine, { BroadPhaseMode, CollisionDetectionMode } from '@/core/Engine';
 import { vec3 } from 'gl-matrix';
 
-const sketchContainer = ref<HTMLCanvasElement | null>(null);
+const sketchContainer = ref<HTMLDivElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine({
     worldBoundings: {
         top: [0, 0],
         right: [600, 600],
     },
-    BroadPhase: BroadPhaseMode.GridSpatialPartition,
-    CollisionDetection: CollisionDetectionMode.Sat,
+    BroadPhase: BroadPhaseMode.Naive,
+    CollisionDetection: CollisionDetectionMode.GjkEpa,
 });
 let debug = true;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
+const totalEntities = 50;
 const fps = ref(0);
 
-onMounted(() => {
+function start() {
     if (!sketchContainer.value) return;
 
     const sketch = (p: p5) => {
@@ -90,7 +118,6 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    const totalEntities = 10;
     for (let i = 0; i < totalEntities; i++) {
         const x = Math.random() * p.width;
         const y = Math.random() * p.height;

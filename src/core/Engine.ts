@@ -56,6 +56,7 @@ export default class Engine {
         // Reset engine states
         this.particlesCount = 0;
         this.constraintsCount = 0;
+        this.collisionsTests = 0;
         this.contactPairs.length = 0;
         this.collidersInfo.length = 0;
 
@@ -65,7 +66,7 @@ export default class Engine {
 
         for (const body of this.bodies) {
             this.particlesCount += body.particles.length;
-            this.constraintsCount += body.particles.length;
+            this.constraintsCount += body.constraints.length;
 
             // Invalidate caches
             body.aabb = null;
