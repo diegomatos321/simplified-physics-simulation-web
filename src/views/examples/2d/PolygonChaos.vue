@@ -74,7 +74,7 @@ canvas {
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 import p5 from 'p5';
 import type Body from '@/physics/Body';
 import PolygonBody from '@/physics/PolygonBody';
@@ -90,7 +90,7 @@ let engine = new Engine({
         top: [0, 0],
         right: [600, 600],
     },
-    BroadPhase: BroadPhaseMode.Naive,
+    BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
 });
 let debug = true;
@@ -109,7 +109,7 @@ function start() {
 
     sketchInstance = new p5(sketch);
     window.addEventListener('keydown', handleKeyDown);
-});
+}
 
 async function setup(p: p5) {
     if (sketchContainer.value === null) return;

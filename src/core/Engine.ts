@@ -142,20 +142,34 @@ export default class Engine {
     }
 
     public broadPhase_GridSpatialPartition() {
+        // O mesmo corpo pode cair em várias células
+        // Se BodyA e BodyB aparecem juntos em duas células diferentes
+        // broadphase vai processar A-B duas vezes.
+        const seen = new Set<string>();
+
         for (let i = 0; i < this.spatialPartition.nrows; i++) {
             for (let j = 0; j < this.spatialPartition.ncols; j++) {
-                const bodies = this.spatialPartition.grid[i][j];
+                const cell = this.spatialPartition.grid[i][j];
+                const cellArr = Array.from(cell);
 
-                for (let ii = 0; ii < bodies.length - 1; ii++) {
-                    const bodyA = bodies[ii];
+                for (let ii = 0; ii < cellArr.length - 1; ii++) {
+                    const bodyA = cellArr[ii];
 
-                    for (let jj = ii + 1; jj < bodies.length; jj++) {
-                        const bodyB = bodies[jj];
+                    for (let jj = ii + 1; jj < cellArr.length; jj++) {
+                        const bodyB = cellArr[jj];
+                        const idA = bodyA.id;
+                        const idB = bodyB.id;
+                        const keyPair = idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
+                        if (seen.has(keyPair)) {
+                            continue;
+                        }
 
+                        seen.add(keyPair);
+                        
                         const boundingBoxA = bodyA.getAABB();
                         const boundingBoxB = bodyB.getAABB();
 
-                        if (boundingBoxA.intersercts(boundingBoxB)) {
+                        if (boundingBoxA.intersects(boundingBoxB)) {
                             this.contactPairs.push([bodyA, bodyB]);
                         }
                     }
@@ -174,7 +188,7 @@ export default class Engine {
                 const boundingBoxA = bodyA.getAABB();
                 const boundingBoxB = bodyB.getAABB();
 
-                if (boundingBoxA.intersercts(boundingBoxB)) {
+                if (boundingBoxA.intersects(boundingBoxB)) {
                     this.contactPairs.push([bodyA, bodyB]);
                 }
             }

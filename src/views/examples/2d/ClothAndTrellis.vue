@@ -1,24 +1,66 @@
-<style></style>
+<style>
+canvas {
+    border-radius: 12px;
+    width: 100% !important;
+    height: 100% !important;
+}
+</style>
 
 <template>
-    <div class="container mx-auto">
-        <h1 class="text-3xl"><strong>GJK/EPA Engine</strong></h1>
-        <p>Polygons vs Polygons demo</p>
+    <div style="max-width: 1000px" class="mx-auto space-y-4">
+        <div>
+            <h1 class="text-3xl"><strong>Tecido e Treliças</strong></h1>
+        </div>
 
-        <div class="flex">
-            <div class="relative">
-                <div class="absolute">FPS {{ fps }}</div>
-                <div ref="sketchContainer"></div>
-            </div>
-            <div>
-                <div>
+        <div class="w-full flex flex-col md:flex-row gap-6">
+            <div class="md:w-2/3" ref="sketchContainer"></div>
+            <div class="md:w-1/3 border border-slate-200 rounded p-4 space-y-2">
+                <div class="flex justify-between">
+                    <p>FPS</p>
+                    <p>{{ fps }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Entities</p>
+                    <p>{{ totalEntities }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Particles</p>
+                    <p>{{ engine.particlesCount }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Constraints</p>
+                    <p>{{ engine.constraintsCount }}</p>
+                </div>
+                <div class="flex justify-between">
+                    <p>Collision Tests</p>
+                    <p>{{ engine.collisionsTests }}</p>
+                </div>
+
+                <hr class="my-4 border-slate-200" />
+                <div class="flex justify-between">
                     <label for="debug">Debug Mode</label>
                     <input id="debug" name="debug" type="checkbox" v-model="debug" />
                 </div>
 
-                <div>
+                <div class="flex justify-between">
                     <label for="pauseOnCollision">Pause on Collision</label>
                     <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
+                </div>
+
+                <div class="flex justify-between">
+                    <label for="broadPhaseMode">Broad Phase</label>
+                    <select style="max-width: 100px" name="broadPhaseMode" id="broadPhaseMode" class="border border-slate-200 rounded">
+                        <option value="gridSpatialPartition">Grid Spatial Partition</option>
+                        <option value="naive">Naive</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-between">
+                    <label for="collisionDetectionMode">Collision Detection</label>
+                    <select style="max-width: 100px" name="collisionDetectionMode" id="collisionDetectionMode" class="border border-slate-200 rounded">
+                        <option value="gjk">GJK/EPA</option>
+                        <option value="sat">Sat</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -28,22 +70,26 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import p5 from 'p5';
-import TriangleBody from '@/physics/TriangleBody';
-import RectangleBody from '@/physics/RectangleBody';
-import Engine from '@/core/Engine';
 import type Body from '@/physics/Body';
 import PolygonBody from '@/physics/PolygonBody';
+import TrellisBody from '@/physics/TrellisBody';
+import Engine, { BroadPhaseMode, CollisionDetectionMode } from '@/core/Engine';
 import { vec3 } from 'gl-matrix';
 
-const sketchContainer = ref<HTMLCanvasElement | null>(null);
+const sketchContainer = ref<HTMLDivElement | null>(null);
 let sketchInstance: p5 | null = null;
 let engine = new Engine({
-    top: [0, 0],
-    right: [600, 600],
+    worldBoundings: {
+        top: [0, 0],
+        right: [600, 600],
+    },
+    BroadPhase: BroadPhaseMode.GridSpatialPartition,
+    CollisionDetection: CollisionDetectionMode.GjkEpa,
 });
 let debug = true;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
+const totalEntities = 50;
 const fps = ref(0);
 
 onMounted(() => {
@@ -65,30 +111,45 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    for (let i = 0; i < 100; i++) {
-        const x = Math.random() * p.width;
-        const y = Math.random() * p.height;
+    let trelis1 = new TrellisBody(vec3.fromValues(130, 200, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
+    trelis1.particles[0].pinned = true;
+    // trelis1.particles[10].pinned = true;
+    const triangulation1 = trelis1.triangulation();
+    engine.addBody(trelis1);
+    entities.push({
+        uvs: triangulation1.uvs,
+        indices: triangulation1.indices,
+        body: trelis1,
+    });
 
-        const type = Math.random();
-        let body;
-        if (type <= 0.25) {
-            body = new TriangleBody(x, y, 30);
-        } else if (type <= 0.5) {
-            body = new RectangleBody(x, y, 30, 20);
-        } else if (type <= 0.75) {
-            body = PolygonBody.PolygonBuilder(x, y, 30, 5);
-        } else {
-            body = PolygonBody.PolygonBuilder(x, y, 30, 6);
-        }
+    let trelis2 = new TrellisBody(vec3.fromValues(50, 400, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
+    const triangulation2 = trelis2.triangulation();
+    engine.addBody(trelis2);
+    entities.push({
+        uvs: triangulation2.uvs,
+        indices: triangulation2.indices,
+        body: trelis2,
+    });
 
-        engine.bodies.push(body);
-        const { uvs, indices } = body.triangulation();
-        entities.push({
-            uvs,
-            indices,
-            body,
-        });
-    }
+    let cloth = new TrellisBody(vec3.fromValues(250, 200, 0), vec3.fromValues(100, 100, 0), 10, 10);
+    cloth.particles[0].pinned = true;
+    cloth.particles[10].pinned = true;
+    const triangulation4 = cloth.triangulation();
+    engine.addBody(cloth);
+    entities.push({
+        uvs: triangulation4.uvs,
+        indices: triangulation4.indices,
+        body: cloth,
+    });
+
+    const pentagonPoly = PolygonBody.PolygonBuilder(200, 50, 50, 5);
+    const triangulation3 = pentagonPoly.triangulation();
+    engine.addBody(pentagonPoly);
+    entities.push({
+        uvs: triangulation3.uvs,
+        indices: triangulation3.indices,
+        body: pentagonPoly,
+    });
 }
 
 function loop(p: p5) {
@@ -99,13 +160,11 @@ function loop(p: p5) {
     engine.step(p.deltaTime / 1000);
 
     if (debug) {
-        // Batch all line draw constraints
         p.stroke(0, 0, 0);
         p.strokeWeight(1);
         p.beginShape(p.LINES);
         for (const entity of entities) {
             for (const constraint of entity.body.constraints) {
-                // p.line(constraint.p0.position[0], constraint.p0.position[1], constraint.p1.position[0], constraint.p1.position[1]);
                 p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
                 p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
             }
@@ -117,7 +176,8 @@ function loop(p: p5) {
         p.strokeWeight(1);
         p.beginShape(p.LINES);
         for (const colliderInfo of engine.collidersInfo) {
-            const body = engine.bodies[colliderInfo.bodyIndex];
+            // const body = engine.bodies[colliderInfo.bodyIndex];
+            const body = colliderInfo.body;
             const convexHull = body.convexHull();
 
             for (let i = 0; i < convexHull.particles.length; i++) {
@@ -155,21 +215,19 @@ function loop(p: p5) {
         }
         p.endShape();
     } else {
+        p.texture(texture);
+        p.textureMode(p.NORMAL);
+        p.noStroke();
+        p.beginShape(p.TRIANGLES);
         for (const entity of entities) {
-            p.texture(texture);
-            p.textureMode(p.NORMAL);
-            p.noStroke();
-            p.beginShape(p.TRIANGLES);
-
             for (let i = 0; i < entity.indices.length; i++) {
                 const indice = entity.indices[i];
                 const particle = entity.body.particles[indice];
                 const uv = entity.uvs[indice];
                 p.vertex(particle.position[0], particle.position[1], 0, uv[0], uv[1]);
             }
-
-            p.endShape();
         }
+        p.endShape();
     }
 }
 

@@ -18,6 +18,11 @@ const router = createRouter({
                     name: 'polygon_chaos',
                     component: () => import('../views/examples/2d/PolygonChaos.vue'),
                 },
+                {
+                    path: 'cloth-trellis',
+                    name: 'cloth_tellis',
+                    component: () => import('../views/examples/2d/ClothAndTrellis.vue'),
+                },
             ],
         },
     ],

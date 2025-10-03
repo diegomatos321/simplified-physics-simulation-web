@@ -6,15 +6,21 @@ import PolygonBody from './PolygonBody';
 
 export default abstract class Body {
     // public colliders: Collider[] = [];
+    public readonly id: number;
 
     // cache convex hull
     public _convexHull: PolygonBody | null = null;
     public aabb: AABB | null = null;
 
+    private static nextId = 0;
+
     constructor(
         public particles: Particle[] = [],
         public constraints: IConstraint[] = [],
-    ) {}
+    ) {
+        this.id = Body.nextId;
+        Body.nextId++;
+    }
 
     abstract triangulation(): {
         uvs: [number, number][];

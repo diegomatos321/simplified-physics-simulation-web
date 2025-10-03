@@ -2,7 +2,8 @@ import type Body from '@/physics/Body';
 import type AABB from './AABB';
 
 export default class GridSpatialPartition {
-    public grid: Array<Body>[][] = [];
+    // Uso de set para evitar duplicação DENTRO da célula.
+    public grid: Set<Body>[][] = [];
     public nrows: number;
     public ncols: number;
 
@@ -11,12 +12,14 @@ export default class GridSpatialPartition {
         worldHeight: number,
         protected cellsize: number,
     ) {
+        if (cellsize <= 0) throw new Error('cellsize must be > 0');
+
         this.nrows = Math.ceil(worldHeight / cellsize);
         this.ncols = Math.ceil(worldWidth / cellsize);
-        for (let i = 0; i < this.nrows; i++) {
-            const row = [];
-            for (let j = 0; j < this.ncols; j++) {
-                row.push([]);
+        for (let r = 0; r < this.nrows; r++) {
+            const row: Set<Body>[] = [];
+            for (let c = 0; c < this.ncols; c++) {
+                row.push(new Set<Body>());
             }
             this.grid.push(row);
         }
@@ -27,18 +30,16 @@ export default class GridSpatialPartition {
         const cells = this.cellsForAABB(aabb);
         for (const [gx, gy] of cells) {
             const cell = this.grid[gy][gx];
-            cell.push(body);
+            cell.add(body);
         }
     }
 
     public clear() {
-        this.grid.length = 0;
-        for (let i = 0; i < this.nrows; i++) {
-            const row = [];
-            for (let j = 0; j < this.ncols; j++) {
-                row.push([]);
+        // esvazia sets e o map
+        for (let r = 0; r < this.nrows; r++) {
+            for (let c = 0; c < this.ncols; c++) {
+                this.grid[r][c].clear();
             }
-            this.grid.push(row);
         }
     }
 
