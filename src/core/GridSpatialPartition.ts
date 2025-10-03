@@ -4,8 +4,8 @@ import type AABB from './AABB';
 export default class GridSpatialPartition {
     // Uso de set para evitar duplicação DENTRO da célula.
     public grid: Set<Body>[][] = [];
-    public nrows: number;
-    public ncols: number;
+    public readonly nrows: number;
+    public readonly ncols: number;
 
     constructor(
         worldWidth: number,
@@ -32,6 +32,20 @@ export default class GridSpatialPartition {
             const cell = this.grid[gy][gx];
             cell.add(body);
         }
+    }
+
+    public query(aabb: AABB): Set<Body> {
+        const resultSet = new Set<Body>();
+        const cells = this.cellsForAABB(aabb);
+
+        for (const [gx, gy] of cells) {
+            const cell = this.grid[gy][gx];
+            for (const body of cell) {
+                resultSet.add(body);
+            }
+        }
+
+        return resultSet;
     }
 
     public clear() {

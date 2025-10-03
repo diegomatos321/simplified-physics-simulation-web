@@ -44,7 +44,7 @@ export default class Engine {
         if (config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
             const worldWidth = config.worldBoundings.right[0] - config.worldBoundings.top[0];
             const worldHeight = config.worldBoundings.right[1] - config.worldBoundings.top[1];
-            this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, 50);
+            this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, 20);
         }
     }
 
@@ -147,35 +147,61 @@ export default class Engine {
         // broadphase vai processar A-B duas vezes.
         const seen = new Set<string>();
 
-        for (let i = 0; i < this.spatialPartition.nrows; i++) {
-            for (let j = 0; j < this.spatialPartition.ncols; j++) {
-                const cell = this.spatialPartition.grid[i][j];
-                const cellArr = Array.from(cell);
+        for (const bodyA of this.bodies) {
+            const candidates = this.spatialPartition.query(bodyA.getAABB());
 
-                for (let ii = 0; ii < cellArr.length - 1; ii++) {
-                    const bodyA = cellArr[ii];
+            for (const bodyB of candidates) {
+                const idA = bodyA.id;
+                const idB = bodyB.id;
+                const keyPair = idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
+                if (seen.has(keyPair)) {
+                    continue;
+                }
 
-                    for (let jj = ii + 1; jj < cellArr.length; jj++) {
-                        const bodyB = cellArr[jj];
-                        const idA = bodyA.id;
-                        const idB = bodyB.id;
-                        const keyPair = idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
-                        if (seen.has(keyPair)) {
-                            continue;
-                        }
+                seen.add(keyPair);
 
-                        seen.add(keyPair);
-                        
-                        const boundingBoxA = bodyA.getAABB();
-                        const boundingBoxB = bodyB.getAABB();
+                const boundingBoxA = bodyA.getAABB();
+                const boundingBoxB = bodyB.getAABB();
 
-                        if (boundingBoxA.intersects(boundingBoxB)) {
-                            this.contactPairs.push([bodyA, bodyB]);
-                        }
-                    }
+                this.collisionsTests += 1;
+                if (boundingBoxA.intersects(boundingBoxB)) {
+                    this.contactPairs.push([bodyA, bodyB]);
                 }
             }
         }
+
+        // for (let i = 0; i < this.spatialPartition.nrows; i++) {
+        //     this.collisionsTests += 1;
+        //     for (let j = 0; j < this.spatialPartition.ncols; j++) {
+        //         const cell = this.spatialPartition.grid[i][j];
+        //         const cellArr = Array.from(cell);
+
+        //         this.collisionsTests += 1;
+        //         for (let ii = 0; ii < cellArr.length - 1; ii++) {
+        //             const bodyA = cellArr[ii];
+
+        //             for (let jj = ii + 1; jj < cellArr.length; jj++) {
+        //                 const bodyB = cellArr[jj];
+        //                 const idA = bodyA.id;
+        //                 const idB = bodyB.id;
+        //                 const keyPair = idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
+        //                 if (seen.has(keyPair)) {
+        //                     continue;
+        //                 }
+
+        //                 seen.add(keyPair);
+
+        //                 const boundingBoxA = bodyA.getAABB();
+        //                 const boundingBoxB = bodyB.getAABB();
+
+        //                 this.collisionsTests += 1;
+        //                 if (boundingBoxA.intersects(boundingBoxB)) {
+        //                     this.contactPairs.push([bodyA, bodyB]);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     public broadPhase_Naive() {
@@ -188,6 +214,7 @@ export default class Engine {
                 const boundingBoxA = bodyA.getAABB();
                 const boundingBoxB = bodyB.getAABB();
 
+                this.collisionsTests += 1;
                 if (boundingBoxA.intersects(boundingBoxB)) {
                     this.contactPairs.push([bodyA, bodyB]);
                 }
@@ -216,7 +243,6 @@ export default class Engine {
     }
 
     public narrowPhase_GJK() {
-        // console.log(this.contactPairs);
         for (const pair of this.contactPairs) {
             const bodyA = pair[0];
             const bodyB = pair[1];

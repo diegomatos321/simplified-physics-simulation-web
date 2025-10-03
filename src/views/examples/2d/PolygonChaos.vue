@@ -21,8 +21,15 @@ canvas {
                     <p>{{ fps }}</p>
                 </div>
                 <div class="flex justify-between">
-                    <p>Entities</p>
-                    <p>{{ totalEntities }}</p>
+                    <label for="totalEntities">Entities</label>
+                    <input
+                        id="totalEntities"
+                        class="border border-slate-200 rounded text-right"
+                        type="number"
+                        step="1"
+                        v-model="totalEntities"
+                        :disabled="hasStarted"
+                    />
                 </div>
                 <div class="flex justify-between">
                     <p>Particles</p>
@@ -45,28 +52,39 @@ canvas {
 
                 <div class="flex justify-between">
                     <label for="pauseOnCollision">Pause on Collision</label>
-                    <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-bind:value="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
+                    <input id="pauseOnCollision" name="pauseOnCollision" type="checkbox" v-model="engine.pauseOnCollision" @click="OnPauseCollisionBtn" />
                 </div>
 
                 <div class="flex justify-between">
                     <label for="broadPhaseMode">Broad Phase</label>
-                    <select style="max-width: 100px" name="broadPhaseMode" id="broadPhaseMode" class="border border-slate-200 rounded">
-                        <option value="gridSpatialPartition">Grid Spatial Partition</option>
-                        <option value="naive">Naive</option>
+                    <select
+                        style="max-width: 100px"
+                        name="broadPhaseMode"
+                        id="broadPhaseMode"
+                        v-model="engine.config.BroadPhase"
+                        class="border border-slate-200 rounded"
+                    >
+                        <option value="0">Naive</option>
+                        <option value="1">Grid Spatial Partition</option>
                     </select>
                 </div>
 
                 <div class="flex justify-between">
                     <label for="collisionDetectionMode">Collision Detection</label>
-                    <select style="max-width: 100px" name="collisionDetectionMode" id="collisionDetectionMode" class="border border-slate-200 rounded">
-                        <option value="gjk">GJK/EPA</option>
-                        <option value="sat">Sat</option>
+                    <select
+                        style="max-width: 100px"
+                        name="collisionDetectionMode"
+                        id="collisionDetectionMode"
+                        v-model="engine.config.CollisionDetection"
+                        class="border border-slate-200 rounded"
+                    >
+                        <option value="0">GJK/EPA</option>
+                        <option value="1">Sat</option>
                     </select>
                 </div>
 
                 <div class="flex flex-wrap justify-between mt-4">
-                    <button class="w-full px-4 py-2 border rounded" @click="start">Start</button>
-                    <!-- <button class="px-4 py-2 border rounded">Reset</button> -->
+                    <button class="w-full px-4 py-2 border rounded" @click="start" :disabled="hasStarted">Start</button>
                 </div>
             </div>
         </div>
@@ -93,15 +111,17 @@ let engine = new Engine({
     BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
 });
-let debug = true;
+let debug = true,
+    hasStarted = false;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 let texture: p5.Image;
-const totalEntities = 50;
+let totalEntities = 100;
 const fps = ref(0);
 
 function start() {
     if (!sketchContainer.value) return;
 
+    hasStarted = true;
     const sketch = (p: p5) => {
         p.setup = () => setup(p);
         p.draw = () => loop(p);
@@ -125,13 +145,13 @@ async function setup(p: p5) {
         const type = Math.random();
         let body;
         if (type <= 0.25) {
-            body = new TriangleBody(x, y, 25);
+            body = new TriangleBody(x, y, 20);
         } else if (type <= 0.5) {
-            body = new RectangleBody(x, y, 25, 15);
+            body = new RectangleBody(x, y, 20, 10);
         } else if (type <= 0.75) {
-            body = PolygonBody.PolygonBuilder(x, y, 25, 5);
+            body = PolygonBody.PolygonBuilder(x, y, 20, 5);
         } else {
-            body = PolygonBody.PolygonBuilder(x, y, 25, 6);
+            body = PolygonBody.PolygonBuilder(x, y, 20, 6);
         }
 
         engine.addBody(body);
