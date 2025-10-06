@@ -142,6 +142,12 @@ export default abstract class Body {
         return this._convexHull;
     }
 
+    move(dt: vec3): void {
+        for (const particle of this.particles) {
+            particle.move(dt);
+        }
+    }
+
     protected quickhull(p0: Particle, p1: Particle, candidates: Particle[], hull: Particle[]) {
         // 4. Find the most distance point from the line
         let farthestDistance = -Infinity;

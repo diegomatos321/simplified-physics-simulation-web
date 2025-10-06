@@ -85,6 +85,7 @@ let engine = new Engine({
     },
     BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
+    gravity: vec3.fromValues(0, 98, 0),
 });
 let debug = true;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
@@ -112,8 +113,8 @@ async function setup(p: p5) {
     texture = await p.loadImage('/pizza-sprite.png');
 
     let trelis1 = new TrellisBody(vec3.fromValues(130, 200, 0), vec3.fromValues(100, 100, 0), 4, 4, true, true);
-    trelis1.particles[0].pinned = true;
-    // trelis1.particles[10].pinned = true;
+    trelis1.particles[0].isStatic = true;
+    // trelis1.particles[10].isStatic = true;
     const triangulation1 = trelis1.triangulation();
     engine.addBody(trelis1);
     entities.push({
@@ -122,7 +123,7 @@ async function setup(p: p5) {
         body: trelis1,
     });
 
-    let trelis2 = new TrellisBody(vec3.fromValues(50, 400, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
+    let trelis2 = new TrellisBody(vec3.fromValues(100, 450, 0), vec3.fromValues(200, 100, 0), 3, 2, true);
     const triangulation2 = trelis2.triangulation();
     engine.addBody(trelis2);
     entities.push({
@@ -132,8 +133,8 @@ async function setup(p: p5) {
     });
 
     let cloth = new TrellisBody(vec3.fromValues(250, 200, 0), vec3.fromValues(100, 100, 0), 10, 10);
-    cloth.particles[0].pinned = true;
-    cloth.particles[10].pinned = true;
+    cloth.particles[0].isStatic = true;
+    cloth.particles[10].isStatic = true;
     const triangulation4 = cloth.triangulation();
     engine.addBody(cloth);
     entities.push({

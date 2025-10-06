@@ -20,10 +20,11 @@ export interface Config {
     worldBoundings: { top: [number, number]; right: [number, number] };
     BroadPhase: BroadPhaseMode;
     CollisionDetection: CollisionDetectionMode;
+    gravity: vec3;
 }
 
 export default class Engine {
-    public gravity: vec3 = vec3.fromValues(0, 98, 0);
+    public gravity: vec3;
 
     public contactPairs: [Body, Body][] = [];
     public collidersInfo: ColliderInfo[] = [];
@@ -46,6 +47,8 @@ export default class Engine {
             const worldHeight = config.worldBoundings.right[1] - config.worldBoundings.top[1];
             this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, 20);
         }
+
+        this.gravity = config.gravity;
     }
 
     step(dt: number) {
@@ -107,7 +110,7 @@ export default class Engine {
      */
     integrate(body: Body, dt: number) {
         for (const particle of body.particles) {
-            if (particle.pinned) continue;
+            if (particle.isStatic) continue;
 
             const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
             vec3.copy(particle.oldPosition, particle.position);

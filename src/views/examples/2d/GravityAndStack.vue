@@ -9,8 +9,8 @@ canvas {
 <template>
     <div style="max-width: 1000px" class="mx-auto space-y-4">
         <div>
-            <h1 class="text-3xl"><strong>Polygon Chaos</strong></h1>
-            <p>Polygons vs Polygons demo</p>
+            <h1 class="text-3xl"><strong>Gravity and Stack</strong></h1>
+            <p>Click to spawn a random Polygon</p>
         </div>
 
         <div class="w-full flex flex-col md:flex-row gap-6">
@@ -22,14 +22,7 @@ canvas {
                 </div>
                 <div class="flex justify-between">
                     <label for="totalEntities">Entities</label>
-                    <input
-                        id="totalEntities"
-                        class="border border-slate-200 rounded text-right"
-                        type="number"
-                        step="1"
-                        v-model="totalEntities"
-                        :disabled="hasStarted"
-                    />
+                    <p>{{ totalEntities }}</p>
                 </div>
                 <div class="flex justify-between">
                     <p>Particles</p>
@@ -82,17 +75,13 @@ canvas {
                         <option value="1">Sat</option>
                     </select>
                 </div>
-
-                <div class="flex flex-wrap justify-between mt-4">
-                    <button class="w-full px-4 py-2 border rounded" @click="start" :disabled="hasStarted">Start</button>
-                </div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import p5 from 'p5';
 import type Body from '@/physics/Body';
 import PolygonBody from '@/physics/PolygonBody';
@@ -110,20 +99,16 @@ let engine = new Engine({
     },
     BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
-    gravity: vec3.fromValues(0, 0, 0),
+    gravity: vec3.fromValues(0, 98, 0),
 });
 let debug = true,
     hasStarted = false;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
-let player: { uvs: [number, number][]; indices: number[]; body: Body };
 let texture: p5.Image;
-let totalEntities = 20,
-    dirX = 0,
-    dirY = 0,
-    speed = 1;
+let totalEntities = 0;
 const fps = ref(0);
 
-function start() {
+onMounted(() => {
     if (!sketchContainer.value) return;
 
     hasStarted = true;
@@ -134,7 +119,8 @@ function start() {
 
     sketchInstance = new p5(sketch);
     window.addEventListener('keydown', handleKeyDown);
-}
+    sketchContainer.value.addEventListener('pointerdown', handlePointerDown);
+});
 
 async function setup(p: p5) {
     if (sketchContainer.value === null) return;
@@ -143,52 +129,20 @@ async function setup(p: p5) {
 
     texture = await p.loadImage('/pizza-sprite.png');
 
-    for (let i = 0; i < totalEntities; i++) {
-        const x = Math.random() * p.width;
-        const y = Math.random() * p.height;
-
-        const type = Math.random();
-        const isStatic = Math.random() < 0.2 ? true : false;
-        let body;
-        if (type <= 0.25) {
-            body = new TriangleBody(x, y, 20, isStatic);
-        } else if (type <= 0.5) {
-            body = new RectangleBody(x, y, 20, 10, isStatic);
-        } else if (type <= 0.75) {
-            body = PolygonBody.PolygonBuilder(x, y, 20, 5, isStatic);
-        } else {
-            body = PolygonBody.PolygonBuilder(x, y, 20, 6, isStatic);
-        }
-
-        engine.addBody(body);
-        const { uvs, indices } = body.triangulation();
-        entities.push({
-            uvs,
-            indices,
-            body,
-        });
-    }
-
-    do {
-        const i = Math.round(Math.random() * entities.length);
-        player = entities[i];
-    } while (player.body.particles[0].isStatic);
-    console.log(player.body);
+    const body = new RectangleBody(300, 550, 450, 50, true);
+    engine.addBody(body);
+    const { uvs, indices } = body.triangulation();
+    entities.push({
+        uvs,
+        indices,
+        body,
+    });
 }
 
 function loop(p: p5) {
     p.background(220);
 
     fps.value = Math.round(p.frameRate());
-
-    const velocity = vec3.fromValues(dirX, dirY, 0);
-    vec3.normalize(velocity, velocity);
-    vec3.scale(velocity, velocity, speed);
-
-    player.body.move(velocity);
-
-    dirX = 0;
-    dirY = 0;
 
     engine.step(p.deltaTime / 1000);
 
@@ -199,28 +153,8 @@ function loop(p: p5) {
         p.beginShape(p.LINES);
         for (const entity of entities) {
             for (const constraint of entity.body.constraints) {
-                if (constraint.p0.isStatic === false) {
-                    p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
-                }
-                if (constraint.p1.isStatic === false) {
-                    p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
-                }
-            }
-        }
-        p.endShape();
-
-        // Batch draw all constraints of static particles in red
-        p.stroke(255, 0, 0);
-        p.strokeWeight(1);
-        p.beginShape(p.LINES);
-        for (const entity of entities) {
-            for (const constraint of entity.body.constraints) {
-                if (constraint.p0.isStatic) {
-                    p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
-                }
-                if (constraint.p1.isStatic) {
-                    p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
-                }
+                p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
+                p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
             }
         }
         p.endShape();
@@ -299,6 +233,7 @@ onBeforeUnmount(() => {
     }
 
     window.removeEventListener('keydown', handleKeyDown);
+    sketchContainer.value?.removeEventListener('pointerdown', handlePointerDown);
 });
 
 function OnPauseCollisionBtn() {
@@ -306,22 +241,39 @@ function OnPauseCollisionBtn() {
 }
 
 function handleKeyDown(e: KeyboardEvent) {
-    if (e.code === 'KeyW') {
-        dirY = -1;
-    }
-    if (e.code === 'KeyS') {
-        dirY = 1;
-    }
-    if (e.code === 'KeyD') {
-        dirX = 1;
-    }
-    if (e.code === 'KeyA') {
-        dirX = -1;
-    }
-
     if (e.code == 'Space') {
         engine.isPaused = !engine.isPaused;
         engine.skip = !engine.skip;
     }
+}
+
+function handlePointerDown(e: PointerEvent) {
+    if (sketchContainer.value === null) {
+        return;
+    }
+    const containerRect = sketchContainer.value?.getBoundingClientRect();
+
+    const x = e.clientX - containerRect?.left;
+    const y = e.clientY - containerRect?.top;
+
+    const type = Math.random();
+    let body;
+    if (type <= 0.25) {
+        body = new TriangleBody(x, y, 20);
+    } else if (type <= 0.5) {
+        body = new RectangleBody(x, y, 20, 10);
+    } else if (type <= 0.75) {
+        body = PolygonBody.PolygonBuilder(x, y, 20, 5);
+    } else {
+        body = PolygonBody.PolygonBuilder(x, y, 20, 6);
+    }
+
+    engine.addBody(body);
+    const { uvs, indices } = body.triangulation();
+    entities.push({
+        uvs,
+        indices,
+        body,
+    });
 }
 </script>

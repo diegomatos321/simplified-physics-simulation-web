@@ -29,11 +29,11 @@ export default class PolygonBody extends Body {
         super(particles, constraints);
     }
 
-    static PolygonBuilder(x: number, y: number, size: number, k: number, restitution: number = 0.5) {
+    static PolygonBuilder(x: number, y: number, size: number, k: number, isStatic: boolean = false, restitution: number = 0.5) {
         const particles: Particle[] = [];
         for (let i = 0; i < k; i++) {
             const angle = (i / k) * 2 * Math.PI; // Start from right
-            particles.push(new Particle(vec3.fromValues(x + size * Math.cos(angle), y + size * Math.sin(angle), 0)));
+            particles.push(new Particle(vec3.fromValues(x + size * Math.cos(angle), y + size * Math.sin(angle), 0), 1, isStatic));
         }
 
         return new PolygonBody(particles, restitution);
