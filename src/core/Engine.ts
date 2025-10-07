@@ -21,6 +21,7 @@ export interface Config {
     BroadPhase: BroadPhaseMode;
     CollisionDetection: CollisionDetectionMode;
     gravity: vec3;
+    gridSize: number;
 }
 
 export default class Engine {
@@ -45,7 +46,7 @@ export default class Engine {
         if (config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
             const worldWidth = config.worldBoundings.right[0] - config.worldBoundings.top[0];
             const worldHeight = config.worldBoundings.right[1] - config.worldBoundings.top[1];
-            this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, 20);
+            this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, config.gridSize);
         }
 
         this.gravity = config.gravity;

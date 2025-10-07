@@ -33,7 +33,7 @@ export default class PolygonBody extends Body {
         const particles: Particle[] = [];
         for (let i = 0; i < k; i++) {
             const angle = (i / k) * 2 * Math.PI; // Start from right
-            particles.push(new Particle(vec3.fromValues(x + size * Math.cos(angle), y + size * Math.sin(angle), 0), 1, isStatic));
+            particles.push(new Particle(vec3.fromValues(x + (size / 2) * Math.cos(angle), y + (size / 2) * Math.sin(angle), 0), 1, isStatic));
         }
 
         return new PolygonBody(particles, restitution);

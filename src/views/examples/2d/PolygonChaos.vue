@@ -111,6 +111,7 @@ let engine = new Engine({
     BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
     gravity: vec3.fromValues(0, 0, 0),
+    gridSize: 40,
 });
 let debug = true,
     hasStarted = false;
@@ -149,35 +150,52 @@ async function setup(p: p5) {
 
         const type = Math.random();
         const isStatic = Math.random() < 0.2 ? true : false;
+        const size = 40;
         let body;
         if (type <= 0.25) {
-            body = new TriangleBody(x, y, 20, isStatic);
+            body = new TriangleBody(x, y, size, isStatic);
         } else if (type <= 0.5) {
-            body = new RectangleBody(x, y, 20, 10, isStatic);
+            body = new RectangleBody(x, y, size, size / 2, isStatic);
         } else if (type <= 0.75) {
-            body = PolygonBody.PolygonBuilder(x, y, 20, 5, isStatic);
+            body = PolygonBody.PolygonBuilder(x, y, size, 5, isStatic);
         } else {
-            body = PolygonBody.PolygonBuilder(x, y, 20, 6, isStatic);
+            body = PolygonBody.PolygonBuilder(x, y, size, 6, isStatic);
         }
 
         engine.addBody(body);
         const { uvs, indices } = body.triangulation();
-        entities.push({
+        const entity = {
             uvs,
             indices,
             body,
-        });
-    }
+        };
+        entities.push(entity);
 
-    do {
-        const i = Math.round(Math.random() * entities.length);
-        player = entities[i];
-    } while (player.body.particles[0].isStatic);
-    console.log(player.body);
+        if (isStatic === false && !player) {
+            player = entity;
+        }
+    }
 }
 
 function loop(p: p5) {
-    p.background(220);
+    p.background('#ffffff');
+
+    // Draw grid
+    p.push();
+    p.stroke('#e0e0e0');
+    p.strokeWeight(1);
+
+    // linhas verticais
+    for (let x = 0; x <= p.width; x += engine.config.gridSize) {
+        p.line(x + 0.5, 0, x + 0.5, p.height); // 0.5 corrige artefatos de subpixel
+    }
+
+    // linhas horizontais
+    for (let y = 0; y <= p.height; y += engine.config.gridSize) {
+        p.line(0, y + 0.5, p.width, y + 0.5);
+    }
+
+    p.pop();
 
     fps.value = Math.round(p.frameRate());
 

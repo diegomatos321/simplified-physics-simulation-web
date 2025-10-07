@@ -100,6 +100,7 @@ let engine = new Engine({
     BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
     gravity: vec3.fromValues(0, 98, 0),
+    gridSize: 40,
 });
 let debug = true,
     hasStarted = false;
@@ -140,7 +141,24 @@ async function setup(p: p5) {
 }
 
 function loop(p: p5) {
-    p.background(220);
+    p.background('#ffffff');
+
+    // Draw grid
+    p.push();
+    p.stroke('#e0e0e0');
+    p.strokeWeight(1);
+
+    // linhas verticais
+    for (let x = 0; x <= p.width; x += engine.config.gridSize) {
+        p.line(x + 0.5, 0, x + 0.5, p.height); // 0.5 corrige artefatos de subpixel
+    }
+
+    // linhas horizontais
+    for (let y = 0; y <= p.height; y += engine.config.gridSize) {
+        p.line(0, y + 0.5, p.width, y + 0.5);
+    }
+
+    p.pop();
 
     fps.value = Math.round(p.frameRate());
 
@@ -257,15 +275,16 @@ function handlePointerDown(e: PointerEvent) {
     const y = e.clientY - containerRect?.top;
 
     const type = Math.random();
+    const size = 40;
     let body;
     if (type <= 0.25) {
-        body = new TriangleBody(x, y, 20);
+        body = new TriangleBody(x, y, size);
     } else if (type <= 0.5) {
-        body = new RectangleBody(x, y, 20, 10);
+        body = new RectangleBody(x, y, size, size / 2);
     } else if (type <= 0.75) {
-        body = PolygonBody.PolygonBuilder(x, y, 20, 5);
+        body = PolygonBody.PolygonBuilder(x, y, size, 5);
     } else {
-        body = PolygonBody.PolygonBuilder(x, y, 20, 6);
+        body = PolygonBody.PolygonBuilder(x, y, size, 6);
     }
 
     engine.addBody(body);

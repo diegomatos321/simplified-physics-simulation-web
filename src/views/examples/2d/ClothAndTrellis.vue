@@ -86,6 +86,7 @@ let engine = new Engine({
     BroadPhase: BroadPhaseMode.GridSpatialPartition,
     CollisionDetection: CollisionDetectionMode.GjkEpa,
     gravity: vec3.fromValues(0, 98, 0),
+    gridSize: 40,
 });
 let debug = true;
 let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
@@ -143,7 +144,7 @@ async function setup(p: p5) {
         body: cloth,
     });
 
-    const pentagonPoly = PolygonBody.PolygonBuilder(200, 50, 50, 5);
+    const pentagonPoly = PolygonBody.PolygonBuilder(200, 50, 100, 5);
     const triangulation3 = pentagonPoly.triangulation();
     engine.addBody(pentagonPoly);
     entities.push({
@@ -154,7 +155,24 @@ async function setup(p: p5) {
 }
 
 function loop(p: p5) {
-    p.background(220);
+    p.background('#ffffff');
+
+    // Draw grid
+    p.push();
+    p.stroke('#e0e0e0');
+    p.strokeWeight(1);
+
+    // linhas verticais
+    for (let x = 0; x <= p.width; x += engine.config.gridSize) {
+        p.line(x + 0.5, 0, x + 0.5, p.height); // 0.5 corrige artefatos de subpixel
+    }
+
+    // linhas horizontais
+    for (let y = 0; y <= p.height; y += engine.config.gridSize) {
+        p.line(0, y + 0.5, p.width, y + 0.5);
+    }
+
+    p.pop();
 
     fps.value = Math.round(p.frameRate());
 
