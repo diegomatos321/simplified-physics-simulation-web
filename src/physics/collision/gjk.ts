@@ -7,7 +7,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
 
     // initial search direction equals to the difference of the shapes center
     let d = vec3.subtract(vec3.create(), B.getCenter(), A.getCenter());
-    if (vec3.length(d) < 1e-8) {
+    if (vec3.length(d) < 1e-3) {
         vec3.set(d, 1, 0, 0); // Default direction if centers are identical
     } else {
         vec3.normalize(d, d);
@@ -19,16 +19,17 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
     // negate d for the next point
     vec3.negate(d, d);
 
-    for (let i = 0; i < 30; i++) {
+    const MAX_ITERATIONS = 30;
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
         let a = support(A, B, d);
 
         // make sure that the last point we added actually passed the origin
-        if (vec3.dot(a, d) <= 1e-10) {
+        if (vec3.dot(a, d) <= 1e-3) {
             return false;
         }
 
         // // Check duplicate point (stuck case)
-        if (simplex.some((p) => vec3.sqrDist(p, a) < 1e-12)) {
+        if (simplex.some((p) => vec3.sqrDist(p, a) < 1e-3)) {
             return false;
         }
 
@@ -42,7 +43,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
         }
 
         // // If direction is degenerate, stop
-        if (vec3.sqrLen(d) < 1e-12) {
+        if (vec3.sqrLen(d) < 1e-3) {
             return false;
         }
     }

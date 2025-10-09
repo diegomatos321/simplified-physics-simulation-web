@@ -27,8 +27,8 @@ export default class GridSpatialPartition {
 
     public insert(body: Body): void {
         const aabb = body.getAABB();
-        const cells = this.cellsForAABB(aabb);
-        for (const [gx, gy] of cells) {
+        // const cells = this.cellsForAABB(aabb);
+        for (const [gx, gy] of this.cellsForAABB(aabb)) {
             const cell = this.grid[gy][gx];
             cell.add(body);
         }
@@ -36,9 +36,9 @@ export default class GridSpatialPartition {
 
     public query(aabb: AABB): Set<Body> {
         const resultSet = new Set<Body>();
-        const cells = this.cellsForAABB(aabb);
+        // const cells = this.cellsForAABB(aabb);
 
-        for (const [gx, gy] of cells) {
+        for (const [gx, gy] of this.cellsForAABB(aabb)) {
             const cell = this.grid[gy][gx];
             for (const body of cell) {
                 resultSet.add(body);
@@ -57,21 +57,22 @@ export default class GridSpatialPartition {
         }
     }
 
-    protected cellsForAABB(aabb: AABB) {
+    protected *cellsForAABB(aabb: AABB) {
         const gx0 = Math.floor(aabb.min[0] / this.cellsize);
         const gy0 = Math.floor(aabb.min[1] / this.cellsize);
         const gx1 = Math.floor(aabb.max[0] / this.cellsize);
         const gy1 = Math.floor(aabb.max[1] / this.cellsize);
 
-        const out: Array<[number, number]> = [];
+        // const out: Array<[number, number]> = [];
         for (let gy = gy0; gy <= gy1; gy++) {
             for (let gx = gx0; gx <= gx1; gx++) {
                 if (gx < 0 || gx >= this.ncols || gy < 0 || gy >= this.nrows) {
                     continue;
                 }
-                out.push([gx, gy]);
+                // out.push([gx, gy]);
+                yield [gx, gy];
             }
         }
-        return out;
+        // return out;
     }
 }

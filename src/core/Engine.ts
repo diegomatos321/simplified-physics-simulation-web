@@ -43,7 +43,7 @@ export default class Engine {
     protected NUM_ITERATIONS: number = 3;
 
     constructor(public config: Config) {
-        if (config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
+        if (config.BroadPhase == BroadPhaseMode.GridSpatialPartition) {
             const worldWidth = config.worldBoundings.right[0] - config.worldBoundings.top[0];
             const worldHeight = config.worldBoundings.right[1] - config.worldBoundings.top[1];
             this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, config.gridSize);
@@ -64,7 +64,7 @@ export default class Engine {
         this.contactPairs.length = 0;
         this.collidersInfo.length = 0;
 
-        if (this.config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
+        if (this.config.BroadPhase == BroadPhaseMode.GridSpatialPartition) {
             this.spatialPartition.clear();
         }
 
@@ -78,20 +78,20 @@ export default class Engine {
 
             this.integrate(body, dt);
 
-            if (this.config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
+            if (this.config.BroadPhase == BroadPhaseMode.GridSpatialPartition) {
                 this.spatialPartition.insert(body);
             }
         }
 
-        if (this.config.BroadPhase === BroadPhaseMode.GridSpatialPartition) {
+        if (this.config.BroadPhase == BroadPhaseMode.GridSpatialPartition) {
             this.broadPhase_GridSpatialPartition();
         } else {
             this.broadPhase_Naive();
         }
 
-        if (this.config.CollisionDetection === CollisionDetectionMode.Sat) {
+        if (this.config.CollisionDetection == CollisionDetectionMode.Sat) {
             this.narrowPhase_SAT();
-        } else if (this.config.CollisionDetection === CollisionDetectionMode.GjkEpa) {
+        } else if (this.config.CollisionDetection == CollisionDetectionMode.GjkEpa) {
             this.narrowPhase_GJK();
         }
 

@@ -14,7 +14,7 @@ export default function sat(shapeA: PolygonBody, shapeB: PolygonBody) {
         const projB = shapeB.project(axis);
 
         let o = projA.overlaps(projB);
-        if (o <= 1e-10) {
+        if (o <= 1e-3) {
             return false;
         } else if (o < overlap) {
             overlap = o;

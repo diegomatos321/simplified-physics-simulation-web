@@ -13,9 +13,9 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
         simplex.reverse();
     }
 
-    const TOLERANCE = 1e-3;
+    const TOLERANCE = 1e-3, MAX_ITERATIONS = 30;
     // loop to find the collision information
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
         // obtain the feature (edge for 2D) closest to the
         // origin on the Minkowski Difference
         const e = findClosestEdge(simplex);

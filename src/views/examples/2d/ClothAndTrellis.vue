@@ -176,7 +176,12 @@ function loop(p: p5) {
 
     fps.value = Math.round(p.frameRate());
 
-    engine.step(p.deltaTime / 1000);
+    const dtMs = p.deltaTime / 1000;
+    engine.step(dtMs);
+    // const substeps = 5;
+    // for (let i = 0; i < substeps; i++) {
+    //     engine.step(dtMs / substeps);
+    // }
 
     if (debug) {
         p.stroke(0, 0, 0);
