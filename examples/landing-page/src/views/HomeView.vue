@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
+import test from '@devdiegomatos/liso-engine';
+
+test();
 </script>
 
 <template>

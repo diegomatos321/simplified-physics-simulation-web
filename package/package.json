@@ -1,0 +1,20 @@
+{
+  "name": "@devdiegomatos/liso-engine",
+  "version": "1.0.0",
+  "description": "A physics engine library prototype",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "physics",
+    "simulation",
+    "game",
+    "engine"
+  ],
+  "author": "Diego V. S. de Matos",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
