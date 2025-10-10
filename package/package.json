@@ -2,9 +2,22 @@
   "name": "@devdiegomatos/liso-engine",
   "version": "1.0.0",
   "description": "A physics engine library prototype",
-  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./math": {
+      "default": "./dist/math.js",
+      "types": "./dist/math.d.ts"
+    }
+  },
+  "files": [
+    "./dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rimraf ./dist && tsc"
   },
   "keywords": [
     "physics",
@@ -12,9 +25,18 @@
     "game",
     "engine"
   ],
-  "author": "Diego V. S. de Matos",
+  "author": "Diego V. S. de Matos <diegovasconcelos62@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "@eslint/js": "^9.37.0",
+    "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.4.0",
+    "jiti": "^2.6.1",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0"
   }
 }
