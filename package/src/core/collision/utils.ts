@@ -1,9 +1,15 @@
-import type PolygonBody from '@/physics/PolygonBody';
+import type PolygonBody from '../../bodies/PolygonBody';
 import { vec3 } from 'gl-matrix';
 
-export function support(shape1: PolygonBody, shape2: PolygonBody, d: vec3): vec3 {
+export function support(
+    shape1: PolygonBody,
+    shape2: PolygonBody,
+    d: vec3,
+): vec3 {
     const p1 = shape1.getFarthestPointInDirection(d);
-    const p2 = shape2.getFarthestPointInDirection(vec3.negate(vec3.create(), d));
+    const p2 = shape2.getFarthestPointInDirection(
+        vec3.negate(vec3.create(), d),
+    );
 
     // perform the Minkowski Difference
     const p3 = vec3.subtract(vec3.create(), p1.position, p2.position);

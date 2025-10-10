@@ -1,8 +1,8 @@
-import type Body from '@/physics/Body';
-import gjk from '@/physics/collision/gjk';
-import { epa } from '@/physics/collision/epa';
+import type Body from '../bodies/Body';
+import gjk from './collision/gjk';
+import { epa } from './collision/epa';
 import { vec3 } from 'gl-matrix';
-import sat from '@/physics/collision/sat';
+import sat from './collision/sat';
 import ColliderInfo from './ColliderInfo';
 import GridSpatialPartition from './GridSpatialPartition';
 
@@ -39,14 +39,24 @@ export default class Engine {
     public collisionsTests: number = 0;
 
     protected bodies: Body[] = [];
-    protected spatialPartition: GridSpatialPartition = new GridSpatialPartition(0, 0, 1);
+    protected spatialPartition: GridSpatialPartition = new GridSpatialPartition(
+        0,
+        0,
+        1,
+    );
     protected NUM_ITERATIONS: number = 3;
 
     constructor(public config: Config) {
         if (config.BroadPhase == BroadPhaseMode.GridSpatialPartition) {
-            const worldWidth = config.worldBoundings.right[0] - config.worldBoundings.top[0];
-            const worldHeight = config.worldBoundings.right[1] - config.worldBoundings.top[1];
-            this.spatialPartition = new GridSpatialPartition(worldWidth, worldHeight, config.gridSize);
+            const worldWidth =
+                config.worldBoundings.right[0] - config.worldBoundings.top[0];
+            const worldHeight =
+                config.worldBoundings.right[1] - config.worldBoundings.top[1];
+            this.spatialPartition = new GridSpatialPartition(
+                worldWidth,
+                worldHeight,
+                config.gridSize,
+            );
         }
 
         this.gravity = config.gravity;
@@ -91,7 +101,9 @@ export default class Engine {
 
         if (this.config.CollisionDetection == CollisionDetectionMode.Sat) {
             this.narrowPhase_SAT();
-        } else if (this.config.CollisionDetection == CollisionDetectionMode.GjkEpa) {
+        } else if (
+            this.config.CollisionDetection == CollisionDetectionMode.GjkEpa
+        ) {
             this.narrowPhase_GJK();
         }
 
@@ -113,10 +125,18 @@ export default class Engine {
         for (const particle of body.particles) {
             if (particle.isStatic) continue;
 
-            const velocity = vec3.subtract(vec3.create(), particle.position, particle.oldPosition);
+            const velocity = vec3.subtract(
+                vec3.create(),
+                particle.position,
+                particle.oldPosition,
+            );
             vec3.copy(particle.oldPosition, particle.position);
 
-            const drag = vec3.fromValues(-10 * velocity[0], -10 * velocity[1], 0);
+            const drag = vec3.fromValues(
+                -10 * velocity[0],
+                -10 * velocity[1],
+                0,
+            );
             const acc = vec3.add(vec3.create(), drag, this.gravity);
             vec3.scale(acc, acc, dt * dt);
 
@@ -134,8 +154,20 @@ export default class Engine {
     satisfyConstraints(body: Body) {
         for (let i = 0; i < this.NUM_ITERATIONS; i++) {
             for (const particle of body.particles) {
-                let x = Math.max(Math.min(particle.position[0], this.config.worldBoundings.right[0]), this.config.worldBoundings.top[0]);
-                let y = Math.max(Math.min(particle.position[1], this.config.worldBoundings.right[1]), this.config.worldBoundings.top[1]);
+                let x = Math.max(
+                    Math.min(
+                        particle.position[0],
+                        this.config.worldBoundings.right[0],
+                    ),
+                    this.config.worldBoundings.top[0],
+                );
+                let y = Math.max(
+                    Math.min(
+                        particle.position[1],
+                        this.config.worldBoundings.right[1],
+                    ),
+                    this.config.worldBoundings.top[1],
+                );
                 vec3.set(particle.position, x, y, 0);
             }
 
@@ -239,8 +271,16 @@ export default class Engine {
             this.collisionsTests += 1;
             const hit = sat(convexHullA, convexHullB);
             if (hit) {
-                const colliderA = new ColliderInfo(bodyA, vec3.negate(vec3.create(), hit.normal), hit.depth);
-                const colliderB = new ColliderInfo(bodyB, hit.normal, hit.depth);
+                const colliderA = new ColliderInfo(
+                    bodyA,
+                    vec3.negate(vec3.create(), hit.normal),
+                    hit.depth,
+                );
+                const colliderB = new ColliderInfo(
+                    bodyB,
+                    hit.normal,
+                    hit.depth,
+                );
                 this.collidersInfo.push(colliderA, colliderB);
             }
         }
@@ -260,8 +300,16 @@ export default class Engine {
             const hit = gjk(convexHullA, convexHullB);
             if (hit) {
                 const mvp = epa(convexHullA, convexHullB, hit);
-                const colliderA = new ColliderInfo(bodyA, vec3.negate(vec3.create(), mvp.normal), mvp.depth);
-                const colliderB = new ColliderInfo(bodyB, mvp.normal, mvp.depth);
+                const colliderA = new ColliderInfo(
+                    bodyA,
+                    vec3.negate(vec3.create(), mvp.normal),
+                    mvp.depth,
+                );
+                const colliderB = new ColliderInfo(
+                    bodyB,
+                    mvp.normal,
+                    mvp.depth,
+                );
                 this.collidersInfo.push(colliderA, colliderB);
             }
         }
@@ -272,7 +320,9 @@ export default class Engine {
             // The separation direction is pointing away from the colliding points
             // We should look for the contact edges on the oppositive direction
             const convexHull = c.body.convexHull();
-            let edge = convexHull.getFarthestEdgeInDirection(vec3.negate(vec3.create(), c.normal));
+            let edge = convexHull.getFarthestEdgeInDirection(
+                vec3.negate(vec3.create(), c.normal),
+            );
             c.contactPoints = edge;
 
             if (this.pauseOnCollision && this.skip === false) {
@@ -283,7 +333,11 @@ export default class Engine {
                 continue;
             }
             for (const particle of edge) {
-                const correction = vec3.scale(vec3.create(), c.normal, c.depth / edge.length);
+                const correction = vec3.scale(
+                    vec3.create(),
+                    c.normal,
+                    c.depth / edge.length,
+                );
                 vec3.scale(correction, correction, 1 / particle.mass);
 
                 particle.move(correction);

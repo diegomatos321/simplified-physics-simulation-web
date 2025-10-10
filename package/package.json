@@ -1,42 +1,33 @@
 {
   "name": "@devdiegomatos/liso-engine",
-  "version": "1.0.0",
-  "description": "A physics engine library prototype",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
+  "files": ["dist"],
+  "main": "./dist/core.cjs",
+  "module": "./dist/core.js",
   "exports": {
-    ".": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+    "./core": {
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
     },
-    "./math": {
-      "default": "./dist/math.js",
-      "types": "./dist/math.d.ts"
+    "./bodies": {
+      "import": "./dist/bodies.js",
+      "require": "./dist/bodies.cjs"
     }
   },
-  "files": [
-    "./dist"
-  ],
   "scripts": {
-    "build": "rimraf ./dist && tsc"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
-  "keywords": [
-    "physics",
-    "simulation",
-    "game",
-    "engine"
-  ],
-  "author": "Diego V. S. de Matos <diegovasconcelos62@gmail.com>",
-  "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.37.0",
-    "eslint": "^9.37.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "globals": "^16.4.0",
-    "jiti": "^2.6.1",
-    "prettier": "^3.6.2",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.0"
+    "@types/earcut": "^3.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "earcut": "^3.0.2",
+    "gl-matrix": "^3.4.4"
   }
 }

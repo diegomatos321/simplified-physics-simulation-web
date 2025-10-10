@@ -9,7 +9,9 @@ export default class Projection {
 
     overlaps(other: Projection): number {
         if (this.max >= other.min && other.max >= this.min) {
-            return Math.min(this.max, other.max) - Math.max(this.min, other.min);
+            return (
+                Math.min(this.max, other.max) - Math.max(this.min, other.min)
+            );
         }
 
         return 0;

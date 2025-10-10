@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import earcut from 'earcut';
-import Particle from '@/physics/Particle';
-import IConstraint from '@/physics/constraints/IConstraint';
-import LinearConstraint from '@/physics/constraints/LinearConstraint';
+import Particle from '../core/Particle';
+import IConstraint from '../core/constraints/IConstraint';
+import LinearConstraint from '../core/constraints/LinearConstraint';
 import Body from './Body';
-import Projection from '@/physics/Projection';
+import Projection from '../core/Projection';
 
 export default class PolygonBody extends Body {
     public wireframe: boolean = false;
@@ -29,11 +29,28 @@ export default class PolygonBody extends Body {
         super(particles, constraints);
     }
 
-    static PolygonBuilder(x: number, y: number, size: number, k: number, isStatic: boolean = false, restitution: number = 0.5) {
+    static PolygonBuilder(
+        x: number,
+        y: number,
+        size: number,
+        k: number,
+        isStatic: boolean = false,
+        restitution: number = 0.5,
+    ) {
         const particles: Particle[] = [];
         for (let i = 0; i < k; i++) {
             const angle = (i / k) * 2 * Math.PI; // Start from right
-            particles.push(new Particle(vec3.fromValues(x + (size / 2) * Math.cos(angle), y + (size / 2) * Math.sin(angle), 0), 1, isStatic));
+            particles.push(
+                new Particle(
+                    vec3.fromValues(
+                        x + (size / 2) * Math.cos(angle),
+                        y + (size / 2) * Math.sin(angle),
+                        0,
+                    ),
+                    1,
+                    isStatic,
+                ),
+            );
         }
 
         return new PolygonBody(particles, restitution);
@@ -61,7 +78,9 @@ export default class PolygonBody extends Body {
             return [(x - minX) / (maxX - minX), (y - minY) / (maxY - minY)];
         }); // Automatic Triangulation with Earcut
 
-        const flattened_vertices = convexHull.particles.map((p) => [p.position[0], p.position[1]]).flat();
+        const flattened_vertices = convexHull.particles
+            .map((p) => [p.position[0], p.position[1]])
+            .flat();
 
         const indices = earcut(flattened_vertices);
 

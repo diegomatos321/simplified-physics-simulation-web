@@ -1,9 +1,16 @@
 import PolygonBody from './PolygonBody';
-import Particle from './Particle';
+import Particle from '../core/Particle';
 import { vec3 } from 'gl-matrix';
 
 export default class RectangleBody extends PolygonBody {
-    constructor(x: number, y: number, width: number, height: number, isStatic: boolean = false, restitution: number = 0.5) {
+    constructor(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        isStatic: boolean = false,
+        restitution: number = 0.5,
+    ) {
         const w2 = width / 2;
         const h2 = height / 2;
 

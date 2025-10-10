@@ -1,5 +1,5 @@
-import type Body from '@/physics/Body';
-import type Particle from '@/physics/Particle';
+import type Body from '../bodies/Body';
+import type Particle from './Particle';
 import type { vec3 } from 'gl-matrix';
 
 export default class ColliderInfo {

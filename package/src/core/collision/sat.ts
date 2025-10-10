@@ -1,4 +1,4 @@
-import type PolygonBody from '@/physics/PolygonBody';
+import type PolygonBody from '../../bodies/PolygonBody';
 import { vec3 } from 'gl-matrix';
 
 export default function sat(shapeA: PolygonBody, shapeB: PolygonBody) {
@@ -24,7 +24,10 @@ export default function sat(shapeA: PolygonBody, shapeB: PolygonBody) {
             const centerA = shapeA.getCenter();
             const centerB = shapeB.getCenter();
             // const direction = twgl.v3.dot(twgl.v3.subtract(centerB, centerA), axis);
-            const direction = vec3.dot(vec3.subtract(vec3.create(), centerB, centerA), axis);
+            const direction = vec3.dot(
+                vec3.subtract(vec3.create(), centerB, centerA),
+                axis,
+            );
             if (direction < 0) {
                 // smallest = twgl.v3.negate(axis);
                 smallest = vec3.negate(vec3.create(), axis);

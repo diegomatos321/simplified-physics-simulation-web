@@ -1,4 +1,4 @@
-import type Body from '@/physics/Body';
+import type Body from '../bodies/Body';
 import type AABB from './AABB';
 
 export default class GridSpatialPartition {

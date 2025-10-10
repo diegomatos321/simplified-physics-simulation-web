@@ -12,14 +12,28 @@ export default class LinearConstraint extends IConstraint {
     relax(): void {
         if (this.isActive === false) return;
 
-        let delta = vec3.subtract(vec3.create(), this.p1.position, this.p0.position);
+        let delta = vec3.subtract(
+            vec3.create(),
+            this.p1.position,
+            this.p0.position,
+        );
         let deltalength = vec3.length(delta);
-        let diff = (deltalength - this.restlength) / (deltalength * (this.p0.invmass + this.p1.invmass));
+        let diff =
+            (deltalength - this.restlength) /
+            (deltalength * (this.p0.invmass + this.p1.invmass));
 
-        const vel1 = vec3.scale(vec3.create(), delta, this.p0.invmass * diff * this.restitution);
+        const vel1 = vec3.scale(
+            vec3.create(),
+            delta,
+            this.p0.invmass * diff * this.restitution,
+        );
         this.p0.move(vel1);
 
-        const vel2 = vec3.scale(vec3.create(), delta, -this.p1.invmass * diff * this.restitution);
+        const vel2 = vec3.scale(
+            vec3.create(),
+            delta,
+            -this.p1.invmass * diff * this.restitution,
+        );
         this.p1.move(vel2);
     }
 }
