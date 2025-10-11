@@ -28,6 +28,7 @@ export interface Config {
 export default class Engine {
     public gravity: vec3;
 
+    public bodies: Body[] = [];
     public contactPairs: [Body, Body][] = [];
     public collidersInfo: ColliderInfo[] = [];
 
@@ -39,7 +40,6 @@ export default class Engine {
     public constraintsCount: number = 0;
     public collisionsTests: number = 0;
 
-    protected bodies: Body[] = [];
     protected spatialPartition: GridSpatialPartition = new GridSpatialPartition(
         0,
         0,
