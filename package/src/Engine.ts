@@ -1,10 +1,11 @@
-import type Body from '../bodies/Body';
-import gjk from './collision/gjk';
-import { epa } from './collision/epa';
 import { vec3 } from 'gl-matrix';
-import sat from './collision/sat';
-import ColliderInfo from './ColliderInfo';
-import GridSpatialPartition from './GridSpatialPartition';
+
+import type Body from './bodies/Body';
+import ColliderInfo from './core/ColliderInfo';
+import { epa } from './core/collision/epa';
+import gjk from './core/collision/gjk';
+import sat from './core/collision/sat';
+import GridSpatialPartition from './core/GridSpatialPartition';
 
 export enum BroadPhaseMode {
     Naive,
@@ -154,14 +155,14 @@ export default class Engine {
     satisfyConstraints(body: Body) {
         for (let i = 0; i < this.NUM_ITERATIONS; i++) {
             for (const particle of body.particles) {
-                let x = Math.max(
+                const x = Math.max(
                     Math.min(
                         particle.position[0],
                         this.config.worldBoundings.right[0],
                     ),
                     this.config.worldBoundings.top[0],
                 );
-                let y = Math.max(
+                const y = Math.max(
                     Math.min(
                         particle.position[1],
                         this.config.worldBoundings.right[1],
@@ -320,7 +321,7 @@ export default class Engine {
             // The separation direction is pointing away from the colliding points
             // We should look for the contact edges on the oppositive direction
             const convexHull = c.body.convexHull();
-            let edge = convexHull.getFarthestEdgeInDirection(
+            const edge = convexHull.getFarthestEdgeInDirection(
                 vec3.negate(vec3.create(), c.normal),
             );
             c.contactPoints = edge;

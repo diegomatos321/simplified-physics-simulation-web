@@ -1,5 +1,6 @@
-import type PolygonBody from '../../bodies/PolygonBody';
 import { vec3 } from 'gl-matrix';
+
+import type PolygonBody from '../../bodies/PolygonBody';
 
 export function support(
     shape1: PolygonBody,
@@ -19,8 +20,8 @@ export function support(
 }
 
 export function tripleProduct(a: vec3, b: vec3, c: vec3): vec3 {
-    let triple1 = vec3.scale(vec3.create(), b, vec3.dot(c, a));
-    let triple2 = vec3.scale(vec3.create(), a, vec3.dot(c, b));
+    const triple1 = vec3.scale(vec3.create(), b, vec3.dot(c, a));
+    const triple2 = vec3.scale(vec3.create(), a, vec3.dot(c, b));
 
     return vec3.subtract(vec3.create(), triple1, triple2);
 }

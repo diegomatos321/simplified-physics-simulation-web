@@ -1,6 +1,7 @@
-import PolygonBody from './PolygonBody';
-import Particle from '../core/Particle';
 import { vec3 } from 'gl-matrix';
+
+import Particle from '../core/Particle';
+import PolygonBody from './PolygonBody';
 
 export default class RectangleBody extends PolygonBody {
     constructor(

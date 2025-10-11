@@ -1,6 +1,7 @@
+import { vec3 } from 'gl-matrix';
+
 import type PolygonBody from '../../bodies/PolygonBody';
 import { support, tripleProduct } from './utils';
-import { vec3 } from 'gl-matrix';
 
 export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
     // Ensure the simplex has a counter-clockwise winding
@@ -58,7 +59,7 @@ function findClosestEdge(simplex: vec3[]) {
 
     for (let i = 0; i < simplex.length; i++) {
         // compute the next points index
-        let j = (i + 1) % simplex.length;
+        const j = (i + 1) % simplex.length;
 
         // get the current point and the next one
         const a = simplex[i];

@@ -1,5 +1,6 @@
-import type PolygonBody from '../../bodies/PolygonBody';
 import { vec3 } from 'gl-matrix';
+
+import type PolygonBody from '../../bodies/PolygonBody';
 
 export default function sat(shapeA: PolygonBody, shapeB: PolygonBody) {
     const axesA = shapeA.axes();
@@ -13,7 +14,7 @@ export default function sat(shapeA: PolygonBody, shapeB: PolygonBody) {
         const projA = shapeA.project(axis);
         const projB = shapeB.project(axis);
 
-        let o = projA.overlaps(projB);
+        const o = projA.overlaps(projB);
         if (o <= 1e-3) {
             return false;
         } else if (o < overlap) {

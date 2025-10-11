@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+
 import type Particle from '../Particle';
 import IConstraint from './IConstraint';
 
@@ -12,13 +13,13 @@ export default class LinearConstraint extends IConstraint {
     relax(): void {
         if (this.isActive === false) return;
 
-        let delta = vec3.subtract(
+        const delta = vec3.subtract(
             vec3.create(),
             this.p1.position,
             this.p0.position,
         );
-        let deltalength = vec3.length(delta);
-        let diff =
+        const deltalength = vec3.length(delta);
+        const diff =
             (deltalength - this.restlength) /
             (deltalength * (this.p0.invmass + this.p1.invmass));
 

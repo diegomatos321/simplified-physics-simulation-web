@@ -1,12 +1,13 @@
+import { vec3 } from 'gl-matrix';
+
 import type PolygonBody from '../../bodies/PolygonBody';
 import { support, tripleProduct } from './utils';
-import { vec3 } from 'gl-matrix';
 
 export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
     const simplex: vec3[] = [];
 
     // initial search direction equals to the difference of the shapes center
-    let d = vec3.subtract(vec3.create(), B.getCenter(), A.getCenter());
+    const d = vec3.subtract(vec3.create(), B.getCenter(), A.getCenter());
     if (vec3.length(d) < 1e-3) {
         vec3.set(d, 1, 0, 0); // Default direction if centers are identical
     } else {
@@ -21,7 +22,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
 
     const MAX_ITERATIONS = 30;
     for (let i = 0; i < MAX_ITERATIONS; i++) {
-        let a = support(A, B, d);
+        const a = support(A, B, d);
 
         // make sure that the last point we added actually passed the origin
         if (vec3.dot(a, d) <= 1e-3) {

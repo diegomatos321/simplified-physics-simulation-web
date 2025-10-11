@@ -1,10 +1,11 @@
-import { vec3 } from 'gl-matrix';
 import earcut from 'earcut';
-import Particle from '../core/Particle';
-import IConstraint from '../core/constraints/IConstraint';
+import { vec3 } from 'gl-matrix';
+
+import type IConstraint from '../core/constraints/IConstraint';
 import LinearConstraint from '../core/constraints/LinearConstraint';
-import Body from './Body';
+import Particle from '../core/Particle';
 import Projection from '../core/Projection';
+import Body from './Body';
 
 export default class PolygonBody extends Body {
     public wireframe: boolean = false;
@@ -153,7 +154,7 @@ export default class PolygonBody extends Body {
         cx /= 6 * area;
         cy /= 6 * area;
 
-        let result = vec3.create();
+        const result = vec3.create();
         return vec3.set(result, cx, cy, 0);
     }
 
@@ -162,7 +163,7 @@ export default class PolygonBody extends Body {
         let best = this.particles[0];
 
         for (const particle of this.particles) {
-            let candidate = vec3.dot(d, particle.position);
+            const candidate = vec3.dot(d, particle.position);
             if (candidate > max) {
                 max = candidate;
                 best = particle;
@@ -179,7 +180,7 @@ export default class PolygonBody extends Body {
             best2 = this.particles[1];
 
         for (const particle of this.particles) {
-            let candidate = vec3.dot(d, particle.position);
+            const candidate = vec3.dot(d, particle.position);
             if (candidate > max) {
                 max2 = max;
                 best2 = best;

@@ -92,14 +92,11 @@ canvas {
 </template>
 
 <script setup lang="ts">
+import { vec3 } from 'gl-matrix';
 import { onBeforeUnmount, ref } from 'vue';
 import p5 from 'p5';
-import type Body from '@/physics/Body';
-import PolygonBody from '@/physics/PolygonBody';
-import TriangleBody from '@/physics/TriangleBody';
-import RectangleBody from '@/physics/RectangleBody';
-import Engine, { BroadPhaseMode, CollisionDetectionMode } from '@/core/Engine';
-import { vec3 } from 'gl-matrix';
+import { PolygonBody, Body, TriangleBody, RectangleBody } from '@devdiegomatos/liso-engine/bodies';
+import { Engine, BroadPhaseMode, CollisionDetectionMode } from '@devdiegomatos/liso-engine';
 
 const sketchContainer = ref<HTMLDivElement | null>(null);
 let sketchInstance: p5 | null = null;
@@ -305,11 +302,6 @@ function loop(p: p5) {
 
 onBeforeUnmount(() => {
     console.log('Clean up');
-    // isRunning = false;
-
-    // if (animationId) {
-    //     cancelAnimationFrame(animationId);
-    // }
 
     if (sketchInstance) {
         sketchInstance.remove();

@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+
 import Particle from '../core/Particle';
 import PolygonBody from './PolygonBody';
 

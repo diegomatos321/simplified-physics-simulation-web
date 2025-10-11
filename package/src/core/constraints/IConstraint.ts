@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+
 import type Particle from '../Particle';
 
 export default abstract class IConstraint {

@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
-import { add } from '@devdiegomatos/liso-engine/math';
-
-console.log(add(1, 5));
 </script>
 
 <template>

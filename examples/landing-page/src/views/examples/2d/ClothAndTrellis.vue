@@ -70,11 +70,9 @@ canvas {
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import p5 from 'p5';
-import type Body from '@/physics/Body';
-import PolygonBody from '@/physics/PolygonBody';
-import TrellisBody from '@/physics/TrellisBody';
-import Engine, { BroadPhaseMode, CollisionDetectionMode } from '@/core/Engine';
 import { vec3 } from 'gl-matrix';
+import { type Body, PolygonBody, TrellisBody } from '@devdiegomatos/liso-engine/bodies';
+import { Engine, BroadPhaseMode, CollisionDetectionMode } from '@devdiegomatos/liso-engine';
 
 const sketchContainer = ref<HTMLDivElement | null>(null);
 let sketchInstance: p5 | null = null;
