@@ -13,6 +13,7 @@ export default defineConfig({
                 index: resolve(__dirname, 'src/index.ts'),
                 core: resolve(__dirname, 'src/core/index.ts'),
                 bodies: resolve(__dirname, 'src/bodies/index.ts'),
+                worker: resolve(__dirname, 'src/worker/index.ts'),
             },
             name: 'LisoEngine',
         },

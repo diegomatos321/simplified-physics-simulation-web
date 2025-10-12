@@ -9,6 +9,7 @@ import type PolygonBody from './PolygonBody';
 export default abstract class Body {
     // public colliders: Collider[] = [];
     public readonly id: number;
+    public constraintsIndices: number[] = []; // Particles indices that belongs to constraints
 
     // cache convex hull
     public _convexHull: PolygonBody | null = null;

@@ -13,12 +13,15 @@ export default class PolygonBody extends Body {
     constructor(particles: Particle[], restitution: number = 0.5) {
         // 1. Setup Constrains
         const constraints: IConstraint[] = [];
+        const constraintsIndices = [];
 
         // Create constraints for the outer edges
         for (let i = 0; i < particles.length; i++) {
+            const j = (i + 1) % particles.length;
             const p1 = particles[i];
-            const p2 = particles[(i + 1) % particles.length];
+            const p2 = particles[j];
             constraints.push(new LinearConstraint(p1, p2, restitution));
+            constraintsIndices.push(i, j);
         }
 
         // Internal strut constraints for rigidity (connecting every other vertex)
@@ -27,7 +30,9 @@ export default class PolygonBody extends Body {
             const p2 = particles[(i + 2) % particles.length];
             constraints.push(new LinearConstraint(p1, p2));
         }
+
         super(particles, constraints);
+        this.constraintsIndices = constraintsIndices;
     }
 
     static PolygonBuilder(
