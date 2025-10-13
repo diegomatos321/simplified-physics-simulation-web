@@ -33,15 +33,15 @@ canvas {
                 </div>
                 <div class="flex justify-between">
                     <p>Particles</p>
-                    <!-- <p>{{ engine.particlesCount }}</p> -->
+                    <p>{{ simulation_state.particlesCount }}</p>
                 </div>
                 <div class="flex justify-between">
                     <p>Constraints</p>
-                    <!-- <p>{{ engine.constraintsCount }}</p> -->
+                    <p>{{ simulation_state.constraintsCount }}</p>
                 </div>
                 <div class="flex justify-between">
                     <p>Collision Tests</p>
-                    <!-- <p>{{ engine.collisionsTests }}</p> -->
+                    <p>{{ simulation_state.collisionsTests }}</p>
                 </div>
 
                 <hr class="my-4 border-slate-200" />
@@ -104,6 +104,7 @@ import {
     type ObjectBuilderArgs,
     ObjectType,
     type PhysicsObjectState,
+    type SimulationState,
 } from '@devdiegomatos/liso-engine/worker';
 
 const sketchContainer = ref<HTMLDivElement | null>(null);
@@ -123,7 +124,13 @@ let debug = true,
     hasStarted = false;
 // let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
 // let player: { uvs: [number, number][]; indices: number[]; body: Body };
-let objs: PhysicsObjectState[] = [];
+let simulation_state: SimulationState = {
+    objects: [],
+    collidersInfo: [],
+    particlesCount: 0,
+    constraintsCount: 0,
+    collisionsTests: 0,
+};
 let totalEntities = 20,
     dirX = 0,
     dirY = 0,
@@ -240,7 +247,10 @@ function loop(p: p5) {
     p.stroke(0, 0, 0);
     p.strokeWeight(1);
     p.beginShape(p.LINES);
-    for (const obj of objs) {
+    for (const obj of simulation_state.objects) {
+        if (obj.isStatic) {
+            continue;
+        }
         for (const ci of obj.constraintsIndices) {
             let x0 = obj.particles[ci * 2];
             let y0 = obj.particles[ci * 2 + 1];
@@ -251,66 +261,55 @@ function loop(p: p5) {
     }
     p.endShape();
 
-    //     // Batch draw all constraints of static particles in red
-    //     p.stroke(255, 0, 0);
-    //     p.strokeWeight(1);
-    //     p.beginShape(p.LINES);
-    //     for (const entity of entities) {
-    //         for (const constraint of entity.body.constraints) {
-    //             if (constraint.p0.isStatic) {
-    //                 p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
-    //             }
-    //             if (constraint.p1.isStatic) {
-    //                 p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
-    //             }
-    //         }
-    //     }
-    //     p.endShape();
+    // Batch draw all constraints of static particles in red
+    p.stroke(255, 0, 0);
+    p.strokeWeight(1);
+    p.beginShape(p.LINES);
+    for (const obj of simulation_state.objects) {
+        if (obj.isStatic === false) {
+            continue;
+        }
+        for (const ci of obj.constraintsIndices) {
+            let x0 = obj.particles[ci * 2];
+            let y0 = obj.particles[ci * 2 + 1];
+            p.vertex(x0, y0);
+        }
+    }
+    p.endShape();
 
-    //     // Batch draw all convex hull in blue
-    //     p.stroke(150, 200, 255);
-    //     p.strokeWeight(1);
-    //     p.beginShape(p.LINES);
-    //     for (const colliderInfo of engine.collidersInfo) {
-    //         // const body = engine.bodies[colliderInfo.bodyIndex];
-    //         const body = colliderInfo.body;
-    //         const convexHull = body.convexHull();
+    // Batch draw all convex hull in blue
+    p.stroke(150, 200, 255);
+    p.strokeWeight(1);
+    p.beginShape(p.LINES);
+    for (const colliderInfo of simulation_state.collidersInfo) {
+        // convex hull layout: x0, y0, x1, y1, x2, y2, ...
+        const totalParticles = colliderInfo.convexHull.length / 2;
+        for (let i = 0; i < totalParticles; i++) {
+            let x0 = colliderInfo.convexHull[i * 2];
+            let y0 = colliderInfo.convexHull[i * 2 + 1];
+            p.vertex(x0, y0);
 
-    //         for (let i = 0; i < convexHull.particles.length; i++) {
-    //             const v1 = convexHull.particles[i];
-    //             const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
-    //             p.vertex(v1.position[0], v1.position[1]);
-    //             p.vertex(v2.position[0], v2.position[1]);
-    //         }
-    //     }
-    //     p.endShape();
+            let j = (i + 1) * 2; // next particle indice
+            let x1 = colliderInfo.convexHull[j % colliderInfo.convexHull.length];
+            let y1 = colliderInfo.convexHull[(j + 1) % colliderInfo.convexHull.length];
+            p.vertex(x1, y1);
+        }
+    }
+    p.endShape();
 
-    //     // Batch draw all contact points in red
-    //     p.stroke(255, 0, 0);
-    //     p.strokeWeight(2);
-    //     p.beginShape(p.POINTS);
-    //     for (const colliderInfo of engine.collidersInfo) {
-    //         // Draw the contact points and normal direction
-    //         for (const particle of colliderInfo.contactPoints) {
-    //             p.vertex(particle.position[0], particle.position[1]);
-    //         }
-    //     }
-    //     p.endShape();
-
-    //     // Batch draw all separation normals in red
-    //     p.stroke(255, 0, 0);
-    //     p.strokeWeight(1);
-    //     p.beginShape(p.LINES);
-    //     for (const colliderInfo of engine.collidersInfo) {
-    //         for (const particle of colliderInfo.contactPoints) {
-    //             const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
-    //             const p2 = vec3.add(vec3.create(), particle.position, delta);
-    //             p.vertex(particle.position[0], particle.position[1]);
-    //             p.vertex(p2[0], p2[1]);
-    //         }
-    //     }
-    //     p.endShape();
-    // }
+    // Batch draw all contact points in red
+    p.stroke(255, 0, 0);
+    p.strokeWeight(2);
+    p.beginShape(p.POINTS);
+    for (const colliderInfo of simulation_state.collidersInfo) {
+        // Draw the contact points
+        for (let i = 0; i < colliderInfo.contactPoints.length; i += 2) {
+            let x0 = colliderInfo.contactPoints[i];
+            let y0 = colliderInfo.contactPoints[i + 1];
+            p.vertex(x0, y0);
+        }
+    }
+    p.endShape();
 }
 
 onBeforeUnmount(() => {
@@ -356,7 +355,8 @@ onBeforeUnmount(() => {
 function OnWorkerEvent(e: MessageEvent<WorkerToMainMessage>) {
     const msg = e.data;
     if (msg.type === 'simulation_state') {
-        objs = msg.state.objects;
+        simulation_state = msg.state;
+        // console.dir(simulation_state);
     }
 }
 </script>

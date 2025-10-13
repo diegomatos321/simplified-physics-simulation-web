@@ -3,6 +3,7 @@ import Engine from '../Engine';
 import {
     type MainToWorkerMessage,
     ObjectType,
+    type PhysicsCollidersInfo,
     type PhysicsObjectState,
     type SimulationState,
 } from './types';
@@ -29,23 +30,48 @@ function step() {
         lastTime += MS_PER_STEP;
     }
 
-    // 2. Extraia os dados de posição dos corpos
+    // 2.1 Extraia os dados de posição dos corpos
     const objectsState: PhysicsObjectState[] = [];
     for (const body of engine.bodies) {
         const particles = [];
         for (const p of body.particles) {
-            particles.push(p.position[0], p.position[1])
+            particles.push(p.position[0], p.position[1]);
         }
 
         objectsState.push({
             particles,
             constraintsIndices: body.constraintsIndices,
+            isStatic: body.particles[0].isStatic,
+        });
+    }
+
+    // 2.2 Extraia os dados de colisão da simulação
+    const collidersInfo: PhysicsCollidersInfo[] = [];
+    for (const colliderInfo of engine.collidersInfo) {
+        const convexHull = colliderInfo.body.convexHull();
+        const hull = [];
+        for (const p_hull of convexHull.particles) {
+            hull.push(p_hull.position[0], p_hull.position[1]);
+        }
+
+        const contactPoints = [];
+        for (const p of colliderInfo.contactPoints) {
+            contactPoints.push(p.position[0], p.position[1]);
+        }
+
+        collidersInfo.push({
+            convexHull: hull,
+            contactPoints,
         });
     }
 
     // 3. Empacote o estado
     const state: SimulationState = {
         objects: objectsState,
+        collidersInfo,
+        particlesCount: engine.particlesCount,
+        constraintsCount: engine.constraintsCount,
+        collisionsTests: engine.collisionsTests,
     };
 
     // 4. Envie o estado para a Main Thread

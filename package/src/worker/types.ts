@@ -17,14 +17,23 @@ export interface ObjectBuilderArgs {
 }
 
 export interface PhysicsObjectState {
-    particles: number[], // x1, y1
-    constraintsIndices: number[] // particles indices
+    particles: number[]; // x1, y1
+    constraintsIndices: number[]; // particles indices
+    isStatic: boolean;
+}
+
+export interface PhysicsCollidersInfo {
+    convexHull: number[];
+    contactPoints: number[];
 }
 
 // Representa o estado completo da simulação a ser enviado para a Main Thread
 export interface SimulationState {
     objects: PhysicsObjectState[];
-    // Outros dados, como tempo de simulação, etc.
+    collidersInfo: PhysicsCollidersInfo[];
+    particlesCount: number;
+    constraintsCount: number;
+    collisionsTests: number;
 }
 
 // Mensagens que a Main Thread pode enviar para o Worker
