@@ -191,7 +191,7 @@ export default class Engine {
                 const idA = bodyA.id;
                 const idB = bodyB.id;
                 const keyPair = idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
-                if (seen.has(keyPair)) {
+                if (idA === idB || seen.has(keyPair)) {
                     continue;
                 }
 
