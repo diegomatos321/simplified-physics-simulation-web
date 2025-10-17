@@ -76,12 +76,7 @@ function findClosestEdge(simplex: vec3[]) {
         vec3.normalize(n, n);
 
         // calculate the distance from the origin to the edge
-        let d = vec3.dot(n, a);
-        // Ensure the normal points towards the origin and the distance is positive
-        if (d < 0) {
-            d = -d;
-            vec3.negate(n, n);
-        }
+        const d = vec3.dot(n, a);
 
         // check the distance against the other distances
         if (d < closest.distance) {
