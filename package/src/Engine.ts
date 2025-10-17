@@ -324,7 +324,8 @@ export default class Engine {
             const edge = convexHull.getFarthestEdgeInDirection(
                 vec3.negate(vec3.create(), c.normal),
             );
-            c.contactPoints = edge;
+            c.contactPoints = edge.filter((p) => p.isStatic === false);
+            // c.contactPoints = edge;
 
             if (this.pauseOnCollision && this.skip === false) {
                 this.isPaused = true;
@@ -333,16 +334,22 @@ export default class Engine {
                 // rendering debug
                 continue;
             }
-            for (const particle of edge) {
+
+            for (const particle of c.contactPoints) {
+                if (particle.isStatic) {
+                    continue;
+                }
+
                 const correction = vec3.scale(
                     vec3.create(),
                     c.normal,
-                    c.depth / edge.length,
+                    c.depth / c.contactPoints.length,
                 );
                 vec3.scale(correction, correction, 1 / particle.mass);
 
                 particle.move(correction);
             }
+            // console.log(c);
         }
     }
 

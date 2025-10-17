@@ -3,6 +3,9 @@ import { vec3 } from 'gl-matrix';
 import type PolygonBody from '../../bodies/PolygonBody';
 import { support, tripleProduct } from './utils';
 
+const TOLERANCE = 1e-6,
+    MAX_ITERATIONS = 30;
+
 export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
     // Ensure the simplex has a counter-clockwise winding
     const ab = vec3.subtract(vec3.create(), simplex[1], simplex[0]);
@@ -14,8 +17,6 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
         simplex.reverse();
     }
 
-    const TOLERANCE = 1e-3,
-        MAX_ITERATIONS = 30;
     // loop to find the collision information
     for (let i = 0; i < MAX_ITERATIONS; i++) {
         // obtain the feature (edge for 2D) closest to the
@@ -24,6 +25,15 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
 
         // obtain a new support point in the direction of the edge normal
         const p = support(A, B, e.normal);
+
+        // Se um ponto for duplicado, consideramos que o algoritmo convergiu
+        // e retornamos o resultado da aresta atual, que é o mais preciso.
+        const duplicate = simplex.some(
+            (v) => vec3.squaredDistance(v, p) < TOLERANCE * TOLERANCE,
+        );
+        if (duplicate) {
+            return { normal: e.normal, depth: e.distance };
+        }
 
         // check the distance from the origin to the edge against the
         // distance p is along e.normal
@@ -35,12 +45,12 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
             // assume that we cannot expand the simplex any further and
             // we have our solution
             return { normal: e.normal, depth: d };
-        } else {
-            // we haven't reached the edge of the Minkowski Difference
-            // so continue expanding by adding the new point to the simplex
-            // in between the points that made the closest edge
-            simplex.splice(e.index, 0, p);
         }
+
+        // we haven't reached the edge of the Minkowski Difference
+        // so continue expanding by adding the new point to the simplex
+        // in between the points that made the closest edge
+        simplex.splice(e.index, 0, p);
     }
 
     // Fallback if max iterations reached
@@ -49,10 +59,8 @@ export function epa(A: PolygonBody, B: PolygonBody, simplex: vec3[]) {
 }
 
 function findClosestEdge(simplex: vec3[]) {
-    // Edge closest = new Edge();
     const closest = {
         index: 0,
-        // prime the distance of the edge to the max
         distance: Number.POSITIVE_INFINITY,
         normal: vec3.fromValues(0, 0, 0),
     };
@@ -67,6 +75,11 @@ function findClosestEdge(simplex: vec3[]) {
 
         // create the edge vector
         const e = vec3.subtract(vec3.create(), b, a);
+
+        // Checagem de aresta degenerada (pontos coincidentes)
+        if (vec3.squaredLength(e) < TOLERANCE * TOLERANCE) {
+            continue;
+        }
 
         // get the vector from the origin to a
         const oa = a; // or a - ORIGIN

@@ -3,12 +3,14 @@ import { vec3 } from 'gl-matrix';
 import type PolygonBody from '../../bodies/PolygonBody';
 import { support, tripleProduct } from './utils';
 
+const TOLERANCE = 1e-6;
+
 export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
     const simplex: vec3[] = [];
 
     // initial search direction equals to the difference of the shapes center
     const d = vec3.subtract(vec3.create(), B.getCenter(), A.getCenter());
-    if (vec3.length(d) < 1e-3) {
+    if (vec3.length(d) < TOLERANCE) {
         vec3.set(d, 1, 0, 0); // Default direction if centers are identical
     } else {
         vec3.normalize(d, d);
@@ -25,7 +27,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
         const a = support(A, B, d);
 
         // make sure that the last point we added actually passed the origin
-        if (vec3.dot(a, d) <= 1e-3) {
+        if (vec3.dot(a, d) <= TOLERANCE) {
             return false;
         }
 
@@ -44,7 +46,7 @@ export default function gjk(A: PolygonBody, B: PolygonBody): vec3[] | false {
         }
 
         // // If direction is degenerate, stop
-        if (vec3.sqrLen(d) < 1e-3) {
+        if (vec3.sqrLen(d) < TOLERANCE) {
             return false;
         }
     }
