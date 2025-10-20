@@ -13,7 +13,7 @@ export default class PolygonBody extends Body {
     constructor(particles: Particle[], restitution: number = 0.5) {
         // 1. Setup Constrains
         const constraints: IConstraint[] = [];
-        const constraintsIndices = [];
+        const constraintsIndices: number[] = [];
 
         // Create constraints for the outer edges
         for (let i = 0; i < particles.length; i++) {

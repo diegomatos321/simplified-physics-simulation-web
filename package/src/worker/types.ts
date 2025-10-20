@@ -4,6 +4,7 @@ export enum ObjectType {
     Triangle,
     Rectangle,
     Polygon,
+    Trellis
 }
 
 // Representa o estado de um único objeto na simulação
@@ -11,9 +12,14 @@ export interface ObjectBuilderArgs {
     type: ObjectType;
     x: number;
     y: number;
-    size: number;
-    k?: number;
     isStatic?: boolean;
+    size?: number;
+    width?: number;
+    height?: number;
+    k?: number;
+    nx?: number;
+    ny?: number;
+    reinforce?: boolean;
 }
 
 export interface PhysicsObjectState {

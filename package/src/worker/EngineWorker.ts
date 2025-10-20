@@ -1,7 +1,16 @@
-import { PolygonBody, RectangleBody, TriangleBody } from '../bodies';
+import { vec3 } from 'gl-matrix';
+
+import {
+    type Body,
+    PolygonBody,
+    RectangleBody,
+    TrellisBody,
+    TriangleBody,
+} from '../bodies';
 import Engine from '../Engine';
 import {
     type MainToWorkerMessage,
+    type ObjectBuilderArgs,
     ObjectType,
     type PhysicsCollidersInfo,
     type PhysicsObjectState,
@@ -90,42 +99,7 @@ self.addEventListener('message', (e: MessageEvent<MainToWorkerMessage>) => {
         engine = new Engine(msg.config);
         if (msg.objects) {
             for (const obj of msg.objects) {
-                switch (obj.type) {
-                    case ObjectType.Triangle:
-                        engine.addBody(
-                            new TriangleBody(
-                                obj.x,
-                                obj.y,
-                                obj.size,
-                                obj.isStatic,
-                            ),
-                        );
-                        break;
-                    case ObjectType.Rectangle:
-                        engine.addBody(
-                            new RectangleBody(
-                                obj.x,
-                                obj.y,
-                                obj.size,
-                                obj.size / 2,
-                                obj.isStatic,
-                            ),
-                        );
-                        break;
-                    case ObjectType.Polygon:
-                        engine.addBody(
-                            PolygonBody.PolygonBuilder(
-                                obj.x,
-                                obj.y,
-                                obj.size,
-                                obj.k || 5,
-                                obj.isStatic || false,
-                            ),
-                        );
-                        break;
-                    default:
-                        break;
-                }
+                engine.addBody(MakeBody(obj));
             }
         }
 
@@ -137,8 +111,54 @@ self.addEventListener('message', (e: MessageEvent<MainToWorkerMessage>) => {
         lastTime = performance.now();
         simulationInterval = self.setTimeout(step, 0);
     } else if (msg.type === 'add_body') {
-        // engine.addBody(msg.body);
         console.log('[Worker] Add body');
-        console.dir(msg);
+        engine.addBody(MakeBody(msg.obj));
     }
 });
+
+function MakeBody(obj: ObjectBuilderArgs): Body {
+    let result: Body;
+
+    switch (obj.type) {
+        case ObjectType.Triangle:
+            result = new TriangleBody(
+                obj.x,
+                obj.y,
+                obj.size || 40,
+                obj.isStatic,
+            );
+            break;
+        case ObjectType.Rectangle:
+            result = new RectangleBody(
+                obj.x,
+                obj.y,
+                obj.width || 40,
+                obj.height || 40,
+                obj.isStatic,
+            );
+            break;
+        case ObjectType.Polygon:
+            result = PolygonBody.PolygonBuilder(
+                obj.x,
+                obj.y,
+                obj.size || 40,
+                obj.k || 5,
+                obj.isStatic || false,
+            );
+            break;
+        case ObjectType.Trellis:
+            result = new TrellisBody(
+                vec3.fromValues(obj.x, obj.y, 0),
+                vec3.fromValues(obj.width || 40, obj.height || 40, 0),
+                obj.nx || 4,
+                obj.ny || 4,
+                obj.reinforce || false,
+            );
+            break;
+        default:
+            throw 'Unsuported body type';
+            break;
+    }
+
+    return result;
+}

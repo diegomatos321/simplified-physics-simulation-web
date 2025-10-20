@@ -46,8 +46,8 @@ canvas {
 
                 <hr class="my-4 border-slate-200" />
                 <div class="flex justify-between">
-                    <label for="debug">Debug Mode</label>
-                    <input id="debug" name="debug" type="checkbox" v-model="debug" />
+                    <label for="threaded">Threaded Mode</label>
+                    <input id="threaded" name="threaded" type="checkbox" v-model="threaded" />
                 </div>
 
                 <div class="flex justify-between">
@@ -57,7 +57,7 @@ canvas {
 
                 <div class="flex justify-between">
                     <label for="broadPhaseMode">Broad Phase</label>
-                    <!-- <select
+                    <select
                         style="max-width: 100px"
                         name="broadPhaseMode"
                         id="broadPhaseMode"
@@ -66,12 +66,12 @@ canvas {
                     >
                         <option value="0">Naive</option>
                         <option value="1">Grid Spatial Partition</option>
-                    </select> -->
+                    </select>
                 </div>
 
                 <div class="flex justify-between">
                     <label for="collisionDetectionMode">Collision Detection</label>
-                    <!-- <select
+                    <select
                         style="max-width: 100px"
                         name="collisionDetectionMode"
                         id="collisionDetectionMode"
@@ -80,7 +80,7 @@ canvas {
                     >
                         <option value="0">GJK/EPA</option>
                         <option value="1">Sat</option>
-                    </select> -->
+                    </select>
                 </div>
 
                 <div class="flex flex-wrap justify-between mt-4">
@@ -95,35 +95,38 @@ canvas {
 import { vec3 } from 'gl-matrix';
 import { onBeforeUnmount, ref } from 'vue';
 import p5 from 'p5';
-// import { PolygonBody, type Body, TriangleBody, RectangleBody } from '@devdiegomatos/liso-engine/bodies';
-import { BroadPhaseMode, CollisionDetectionMode } from '@devdiegomatos/liso-engine';
+import { PolygonBody, type Body, TriangleBody, RectangleBody } from '@devdiegomatos/liso-engine/bodies';
+import { BroadPhaseMode, CollisionDetectionMode, Engine } from '@devdiegomatos/liso-engine';
 import {
     createEngineWorker,
     type MainToWorkerMessage,
     type WorkerToMainMessage,
     type ObjectBuilderArgs,
     ObjectType,
-    type PhysicsObjectState,
     type SimulationState,
 } from '@devdiegomatos/liso-engine/worker';
 
-const sketchContainer = ref<HTMLDivElement | null>(null);
-let sketchInstance: p5 | null = null;
+// Component States
+let hasStarted = false;
+const totalEntities = 20;
+const threaded = false;
+const fps = ref(0);
+
+// Main thread mode variables
+const engine = new Engine({
+    worldBoundings: {
+        top: [0, 0],
+        right: [600, 600],
+    },
+    BroadPhase: BroadPhaseMode.GridSpatialPartition,
+    CollisionDetection: CollisionDetectionMode.GjkEpa,
+    gravity: vec3.fromValues(0, 0, 0),
+    gridSize: 40,
+});
+const entities: Body[] = [];
+
+// Threaded mode variables
 let worker: Worker | null = null;
-// let engine = new Engine({
-//     worldBoundings: {
-//         top: [0, 0],
-//         right: [600, 600],
-//     },
-//     BroadPhase: BroadPhaseMode.GridSpatialPartition,
-//     CollisionDetection: CollisionDetectionMode.GjkEpa,
-//     gravity: vec3.fromValues(0, 0, 0),
-//     gridSize: 40,
-// });
-let debug = true,
-    hasStarted = false;
-// let entities: { uvs: [number, number][]; indices: number[]; body: Body }[] = [];
-// let player: { uvs: [number, number][]; indices: number[]; body: Body };
 let simulation_state: SimulationState = {
     objects: [],
     collidersInfo: [],
@@ -131,83 +134,101 @@ let simulation_state: SimulationState = {
     constraintsCount: 0,
     collisionsTests: 0,
 };
-let totalEntities = 20,
-    dirX = 0,
-    dirY = 0,
-    speed = 1;
-const fps = ref(0);
+
+// P5 variables
+const sketchContainer = ref<HTMLDivElement | null>(null);
+let sketchInstance: p5 | null = null;
 
 function start() {
-    if (!sketchContainer.value) return;
+    if (!sketchContainer.value || hasStarted) return;
 
     hasStarted = true;
-    const sketch = (p: p5) => {
-        p.setup = () => setup(p);
-        p.draw = () => loop(p);
-    };
 
-    sketchInstance = new p5(sketch);
-    worker = createEngineWorker();
+    if (sketchInstance === null) {
+        const sketch = (p: p5) => {
+            p.setup = () => setup(p);
+            p.draw = () => loop(p);
+        };
 
-    worker.addEventListener('message', OnWorkerEvent);
-    // window.addEventListener('keydown', handleKeyDown);
+        sketchInstance = new p5(sketch);
+    }
+
+    if (threaded) {
+        worker = createEngineWorker();
+        worker.addEventListener('message', OnWorkerEvent);
+    }
 }
 
 async function setup(p: p5) {
-    if (sketchContainer.value === null || worker === null) return;
+    if (sketchContainer.value === null) return;
 
     p.createCanvas(600, 600).parent(sketchContainer.value);
 
-    const objects: ObjectBuilderArgs[] = [];
-    for (let i = 0; i < totalEntities; i++) {
-        const x = Math.random() * p.width;
-        const y = Math.random() * p.height;
+    if (threaded && worker) {
+        const objects: ObjectBuilderArgs[] = [];
+        for (let i = 0; i < totalEntities; i++) {
+            const x = Math.random() * p.width;
+            const y = Math.random() * p.height;
 
-        const type = Math.random();
-        const isStatic = Math.random() < 0.2 ? true : false;
-        const size = 40;
-        let obj: ObjectBuilderArgs;
-        if (type <= 0.25) {
-            obj = { type: ObjectType.Triangle, x, y, size, isStatic };
-        } else if (type <= 0.5) {
-            obj = { type: ObjectType.Rectangle, x, y, size, isStatic };
-        } else if (type <= 0.75) {
-            obj = { type: ObjectType.Polygon, x, y, size, k: 5, isStatic };
-        } else {
-            obj = { type: ObjectType.Polygon, x, y, size, k: 6, isStatic };
+            const type = Math.random();
+            const isStatic = Math.random() < 0.2 ? true : false;
+            const size = 40;
+            let obj: ObjectBuilderArgs;
+            if (type <= 0.25) {
+                obj = { type: ObjectType.Triangle, x, y, size, isStatic };
+            } else if (type <= 0.5) {
+                obj = { type: ObjectType.Rectangle, x, y, width: size, height: size / 2, isStatic };
+            } else if (type <= 0.75) {
+                obj = { type: ObjectType.Polygon, x, y, size, k: 5, isStatic };
+            } else {
+                obj = { type: ObjectType.Polygon, x, y, size, k: 6, isStatic };
+            }
+
+            objects.push(obj);
         }
 
-        objects.push(obj);
-
-        // engine.addBody(body);
-        // const { uvs, indices } = body.triangulation();
-        // const entity = {
-        //     uvs,
-        //     indices,
-        //     body,
-        // };
-        // entities.push(entity);
-
-        // if (isStatic === false && !player) {
-        //     player = entity;
-        // }
-    }
-
-    const msg: MainToWorkerMessage = {
-        type: 'start',
-        config: {
-            worldBoundings: {
-                top: [0, 0],
-                right: [600, 600],
+        const msg: MainToWorkerMessage = {
+            type: 'start',
+            config: {
+                worldBoundings: {
+                    top: [0, 0],
+                    right: [600, 600],
+                },
+                BroadPhase: BroadPhaseMode.GridSpatialPartition,
+                CollisionDetection: CollisionDetectionMode.GjkEpa,
+                gravity: vec3.fromValues(0, 0, 0),
+                gridSize: 40,
             },
-            BroadPhase: BroadPhaseMode.GridSpatialPartition,
-            CollisionDetection: CollisionDetectionMode.GjkEpa,
-            gravity: vec3.fromValues(0, 0, 0),
-            gridSize: 40,
-        },
-        objects,
-    };
-    worker.postMessage(msg);
+            objects,
+        };
+        worker.postMessage(msg);
+    } else {
+        for (let i = 0; i < totalEntities; i++) {
+            const x = Math.random() * p.width;
+            const y = Math.random() * p.height;
+
+            const type = Math.random();
+            const isStatic = Math.random() < 0.2 ? true : false;
+            const size = 40;
+            let body: Body;
+            if (type <= 0.25) {
+                body = new TriangleBody(x, y, size, isStatic);
+            } else if (type <= 0.5) {
+                body = new RectangleBody(x, y, size, size / 2, isStatic);
+            } else if (type <= 0.75) {
+                body = PolygonBody.PolygonBuilder(x, y, size, 5, isStatic);
+            } else {
+                body = PolygonBody.PolygonBuilder(x, y, size, 6, isStatic);
+            }
+
+            engine.addBody(body);
+            entities.push(body);
+
+            // if (isStatic === false && !player) {
+            //     player = entity;
+            // }
+        }
+    }
 }
 
 function loop(p: p5) {
@@ -241,8 +262,33 @@ function loop(p: p5) {
     // dirX = 0;
     // dirY = 0;
 
-    // engine.step(p.deltaTime / 1000);
+    if (threaded) {
+        Render_Threaded(p);
+    } else {
+        engine.step(p.deltaTime / 1000);
 
+        Render_MainThread(p);
+    }
+}
+
+onBeforeUnmount(() => {
+    console.log('Clean up');
+
+    if (sketchInstance) {
+        sketchInstance.remove();
+        sketchInstance = null;
+    }
+
+    if (worker) {
+        worker.removeEventListener('message', OnWorkerEvent);
+        worker.terminate();
+        worker = null;
+    }
+
+    // window.removeEventListener('keydown', handleKeyDown);
+});
+
+function Render_Threaded(p: p5) {
     // Batch draw all constraints as lines
     p.stroke(0, 0, 0);
     p.strokeWeight(1);
@@ -252,12 +298,10 @@ function loop(p: p5) {
             continue;
         }
         for (const ci of obj.constraintsIndices) {
-            let x0 = obj.particles[ci * 2];
-            let y0 = obj.particles[ci * 2 + 1];
+            const x0 = obj.particles[ci * 2];
+            const y0 = obj.particles[ci * 2 + 1];
             p.vertex(x0, y0);
         }
-        // p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
-        // p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
     }
     p.endShape();
 
@@ -270,8 +314,8 @@ function loop(p: p5) {
             continue;
         }
         for (const ci of obj.constraintsIndices) {
-            let x0 = obj.particles[ci * 2];
-            let y0 = obj.particles[ci * 2 + 1];
+            const x0 = obj.particles[ci * 2];
+            const y0 = obj.particles[ci * 2 + 1];
             p.vertex(x0, y0);
         }
     }
@@ -285,13 +329,13 @@ function loop(p: p5) {
         // convex hull layout: x0, y0, x1, y1, x2, y2, ...
         const totalParticles = colliderInfo.convexHull.length / 2;
         for (let i = 0; i < totalParticles; i++) {
-            let x0 = colliderInfo.convexHull[i * 2];
-            let y0 = colliderInfo.convexHull[i * 2 + 1];
+            const x0 = colliderInfo.convexHull[i * 2];
+            const y0 = colliderInfo.convexHull[i * 2 + 1];
             p.vertex(x0, y0);
 
-            let j = (i + 1) * 2; // next particle indice
-            let x1 = colliderInfo.convexHull[j % colliderInfo.convexHull.length];
-            let y1 = colliderInfo.convexHull[(j + 1) % colliderInfo.convexHull.length];
+            const j = (i + 1) * 2; // next particle indice
+            const x1 = colliderInfo.convexHull[j % colliderInfo.convexHull.length];
+            const y1 = colliderInfo.convexHull[(j + 1) % colliderInfo.convexHull.length];
             p.vertex(x1, y1);
         }
     }
@@ -304,29 +348,70 @@ function loop(p: p5) {
     for (const colliderInfo of simulation_state.collidersInfo) {
         // Draw the contact points
         for (let i = 0; i < colliderInfo.contactPoints.length; i += 2) {
-            let x0 = colliderInfo.contactPoints[i];
-            let y0 = colliderInfo.contactPoints[i + 1];
+            const x0 = colliderInfo.contactPoints[i];
+            const y0 = colliderInfo.contactPoints[i + 1];
             p.vertex(x0, y0);
         }
     }
     p.endShape();
 }
 
-onBeforeUnmount(() => {
-    console.log('Clean up');
-
-    if (sketchInstance) {
-        sketchInstance.remove();
-        sketchInstance = null;
+function Render_MainThread(p: p5) {
+    // Batch draw all constraints as lines
+    p.stroke(0, 0, 0);
+    p.strokeWeight(1);
+    p.beginShape(p.LINES);
+    for (const entity of entities) {
+        for (const constraint of entity.constraints) {
+            p.vertex(constraint.p0.position[0], constraint.p0.position[1]);
+            p.vertex(constraint.p1.position[0], constraint.p1.position[1]);
+        }
     }
+    p.endShape();
 
-    if (worker) {
-        worker.terminate();
-        worker = null;
+    // Batch draw all convex hull in blue
+    p.stroke(150, 200, 255);
+    p.strokeWeight(1);
+    p.beginShape(p.LINES);
+    for (const colliderInfo of engine.collidersInfo) {
+        const body = colliderInfo.body;
+        const convexHull = body.convexHull();
+
+        for (let i = 0; i < convexHull.particles.length; i++) {
+            const v1 = convexHull.particles[i];
+            const v2 = convexHull.particles[(i + 1) % convexHull.particles.length];
+            p.vertex(v1.position[0], v1.position[1]);
+            p.vertex(v2.position[0], v2.position[1]);
+        }
     }
+    p.endShape();
 
-    // window.removeEventListener('keydown', handleKeyDown);
-});
+    // Batch draw all contact points in red
+    p.stroke(255, 0, 0);
+    p.strokeWeight(2);
+    p.beginShape(p.POINTS);
+    for (const colliderInfo of engine.collidersInfo) {
+        // Draw the contact points and normal direction
+        for (const particle of colliderInfo.contactPoints) {
+            p.vertex(particle.position[0], particle.position[1]);
+        }
+    }
+    p.endShape();
+
+    // Batch draw all separation normals in red
+    p.stroke(255, 0, 0);
+    p.strokeWeight(1);
+    p.beginShape(p.LINES);
+    for (const colliderInfo of engine.collidersInfo) {
+        for (const particle of colliderInfo.contactPoints) {
+            const delta = vec3.scale(vec3.create(), colliderInfo.normal, 5);
+            const p2 = vec3.add(vec3.create(), particle.position, delta);
+            p.vertex(particle.position[0], particle.position[1]);
+            p.vertex(p2[0], p2[1]);
+        }
+    }
+    p.endShape();
+}
 
 // function OnPauseCollisionBtn() {
 //     engine.pauseOnCollision = !engine.pauseOnCollision;
@@ -356,7 +441,6 @@ function OnWorkerEvent(e: MessageEvent<WorkerToMainMessage>) {
     const msg = e.data;
     if (msg.type === 'simulation_state') {
         simulation_state = msg.state;
-        // console.dir(simulation_state);
     }
 }
 </script>

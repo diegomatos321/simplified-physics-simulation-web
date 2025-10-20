@@ -17,6 +17,7 @@ export default class TrellisBody extends Body {
     ) {
         const particles: Particle[] = [];
         const constraints: IConstraint[] = [];
+        const constraintsIndices: number[] = [];
 
         const dx = vec3.fromValues(size[0] / nx, 0, 0);
         const dy = vec3.fromValues(0, size[1] / ny, 0);
@@ -29,14 +30,18 @@ export default class TrellisBody extends Body {
                 particles.push(new Particle(p));
 
                 const k = i * m + j;
-                if (j > 0)
+                if (j > 0) {
                     constraints.push(
                         new LinearConstraint(particles[k], particles[k - 1]),
                     );
-                if (i > 0)
+                    constraintsIndices.push(k, k - 1);
+                }
+                if (i > 0) {
                     constraints.push(
                         new LinearConstraint(particles[k], particles[k - m]),
                     );
+                    constraintsIndices.push(k, k - m);
+                }
                 if (i > 0 && j > 0 && stiff) {
                     constraints.push(
                         new LinearConstraint(
@@ -48,6 +53,8 @@ export default class TrellisBody extends Body {
                             particles[k - m - 1],
                         ),
                     );
+                    constraintsIndices.push(k - 1, k - m);
+                    constraintsIndices.push(k, k - m - 1);
                 }
             }
         }
@@ -76,9 +83,20 @@ export default class TrellisBody extends Body {
                     particles[particles.length - 1],
                 ),
             );
+
+            // prettier-ignore
+            constraintsIndices.push(
+                0, particles.length - 1,
+                0, m - 1, 
+                0, particles.length - m,
+                particles.length - m, m - 1,
+                m - 1, particles.length - 1,
+                particles.length - m, particles.length - 1
+            );
         }
 
         super(particles, constraints);
+        this.constraintsIndices = constraintsIndices;
     }
 
     triangulation() {
