@@ -1,3 +1,20 @@
-\chapter{Projeção de posição pelo método Jakobsen}
+\chapter{Animação baseado em física}
 
-\section{Integração verlet}
+Na maioria dos casos, é preciso usar métodos sofisticados e exatos para simular a dinâmica. Porém, em aplicações de jogos interativos, a precisão não é realmente o mais importante, mas sim que o resultado final tenha uma aparência realista e que possa ser executado rapidamente. 
+
+Jakobsen [24] apresentou um conjunto de métodos e técnicas que, unidas, conseguem atingir em grande parte estes objetivos. Estes métodos são relativamente simples de im-
+plementar (comparados com outros esquemas) e têm um bom desempenho. O algoritmo é iterativo e permite aumentar a precisão do método sacrificando parte de sua rapidez: se
+uma pequena fonte de imprecisão é aceita, o código pode conseguir uma execução mais rápida. Esta margem de erro ainda pode ser ajustada de forma adaptativa em tempo de
+execução.
+
+Em geral, o sucesso deste método vem da combinação de varias técnicas que se beneficiam umas das outras, principalmente o uso do integrador Verlet, o tratamento de colisões usando projeção, e a resolução de restrições de distância usando relaxamento. A seguir serão descritas as componentes mais importantes da abordagem proposta por Jakobsen.
+
+\section{Integrador Verlet}
+
+\section{Restrição Linear}
+
+\section{Restrição Angular}
+
+\section{Restrição de Revolução}
+
+\section{Resolvendo restrições concorrentes por relaxamento}
