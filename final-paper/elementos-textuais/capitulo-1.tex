@@ -1,13 +1,16 @@
 \chapter{INTRODUÇÃO}
 
-% Citar livro Real-Time Rendering 4th Edition
-A renderização em tempo real refere-se à criação rápida de imagens no computador. É a área mais interativa da computação gráfica. Uma imagem aparece na tela, o usuário interage ou reage, e esse feedback afeta o que será gerado em seguida.
+A computação gráfica é matemática e arte. Esta ferramenta proporciona um maior poder de abstração, ajudando na criação de imagens complexas e em muitos casos não imaginadas. A computação gráfica pode ser encarada como uma ferramenta não convencional que permite ao artista transcender das técnicas tradicionais de desenho ou modelagem \cite{azevedo2003}.
+
+A computação gráfica vista como ferramenta indicaria que temos um artista responsável pela arte gerada. Mesmo as imagens geradas a partir de equações podem ser consideradas arte, se essas equações forem fruto da criatividade e da capacidade do descobridor que manifesta sua habilidade e originalidade inventiva. A habilidade de simular a natureza em computadores tem sido objeto de atenção e curiosidade de toda a comunidade científica.
+
+De acordo com \citeonline{moller2018} renderização em tempo real refere-se à criação rápida de imagens no computador. É a área mais interativa da computação gráfica. Uma imagem aparece na tela, o usuário interage ou reage, e esse feedback afeta o que será gerado em seguida.
 
 Esse ciclo de reação e renderização acontece em uma velocidade suficientemente alta para que o usuário não veja imagens individuais, mas sim se sinta imerso em um processo dinâmico. A taxa na qual as imagens são exibidas é medida em quadros por segundo (FPS) ou Hertz (Hz). Com um quadro por segundo, há pouca sensação de interatividade; o usuário percebe claramente a chegada de cada nova imagem. A partir de cerca de 6 FPS, a sensação de interatividade começa a aumentar.
 
-Uma taxa de quadros mais alta é importante para minimizar o tempo de resposta. Um atraso temporal de apenas 15 milissegundos pode prejudicar e interferir na interação [1849]. Como exemplo, os óculos de realidade virtual geralmente exigem 90 FPS para minimizar a latência.
+Uma taxa de quadros mais alta é importante para minimizar o tempo de resposta. Um atraso temporal de apenas 15 milissegundos pode prejudicar e interferir na interação. Como exemplo, os óculos de realidade virtual geralmente exigem 90 FPS para minimizar a latência.
 
-Modelagem e animação baseada em física vêm sendo pesquisadas desde início desse século, encontrando aplicação em entretenimento, simulação, desenho assistido por computador \textbf{(CITAR MAIS EXEMPLOS)} e várias outras áreas.
+Modelagem e animação baseada em física vêm sendo pesquisadas desde início desse século, encontrando aplicação em todas áreas de entretenimento, simulação, desenho assistido por computador e várias outras áreas.
 
 Uma animação realista requer que os objetos em movimento obedeçam a leis físicas. Para tanto, vários aspectos precisam ser considerados como, por exemplo: no mundo real, dois objetos não podem ocupar o mesmo lugar no espaço ao mesmo tempo. Isto significa que objetos podem empurrar outros objetos dependendo de suas massas e velocidades; podem ser empilhados uns sobre os outros; não podem atravessar o chão, e assim por diante. Para incorporar um mecanismo que permita tratar estas situações uma tarefa importante para este mecanismo é detectar configurações onde haja interpenetração entre objetos, as quais são chamadas de "colisões". 
 
@@ -17,10 +20,10 @@ O tratamento de colisões pode ser dividido em duas fases: na detecção de coli
 
 Há muitas abordagens para esse problema na literatura que envolve uso de métodos precisos que requerem computar diversas equações que regem as leis físicas, particularmente as da dinâmica como método do impulso, método da penalização %(CITAR OUTROS MÉTODOS)
 
-Em 1999-2001, Thomas Jakobsen [24] propôs um esquema simplificado de simulação baseada em física, conseguindo simular ambientes com objetos deformáveis e rígidos sem a necessidade de calcular explicitamente matrizes de orientação, torques ou tensores de inércia. Este esquema é baseado principalmente na implementação de restrições lineares e a com binação de diversas técnicas que se complementam:
+\citeonline{jakobsen2001advanced} propôs um esquema simplificado de simulação baseada em física, conseguindo simular ambientes com objetos deformáveis e rígidos sem a necessidade de calcular explicitamente matrizes de orientação, torques ou tensores de inércia. Este esquema é baseado principalmente na implementação de restrições lineares e a com binação de diversas técnicas que se complementam:
 
 \begin{itemize}
-	\item A dinâmica das partículas é simulada usando o integrador de Verlet [41].
+	\item A dinâmica das partículas é simulada usando o integrador de Verlet.
 	\item Esquema de resposta a colisão que consiste em projetar vértices que penetram uma determinada superfície para fora desta
 	\item As restrições lineares são mantidas constantes usando um processo de relaxamento.
 	\item É usada uma raiz quadrada aproximada em vez de uma exata para os cálculos de distância.
@@ -31,4 +34,4 @@ Entretanto, vários detalhes importantes foram suprimidos. Em particular, a liga
 
 Neste trabalho estaremos focando em um protótipo de sistema baseado no Jakobsen apresentando soluções para detecção e resposta a colisão. Ele é adequado para situações de aplicações em tempo real e beneficia áreas que exigem alta imersão entre a simulação e o humano.
 
-O restante deste trabalho é dividido nos seguintes capítulos: O Capítulo 2 apresenta as técnicas principais descritas por Jakobsen para animação baseada em física. No Capítulo 3 mostra as diversas representações de objetos aceitas pelos métodos anteriores. O Capítulo 4 aborda as principais metodologias para detecção de colisões e seus casos degenerados. O Capítulo 5 apresenta como calcular de forma simplificada as fronteiras dos objetos. No Capítulo 6 mostra como realizar a resposta a colisão por projeção das posições. O Capítulo 7 apresenta as otimizações usados neste trabalho. Finalmente, o Capítulo 8 aborda alguns comentários finais e sugestões para trabalhos futuros.
+O restante deste trabalho é dividido nos seguintes capítulos: O Capítulo 2 apresenta as técnicas principais descritas por \citeauthor{jakobsen2001advanced} para animação baseada em física. No Capítulo 3 mostra as diversas representações de objetos aceitas pelos métodos anteriores. O Capítulo 4 aborda as principais metodologias para detecção de colisões e seus casos degenerados. O Capítulo 5 apresenta como calcular de forma simplificada as fronteiras dos objetos. No Capítulo 6 mostra como realizar a resposta a colisão por projeção das posições. O Capítulo 7 apresenta as otimizações usados neste trabalho. No Capítulo 8 os experimentos e comparação de resultados com outras bibliotecas. Finalmente, o Capítulo 9 aborda alguns comentários finais e sugestões para trabalhos futuros.
