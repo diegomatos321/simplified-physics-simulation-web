@@ -2,19 +2,104 @@
 
 Na maioria dos casos, é preciso usar métodos sofisticados e exatos para simular a dinâmica. Porém, em aplicações de jogos interativos, a precisão não é realmente o mais importante, mas sim que o resultado final tenha uma aparência realista e que possa ser executado rapidamente. 
 
-Jakobsen [24] apresentou um conjunto de métodos e técnicas que, unidas, conseguem atingir em grande parte estes objetivos. Estes métodos são relativamente simples de im-
-plementar (comparados com outros esquemas) e têm um bom desempenho. O algoritmo é iterativo e permite aumentar a precisão do método sacrificando parte de sua rapidez: se
-uma pequena fonte de imprecisão é aceita, o código pode conseguir uma execução mais rápida. Esta margem de erro ainda pode ser ajustada de forma adaptativa em tempo de
-execução.
+\citeonline{jakobsen2001advanced} apresentou um conjunto de métodos e técnicas que, unidas, conseguem atingir em grande parte estes objetivos. Estes métodos são relativamente simples de implementar (comparados com outros esquemas) e têm um bom desempenho. O algoritmo é iterativo e permite aumentar a precisão do método sacrificando parte de sua rapidez: se uma pequena fonte de imprecisão é aceita, o código pode conseguir uma execução mais rápida. Esta margem de erro ainda pode ser ajustada de forma adaptativa em tempo de execução.
 
 Em geral, o sucesso deste método vem da combinação de varias técnicas que se beneficiam umas das outras, principalmente o uso do integrador Verlet, o tratamento de colisões usando projeção, e a resolução de restrições de distância usando relaxamento. A seguir serão descritas as componentes mais importantes da abordagem proposta por Jakobsen.
 
 \section{Integrador Verlet}
 
+O núcleo da simulação é um sistema de partículas, sua implementação mais simples é para cada passo calcular sua nova posição \textbf{x} e nova velocidade \textbf{v} com o sistema abaixo:
+
+$$
+\begin{cases}
+	x' = x + v \cdot \Delta t \\
+	v' = v + a \cdot \Delta t
+\end{cases}
+$$
+
+
+Esse é o método de Euler sendo $\Delta t$ o tamanho do passo, \textbf{a} é aceleração calculado a partir da lei de newton $F = ma$ onde F é a força acumulada agindo na partícula.
+%. É comum esses tipos de sistemas serem implementados com duas variáveis principais: posição x e velocidade v. Então para cada passo da simulação  
+
+Existem muitos outros esquemas de integração como Runge-Kutta e outras variantes. Um método que é bem estável, sua velocidade é calculada implicitamente o quê mantém sua posição e velocidade em sincronia é o integrador de Verlet, muito popular em simulação de dinâmica molecular.
+
+$$
+\begin{cases}
+	x' = 2x - x^* + a \cdot \Delta t^2 \\
+	x^* = x
+\end{cases}
+$$
+
+Sendo \textbf{x} sua posição corrente e \textbf{$x^*$} sua posição anterior, essa é chamada representação sem velocidade. Ao fim de cada passo conseguimos representar o sistema de partículas como:
+
+$$
+X = \begin{pmatrix}
+	x_1 \\
+	x^*_1 \\
+	a_1 \\
+	\vdots \\
+	x_n \\
+	x^*_n \\
+	a_n \\
+\end{pmatrix}
+$$
+
+O algoritmo para o integrador verlet segue como
+
+\begin{algorithm}[H]
+	\caption{Verlet}
+	\KwIn{Tamanho do passo dt}
+	\For{$i \leftarrow 0$ \KwTo n}{
+		$x \leftarrow X[i]$ \\
+		$x^* \leftarrow X[i+1]$ \\
+		$a \leftarrow X[i+2]$  \\
+		$x_{tmp} \leftarrow x$ \\
+		
+		$X[i] \leftarrow 2*x-x^* + a*dt$ \\
+		$X[i+1] \leftarrow x_{tmp}$ \\
+		$X[i+2] = 0$ \tcp{Limpa as forças para próxima iteração}
+	}
+\end{algorithm}
+
+Como dito anteriormente, as vantagens de usar esse esquema proposta por \citeauthor{jakobsen2001advanced} serão evidenciadas quando combinadas com as próximas técnicas.
+
 \section{Restrição Linear}
+
+Anteriormente foi um método numérico, porém o sucesso de \citeonline{jakobsen2001advanced} foi conectar ideias simples para construir corpos maiores e complexos. Isso é feito atribuindo as partículas algo em comum, um conjunto de propriedades que devem ser respeitadas para atingir o efeito desejado.
+
+A primeira propriedade - também é a base para as próximas - é a chamada restrição linear ou restrição de distância. Ela apenas dita que duas partículas $p_0$ e $p_1$ devem sempre estar a uma distância d entre si. Dessa forma nossa nuvem de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
+
+\begin{equation}
+	|x_2 - x_1| = d
+	\label{eq:linear_constraint}
+\end{equation}
+
+Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválidas (através de forças externas, por exemplo). Para corrigir sua distância devemos mover (projetar) elas de tal forma que satisfaça \ref{eq:linear_constraint}.
+
+Isso é feito afastando as partículas entre si ou aproximando elas:
+
+\textbf{Inserir figura}
+
+A essência de uma restrição é a projeção. Deve-se encontrar o movimento mínimo que a satisfaça. Seu efeito não envolve apenas uma haste rígida entre duas partículas mas também projetar o ponto em um círculo ao redor do ponto de ancoragem.
+
+\begin{algorithm}[H]
+	\caption{Restrição Linear}
+	$delta \leftarrow x_2 - x_1$ \\
+	$delta\_length \leftarrow sqrt(delta * delta)$ \\
+	$diff \leftarrow (delta\_length - d)/delta\_length$ \\
+	$x_1 -= delta*0.5*diff$ \\
+	$x_2 += delta*0.5*diff$ \\
+\end{algorithm}
 
 \section{Restrição Angular}
 
 \section{Restrição de Revolução}
 
 \section{Resolvendo restrições concorrentes por relaxamento}
+
+\begin{algorithm}[H]
+	\caption{Sistema de Partículas}
+	AcumularForças() \\
+	Verlet() \\
+	SatisfazerRestrições() \\
+\end{algorithm}
