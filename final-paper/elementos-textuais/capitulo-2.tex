@@ -67,7 +67,7 @@ Como dito anteriormente, as vantagens de usar esse esquema proposta por \citeaut
 
 Anteriormente foi um método numérico, porém o sucesso de \citeonline{jakobsen2001advanced} foi conectar ideias simples para construir corpos maiores e complexos. Isso é feito atribuindo as partículas algo em comum, um conjunto de propriedades que devem ser respeitadas para atingir o efeito desejado.
 
-A primeira propriedade - também é a base para as próximas - é a chamada restrição linear ou restrição de distância. Ela apenas dita que duas partículas $p_0$ e $p_1$ devem sempre estar a uma distância d entre si. Dessa forma nossa nuvem de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
+A primeira propriedade - também é a base para as próximas - é chamada restrição linear ou restrição de distância. Ela apenas dita que duas partículas $p_0$ e $p_1$ devem sempre estar a uma distância d entre si. Dessa forma o conjunto de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
 
 \begin{equation}
 	|x_2 - x_1| = d
@@ -76,30 +76,65 @@ A primeira propriedade - também é a base para as próximas - é a chamada rest
 
 Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválidas (através de forças externas, por exemplo). Para corrigir sua distância devemos mover (projetar) elas de tal forma que satisfaça \ref{eq:linear_constraint}.
 
-Isso é feito afastando as partículas entre si ou aproximando elas:
-
 \textbf{Inserir figura}
 
-A essência de uma restrição é a projeção. Deve-se encontrar o movimento mínimo que a satisfaça. Seu efeito não envolve apenas uma haste rígida entre duas partículas mas também projetar o ponto em um círculo ao redor do ponto de ancoragem.
+A essência de uma restrição é a projeção. Deve-se encontrar o movimento mínimo que a satisfaça. O efeito de uma restrição linear pode representar conectar duas partículas com uma haste rígida mas também projetar o ponto em um círculo ao redor do ponto de ancoragem.
 
 \begin{algorithm}[H]
 	\caption{Restrição Linear}
-	$delta \leftarrow x_2 - x_1$ \\
-	$delta\_length \leftarrow sqrt(delta * delta)$ \\
-	$diff \leftarrow (delta\_length - d)/delta\_length$ \\
-	$x_1 -= delta*0.5*diff$ \\
-	$x_2 += delta*0.5*diff$ \\
+	$\vec{\delta} \leftarrow x_2 - x_1$ \\
+	$\epsilon \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
+	$x_1 \leftarrow x_1 - \vec{\delta}*0.5*\epsilon$ \\
+	$x_2 \leftarrow x_2 + \vec{\delta}*0.5*\epsilon$ \\
+	\label{al:linear_constraint}
 \end{algorithm}
 
-\section{Restrição Angular}
+O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito.
 
 \section{Restrição de Revolução}
 
+Na animação física queremos muitas vezes que uma partícula gire em torno de um eixo. Isso feito de forma simples, basta ter uma partícula em comum cuja função seja ser um eixo de rotação.
+
+\textbf{Inserir figura}
+
+Uma outra forma de fazer isso é usar uma restrição linear com $d=0$.
+
+\section{Restrição Angular}
+
+Em muitas situações em animação física é desejável que o ângulo formado entre duas partículas esteja restrito a um intervalo válido. Isso pode ser feito de forma simples aplicando uma restrição linear caso a distância entre duas partículas seja menor que um limiar. Ou seja, satisfazer a inequação abaixo
+
+$$|x_2 - x_1| > 100$$
+
+A rotina para essa restrição é tão simples quanto usar um condicional junto com o algoritmo de restrição linear.
+
+\begin{algorithm}
+	\caption{Restrição Angular}
+	$\vec{\delta} \leftarrow x_2 - x_1$ \\
+	\If{$\vec{|\delta|} < d$}{
+		$\epsilon \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
+		$x_1 \leftarrow x_1 - \vec{\delta}*0.5*\epsilon$ \\
+		$x_2 \leftarrow x_2 + \vec{\delta}*0.5*\epsilon$ \\
+	}
+\end{algorithm}
+
+Um outro método de restringir os ângulos é satisfazer a restrição de produto interno
+
+$$(x_2-x_0) \cdot (x_1 - x_0) < \alpha$$
+
+
 \section{Resolvendo restrições concorrentes por relaxamento}
 
-\begin{algorithm}[H]
-	\caption{Sistema de Partículas}
-	AcumularForças() \\
-	Verlet() \\
-	SatisfazerRestrições() \\
+Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas as inequações sequencialmente, isso seria o equivalente a encontrar a solução de um sistema de equações.
+
+Entretanto \citeonline{jakobsen2001advanced} propõe uma abordagem de solução indireta por iteração local, basta satisfazer todas restrições e repetir um número $N$ vezes a cada passo da simulação
+
+\begin{algorithm}
+	\caption{Satisfazer Restrições}
+	\KwIn{n: número de repetições}
+	\For{$i \leftarrow 0$ \KwTo n}{
+		ResolverRestrição(i)
+	}
+	\label{al:satisfazer_restricoes}
 \end{algorithm}
+
+Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução e também a animação irá parecer mais rígida para o usuário.
