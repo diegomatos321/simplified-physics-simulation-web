@@ -1,10 +1,25 @@
 \chapter{Modelando corpos}
 
+Em animação física, convencionalmente são usadas funções paramétricas para representar sólidos simples, tais como cubos, cilindros, cones, esferas, toros, etc. Isto é feito frequentemente em ambientes interativos complexos, como jogos, onde é preciso animar milhares de objetos simples.
+
+Um objeto geométrico é um conjunto fechado de pontos, limitado e não vazio. É fechado, pois a borda faz parte do objeto e é limitado significa que existe uma esfera de raio finito que limita o objeto. Assim, por exemplo, um plano é fechado mas não limitado. Tais objetos geométricos podem ser de dois tipos: objetos convexos e objetos côncavos. Um objeto é convexo se contém todos os segmentos de reta que conectam pares de pontos, caso contrário é chamado côncavo. 
+
+Objetos complexos podem ser compostos de objetos mais simples – tipicamente convexos.
+
 \section{Corpos rígidos}
+
+Usando as ferramentas vistas no capítulo anterior a representação de corpos rígidos torna-se um passo quase natural a ser feito. Basta decompor a geometria desejada em partes menores e mais simples usando partículas para representar seus vértices e restrições lineares com coeficiente de restituição igual a 1 para representar suas arestas. No caso de 2D um quadrado pode ser representado com 4 partículas, 4 restrições lineares e mais 2 restrições internas para garantir rigidez.
+
+Dessa forma ao colocar o objeto na simulação a integração Verlet das partículas e o relaxamento das restrições são responsáveis por mover o corpo de forma plausível, conservando momento e torque.
 
 \section{Corpos deformáveis}
 
+A modelagem de um corpo deformável é análoga a um corpo rígido, com a principal diferença que o coeficiente de restituição é menor que 1. Dessa forma será necessário alguns passos da simulação para a restrição convergir para configuração ideal, gerando efeito de deformação do corpo.
+
 \section{Corpos articulados}
+
+Essa abordagem permite construir um modelo completo de corpo articulado bem realista usando uma combinação de: restrição linear, restrição de revolução e restrição angular.
 
 \section{Tecidos}
 
+O tecido pode ser facilmente representado como uma grade uniforme de partículas conectadas por restrições lineares com coeficientes de restituição menor que 1 e apenas um passo de relaxamento.

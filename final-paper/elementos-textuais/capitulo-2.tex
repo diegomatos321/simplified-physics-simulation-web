@@ -93,7 +93,7 @@ O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partícu
 
 \section{Restrição de Revolução}
 
-Na animação física queremos muitas vezes que uma partícula gire em torno de um eixo. Isso feito de forma simples, basta ter uma partícula em comum cuja função seja ser um eixo de rotação.
+Na animação física queremos muitas vezes que uma partícula gire em torno de um eixo. Isso é feito de forma simples, basta ter uma partícula em comum cuja função seja ser um eixo de rotação.
 
 \textbf{Inserir figura}
 
@@ -138,3 +138,5 @@ Entretanto \citeonline{jakobsen2001advanced} propõe uma abordagem de solução 
 \end{algorithm}
 
 Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução e também a animação irá parecer mais rígida para o usuário.
+
+Além disso para o \ref{al:linear_constraint} a constante 0,5 também tem o efeito de aumentar o passo local de convergência para solução ideal. Fisicamente pode ser interpretado como um coeficiente de restituição. Pode ser usado para representar quão abrupto as partículas se aproximam ou afastam.
