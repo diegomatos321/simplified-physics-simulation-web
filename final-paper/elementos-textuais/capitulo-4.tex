@@ -1,10 +1,134 @@
 \chapter{Detecção de Colisões}
 
+O mecanismo de detecção de colisão é um componente fundamental para um sistema de simulação baseada em física [26, 40, 29, 32, 33]. Este componente permite efetuar consultas rápidas de proximidade geométrica entre objetos durante a simulação. Isso não somente inclui verificações de como dois objetos se intersectam, mas também quando e onde a colisão ocorreu.
+
+Neste capítulo introduzimos conceitos relevantes dentro do contexto deste trabalho e discutimos métodos que geralmente são usados para representar objetos, assim como algoritmos para fazer consultas de proximidade e interseção entre objetos.
+
 \section{Polígonos convexos}
+
+Um objeto geométrico é um conjunto fechado de pontos, limitado e não vazio. É fechado, pois a borda faz parte do objeto e é limitado significa que existe uma esfera de raio finito que limita o objeto. Assim, por exemplo, um plano é fechado mas não limitado.
+
+\textbf{(INSERIR IMAGEM FORMA CONVEXA X NAO CONVEXA)}
+
+Uma forma é considerada convexa se, para qualquer linha desenhada através da forma, essa linha cruzar apenas duas vezes. Formas não convexas podem ser representadas por uma combinação de formas convexas.
 
 \subsection{Teorema do Eixo Separador (SAT)}
 
+O Teorema do Eixo Separador (do inglês Separating Axis Theorem, SAT) é um método para determinar se duas formas convexas estão se cruzando. O algoritmo também pode ser usado para encontrar o vetor de penetração mínimo que é útil para simulação de física e uma série de outras aplicações. O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter código de detecção de colisão para cada par tipo de forma, reduzindo assim o código e a manutenção.
+
+\begin{teorema}
+	Se dois objetos convexos não estiverem penetrando, existe um eixo para o qual a projeção dos objetos não se sobreporá.
+	\label{theo:sat}
+\end{teorema}
+
+Um plano de separação (PS) é um plano que está localizado entre dois objetos convexos, separando-os. Eventualmente, A está situado no lado positivo e B no lado negativo ou vice-versa. Matematicamente, um PS é definido por $H(v, \delta)$,onde v é chamado de eixo de separação (ES).
+
+Se $v$ é um eixo de separação, então existe um escalar $\delta$ tal que o plano de separação possa ser definido.
+
+\textbf{INSERIR IMAGEM POLIGONO SEPARADO E POLIGONO EM COLISÃO}
+
+Isso pode ser verificado calculando a linha perpendicular à linha que separa as duas formas e projetarmos as formas nessa linha. Caso haja sobreposição das projeções os objetos estão em interseção, caso contrário não há colisão. Uma linha onde as projeções (sombras) das formas não se sobrepõem é chamada de eixo de separação.
+
+O SAT deve testar todos os eixos candidatos a separação para determinar se há ou não sobreposição. Devido a isso ele não muito prático em ambientes 3D. No entanto, o teorema \ref{theo:sat} nos garante que o primeiro eixo onde as projeções não estão sobrepostas, o algoritmo pode sair imediatamente determinando que as formas não estão se cruzando.
+
+\begin{algorithm}
+	\caption{SAT 1}
+	\KwIn{objetoA e objetoB}
+	\ForEach{eixo do objetoA}{
+		p1 $\leftarrow$ Projetar shapeA no eixo \\
+		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		\If{p1 sobrepoe p2}{
+			\KwResult{False}
+		}
+	}
+	
+	\ForEach{eixo do objetoB}{
+		p1 $\leftarrow$ Projetar shapeA no eixo \\
+		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		\If{p1 sobrepoe p2}{
+			\KwResult{False}
+		}
+	}
+	
+	\KwResult{True}
+	\label{al:sat_1}
+\end{algorithm}
+
+O algoritmo SAT precisa responder duas perguntas fundamentais:
+
+\begin{enumerate}
+	\item \textbf{Quais eixos de separação testar?}  deve-se testar a normal de todas faces (3D) ou arestas (2D) dos objetos que estão participando da colisão.
+	\item \textbf{Como projetar um geometria no eixo?} Para projetar um polígono em um eixo é relativamente simples; loop sobre todos os vértices e faça o produto interno com o eixo, armazenando o mínimo e máximo.
+\end{enumerate}
+
+Dessa forma o algoritmo apenas retorna verdadeiro ou falso se as duas formas estão se sobrepondo. Além disso, o SAT pode retornar um vetor de translação mínima (MTV). A MTV é o vetor usado para empurrar as formas para fora da colisão, na direção de separação com tamanho da penetração.
+
+Para o SAT a direção é equivalente ao eixo de separação e a penetração (magnitude do MTV) é o tamanho da menor projeção do polígono com o eixo de separação. Podemos adaptar nosso pseudocódigo como
+
+\begin{algorithm}
+	\caption{SAT 2}
+	\KwIn{objetoA e objetoB}
+	penetracao $\leftarrow$ 0 \\
+	separacao $\leftarrow$ Vector.Zero \\
+	\ForEach{eixo do objetoA}{
+		p1 $\leftarrow$ Projetar shapeA no eixo \\
+		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		$\delta \leftarrow$ projeção p1 com p2 \\
+		\If{$\delta \leq$ TOLERANCIA}{
+			\KwResult{False}
+		} \Else{
+			penetracao $\leftarrow \delta$ \\
+			separacao $\leftarrow$ eixo
+		}
+	}
+	
+	\ForEach{eixo do objetoB}{
+		p1 $\leftarrow$ Projetar shapeA no eixo \\
+		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		$\delta \leftarrow$ projeção p1 com p2 \\
+		\If{$\delta \leq$ TOLERANCIA}{
+			\KwResult{False}
+		} \Else{
+			penetracao $\leftarrow \delta$ \\
+			separacao $\leftarrow$ eixo
+		}
+	}
+	
+	\KwResult{penetracao, separacao}
+	\label{al:sat_2}
+\end{algorithm}
+
 \subsection{Algoritmo Gilbert–Johnson–Keerthi (GJK)}
+
+A GJK, como a SAT, só opera em formas convexas. GJK é um método iterativo, mas converge muito rápido. É uma alternativa melhor para o SAT para ambientes 3D devido ao número de eixos que o SAT deve testar.
+
+O algoritmo GJK depende muito de um conceito chamado \textbf{\textit{soma de Minkowski}}. A soma de Minkowski de dois objetos convexos A e B é definida por:
+
+\begin{equation}
+	A + B = \{\vec{x} + \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
+\end{equation}
+
+O objeto A + B é o conjunto de pontos obtido por um processo de varredura que translada o centro de massa de B para cada ponto de A, ou seja, faz-se uma cópia do objeto B centrado em cada ponto de A
+
+(INSERIR FIGURA SOMA DE MINKOWSKI)
+
+Uma propriedade muito útil da soma de Minkowski é o fato de que a soma de dois objetos convexos é um objeto convexo. O algoritmo GJK se beneficia dessas propriedades usando uma operação informalmente chamada de \textit{diferença de Minkowski}
+
+\begin{equation}
+	A - B = \{\vec{x} - \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
+\end{equation}
+
+Essa operação continua sendo a soma de Minkowski (a soma da diferença). Mas neste trabalho usaremos esse termo para referir a essa operação quando necessário.
+
+A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
+
+\begin{teorema}
+	Se duas formas estiverem sobrepostas/em interseção a Diferença de Minkowski dessas formas conterá a origem.
+\end{teorema}
+
+Executar essa operação exige shape1.vertices.size * shape2.vertices.size * 2 subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos. Uma vez que ambas as formas são convexas e definidas por vértices mais externos só precisamos realizar esta operação nos vértices. A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices.
+
+
 
 \section{Polígonos côncavos}
 
