@@ -65,7 +65,7 @@ Como dito anteriormente, as vantagens de usar esse esquema proposta por \citeaut
 
 \section{Restrição Linear}
 
-Anteriormente foi um método numérico, porém o sucesso de \citeonline{jakobsen2001advanced} foi conectar ideias simples para construir corpos maiores e complexos. Isso é feito atribuindo as partículas algo em comum, um conjunto de propriedades que devem ser respeitadas para atingir o efeito desejado.
+O sucesso de \citeonline{jakobsen2001advanced} não está relacionado apenas ao método numérico, mas foi conectar ideias simples para construir objetos maiores e complexos. Isso é feito atribuindo as partículas algo em comum, um conjunto de propriedades que devem ser respeitadas para atingir o efeito desejado.
 
 A primeira propriedade - também é a base para as próximas - é chamada restrição linear ou restrição de distância. Ela apenas dita que duas partículas $p_0$ e $p_1$ devem sempre estar a uma distância d entre si. Dessa forma o conjunto de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
 
@@ -89,7 +89,7 @@ A essência de uma restrição é a projeção. Deve-se encontrar o movimento m�
 	\label{al:linear_constraint}
 \end{algorithm}
 
-O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito.
+O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas.
 
 \section{Restrição de Revolução}
 
@@ -104,6 +104,8 @@ Uma outra forma de fazer isso é usar uma restrição linear com $d=0$.
 Em muitas situações em animação física é desejável que o ângulo formado entre duas partículas esteja restrito a um intervalo válido. Isso pode ser feito de forma simples aplicando uma restrição linear caso a distância entre duas partículas seja menor que um limiar. Ou seja, satisfazer a inequação abaixo
 
 $$|x_2 - x_1| > 100$$
+
+Com essa restrição conseguimos modelar propriedades como joelhos e cotovelos de uma criatura que não podem dobrar além de ângulo máximo.
 
 A rotina para essa restrição é tão simples quanto usar um condicional junto com o algoritmo de restrição linear.
 

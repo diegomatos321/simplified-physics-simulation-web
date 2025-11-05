@@ -12,7 +12,7 @@ Um objeto geométrico é um conjunto fechado de pontos, limitado e não vazio. �
 
 Uma forma é considerada convexa se, para qualquer linha desenhada através da forma, essa linha cruzar apenas duas vezes. Formas não convexas podem ser representadas por uma combinação de formas convexas.
 
-\subsection{Teorema do Eixo Separador (SAT)}
+\section{Teorema do Eixo Separador (SAT)}
 
 O Teorema do Eixo Separador (do inglês Separating Axis Theorem, SAT) é um método para determinar se duas formas convexas estão se cruzando. O algoritmo também pode ser usado para encontrar o vetor de penetração mínimo que é útil para simulação de física e uma série de outras aplicações. O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter código de detecção de colisão para cada par tipo de forma, reduzindo assim o código e a manutenção.
 
@@ -21,7 +21,7 @@ O Teorema do Eixo Separador (do inglês Separating Axis Theorem, SAT) é um mét
 	\label{theo:sat}
 \end{teorema}
 
-Um plano de separação (PS) é um plano que está localizado entre dois objetos convexos, separando-os. Eventualmente, A está situado no lado positivo e B no lado negativo ou vice-versa. Matematicamente, um PS é definido por $H(v, \delta)$,onde v é chamado de eixo de separação (ES).
+Um plano de separação (PS) é um plano que está localizado entre dois objetos convexos, separando-os. Eventualmente, A está situado no lado positivo e B no lado negativo ou vice-versa. Matematicamente, um PS é definido por $H(v, \delta)$, onde $v$ é chamado de eixo de separação (ES).
 
 Se $v$ é um eixo de separação, então existe um escalar $\delta$ tal que o plano de separação possa ser definido.
 
@@ -29,22 +29,22 @@ Se $v$ é um eixo de separação, então existe um escalar $\delta$ tal que o pl
 
 Isso pode ser verificado calculando a linha perpendicular à linha que separa as duas formas e projetarmos as formas nessa linha. Caso haja sobreposição das projeções os objetos estão em interseção, caso contrário não há colisão. Uma linha onde as projeções (sombras) das formas não se sobrepõem é chamada de eixo de separação.
 
-O SAT deve testar todos os eixos candidatos a separação para determinar se há ou não sobreposição. Devido a isso ele não muito prático em ambientes 3D. No entanto, o teorema \ref{theo:sat} nos garante que o primeiro eixo onde as projeções não estão sobrepostas, o algoritmo pode sair imediatamente determinando que as formas não estão se cruzando.
+O SAT deve testar todos os eixos candidatos a separação para determinar se há ou não sobreposição. Devido a isso ele não é muito prático em ambientes 3D. No entanto, o teorema \ref{theo:sat} nos garante que o primeiro eixo onde as projeções não estão sobrepostas, o algoritmo pode sair imediatamente determinando que as formas não estão se cruzando.
 
 \begin{algorithm}
 	\caption{SAT 1}
 	\KwIn{objetoA e objetoB}
 	\ForEach{eixo do objetoA}{
-		p1 $\leftarrow$ Projetar shapeA no eixo \\
-		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		p1 $\leftarrow$ Projetar objetoA no eixo \\
+		p2 $\leftarrow$ Projetar objetoB no eixo \\
 		\If{p1 sobrepoe p2}{
 			\KwResult{False}
 		}
 	}
 	
 	\ForEach{eixo do objetoB}{
-		p1 $\leftarrow$ Projetar shapeA no eixo \\
-		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		p1 $\leftarrow$ Projetar objetoA no eixo \\
+		p2 $\leftarrow$ Projetar objetoB no eixo \\
 		\If{p1 sobrepoe p2}{
 			\KwResult{False}
 		}
@@ -71,8 +71,8 @@ Para o SAT a direção é equivalente ao eixo de separação e a penetração (m
 	penetracao $\leftarrow$ 0 \\
 	separacao $\leftarrow$ Vector.Zero \\
 	\ForEach{eixo do objetoA}{
-		p1 $\leftarrow$ Projetar shapeA no eixo \\
-		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		p1 $\leftarrow$ Projetar objetoA no eixo \\
+		p2 $\leftarrow$ Projetar objetoB no eixo \\
 		$\delta \leftarrow$ projeção p1 com p2 \\
 		\If{$\delta \leq$ TOLERANCIA}{
 			\KwResult{False}
@@ -83,8 +83,8 @@ Para o SAT a direção é equivalente ao eixo de separação e a penetração (m
 	}
 	
 	\ForEach{eixo do objetoB}{
-		p1 $\leftarrow$ Projetar shapeA no eixo \\
-		p2 $\leftarrow$ Projetar shapeB no eixo \\
+		p1 $\leftarrow$ Projetar objetoA no eixo \\
+		p2 $\leftarrow$ Projetar objetoB no eixo \\
 		$\delta \leftarrow$ projeção p1 com p2 \\
 		\If{$\delta \leq$ TOLERANCIA}{
 			\KwResult{False}
@@ -98,11 +98,15 @@ Para o SAT a direção é equivalente ao eixo de separação e a penetração (m
 	\label{al:sat_2}
 \end{algorithm}
 
-\subsection{Algoritmo Gilbert–Johnson–Keerthi (GJK)}
+\section{Algoritmo Gilbert–Johnson–Keerthi}
 
-A GJK, como a SAT, só opera em formas convexas. GJK é um método iterativo, mas converge muito rápido. É uma alternativa melhor para o SAT para ambientes 3D devido ao número de eixos que o SAT deve testar.
+O algoritmo de distância Gilbert-Johnson-Keerthi (GJK) é um método de determinar a distância mínima entre dois conjuntos convexos, publicado pela primeira vez por \citeauthor{gjk} em \citeyear{gjk}. Ao contrário de muitos outros algoritmos de distância, não requer que os dados de geometria sejam armazenados em qualquer formato específico, mas depende apenas de uma função de suporte para gerar iterativamente Simplex mais próximas da resposta correta usando a diferença de Minkowski.
 
-O algoritmo GJK depende muito de um conceito chamado \textbf{\textit{soma de Minkowski}}. A soma de Minkowski de dois objetos convexos A e B é definida por:
+O GJK, como a SAT, só opera em formas convexas. GJK é um método iterativo, mas converge muito rápido. É uma alternativa melhor para o SAT para ambientes 3D devido ao número de eixos que o SAT deve testar.
+
+\subsection{Soma de Minkowski}
+
+O algoritmo GJK depende muito de um conceito chamado soma de Minkowski de dois objetos convexos A e B é definida por:
 
 \begin{equation}
 	A + B = \{\vec{x} + \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
@@ -120,15 +124,67 @@ Uma propriedade muito útil da soma de Minkowski é o fato de que a soma de dois
 
 Essa operação continua sendo a soma de Minkowski (a soma da diferença). Mas neste trabalho usaremos esse termo para referir a essa operação quando necessário.
 
-A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
+Executar essa operação exige $|A| * |B| * 2$ subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos. Uma vez que ambas as formas são convexas e definidas por vértices mais externos só precisamos realizar esta operação nos vértices. A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices.
+
+A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
 
 \begin{teorema}
 	Se duas formas estiverem sobrepostas/em interseção a Diferença de Minkowski dessas formas conterá a origem.
 \end{teorema}
 
-Executar essa operação exige shape1.vertices.size * shape2.vertices.size * 2 subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos. Uma vez que ambas as formas são convexas e definidas por vértices mais externos só precisamos realizar esta operação nos vértices. A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices.
+Dessa forma, não queremos calcular a diferença de Minkowski. Em vez disso, queremos apenas saber se a Diferença de Minkowski contém ou não a origem. Se isso acontecer, então sabemos que as formas estão se cruzando, se não o faz, então elas não são.
 
+Isso é feito construindo iterativamente um polígono dentro da diferença de Minkowski que tenta incluir a origem. Se o polígono que construímos contém a origem, então podemos dizer que a Diferença de Minkowski contém a origem, e também que há interseção entre os dois objetos. Este polígono que queremos construir deve ser da forma mais elementar possível, no caso de 2D um triângulo, no caso de 3D um poliedro, por isso é chamado de Simplex.
 
+\subsection{Função Suporte}
+
+O algoritmo GJK começa com um simplex inicial e o refina iterativamente adicionando pontos encontrados usando a função de suporte em uma direção que aponta para a origem. Esse processo continua até que a origem seja encontrada dentro do simplex, indicando uma colisão, ou até que se determine que a origem não está contida, o que significa que não há colisão.
+
+A função de suporte deve retornar o ponto mais distante em uma direção dentro da Diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da Diferença Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a Diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
+
+\subsection{Iteração}
+
+Mesmo seguindo todos esses critérios ainda podemos não obter um Simplex que contém a origem nessas três etapas. Devemos criar iterativamente o Simplex de tal forma que o Simplex esteja se aproximando de conter a origem. Também precisamos verificar duas condições ao longo do caminho: 1) o simplex atual contém a origem? e 2) somos capazes de incluir a origem?
+
+\begin{algorithm}
+	\caption{GJK}
+	\KwIn{objeto A e objeto B}
+	
+	d $\leftarrow$ B - A \tcp{Direção inicial aponta para o centro de B}
+	simplex $\leftarrow$ support(A, B, d) \\
+	d $\leftarrow$ -d \tcp{Inverte a direção para próxima iteração}
+	\For{$i \leftarrow 0$ \KwTo MAX\_INTERATION}{
+		$a \leftarrow support(A, B, d)$ \\
+		\If{$a \cdot d \leq 0$}{
+			\KwRet{false}
+		}
+		
+		simplex $\leftarrow$ a \\
+		\If{simplex contém a origem}{
+			\KwRet{true}
+		}
+		
+		d $\leftarrow$ calcular próxima direção
+	}
+	
+	\label{al:gjk}
+\end{algorithm}
+
+Podemos determinar onde está a origem com relação ao simplex através da realização de uma série de testes em plano (testes de linha para 2D) onde cada teste consiste em produtos de pontos simples. O primeiro caso que deve ser tratado é o caso do segmento de linha. Podemos determinar se o simplex contém a origem examinando as regiões de Voronoi
+
+\begin{algorithm}
+	\caption{Contém Origem}
+	\KwIn{simplex}
+	\KwOut{Boolean}
+	
+	\If{|simplex| == 4}{ \tcp{Caso 3D}
+		\KwRet{TestePoliedro()}
+	} \ElseIf{|simplex| == 3} { \tcp{Caso 2D}
+		\KwRet{TesteTriangulo()}
+	} \Else{
+		\KwRet{TesteLinha()}
+	}
+\end{algorithm}
 
 \section{Polígonos côncavos}
 
