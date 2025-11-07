@@ -1,5 +1,14 @@
 \chapter{Resposta a colisão}
 
-\section{EPA}
+Os chamados métodos baseados em penalidades tratam o contato inserindo molas nos pontos de penetração. Embora seja muito simples de implementar, esse método apresenta diversas desvantagens sérias. Por exemplo, é difícil escolher constantes de mola adequadas de forma que, por um lado, os objetos não penetrem demais e, por outro lado, o sistema resultante não se torne instável. Em outros métodos para simulação física, as colisões são tratadas retrocedendo o tempo (por meio de busca binária, por exemplo) até o ponto exato da colisão, tratando a colisão analiticamente a partir desse ponto e, em seguida, reiniciando a simulação. Isso não é muito prático do ponto de vista de tempo real, pois o código pode se tornar muito lento quando há muitas colisões.
+
+\citeonline{jakobsen2001advanced} propõe uma estratégia mais simples, os vértices que fazem parte da colisão são simplesmente projetados para fora do obstáculo. Por projeção, em termos gerais, entendemos mover o ponto o mínimo possível até que ele esteja livre do obstáculo. Normalmente, isso significa mover o ponto perpendicularmente para fora, em direção à superfície de colisão.
 
 \section{Projeção da posição pelo método Jakobsen}
+
+A resposta à uma colisão é composta de dois passos. O primeiro passo consiste em separar os elementos dos objetos (vértice, aresta ou face) que estão se intersectando. Este passo é puramente geométrico, já que é executado movendo as partículas na geometria da colisão.
+
+O segundo passo é um processo de relaxamento iterativo no qual os elementos dos objetos que estão envolvidos na colisão encontram as suas posições apropriadas usando as restrições como suporte.
+
+\section{Algoritmo de expansão de politopos (EPA)}
+

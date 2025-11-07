@@ -1,5 +1,74 @@
 \chapter{O Fecho Convexo}
 
+O Fecho Convexo (FC) de um conjunto é definido como a menor região convexa que contenha todos os pontos (também chamado como volume delimitador). Achar o fecho convexo de um conjunto de pontos, por exemplo, é um problema que aparece quando queremos organizar o conjunto, agrupar os pontos em uma região simples. 
+
+Em 2 dimensões, temos um polígono, que pode ser descrito por uma lista ordenada de seus vértices. Em 3 dimensões, temos um poliedro, que precisa de estruturas um pouco mais complicadas para armazenar as faces que compõem a fronteira. Em dimensões maiores, as coisas se complicam ainda mais, pois precisaríamos de estruturas que representassem as faces de todas as dimensões. 
+
+\textbf{INSERIR FIGURA COM EXEMPLOS DE USO}
+
+Testar diretamente a geometria de dois objetos para verificar se há colisão entre eles é frequentemente muito caro, especialmente quando os objetos consistem em centenas ou até milhares de polígonos. Para minimizar esse custo, o fecho convexo dos objetos geralmente são testados quanto à sobreposição antes que o teste de interseção geométrica seja realizado.
+
+\textbf{INSERIR FIGURA DO FECHO CONVEXO DE OBJETOS EM INTERSECÇÃO E SEM INTERSECÇÃO}
+
+A ideia é que formas mais simples (como caixas e esferas) tenham testes de sobreposição mais baratos do que os objetos complexos que eles delimitam. O uso do FC permite testes rápidos de rejeição de sobreposição, pois só é necessário testar a geometria complexa delimitada quando a consulta inicial de sobreposição para os volumes delimitadores resulta em um resultado positivo. Em algumas aplicações, o próprio teste de interseção dos volumes delimitadores serve como prova suficiente de colisão.
+
+Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como volumes delimitadores eficazes. As propriedades desejáveis para volumes delimitadores incluem:
+
+\begin{itemize}
+	\item Testes de interseção de baixo custo
+	\item Ajuste preciso
+	\item Cálculo econômico
+	\item Fácil de girar e transformar
+	\item Consome pouca memória
+\end{itemize}
+
+\textbf{INSERIR IMAGENS COM TIPOS DIFERENTES FORMAS DE FECHO CONVEXO}
+
+A ideia principal por trás dos volumes delimitadores é preceder testes geométricos complexos com testes menos dispendiosos que permitem que o teste seja interrompido precocemente. Para suportar testes de sobreposição de baixo custo, o volume delimitador deve ter uma forma geométrica simples. Ao mesmo tempo, para tornar o teste de corte antecipado o mais eficaz possível, o volume delimitador também deve ser o mais ajustado possível, resultando em um trade-off entre o ajuste e o custo do teste de interseção.
+
 \section{Caixa Delimitadora Alinhada ao Eixo Coordenado (AABB)}
 
+A caixa delimitadora mínima para um conjunto de pontos em N dimensões é a caixa com a menor medida (área, volume, ou hipervolume em dimensões superiores) possível que englobe todos os pontos. A caixa delimitadora mínima de um conjunto de pontos é a mesma que a caixa delimitadora mínima de seu FC, um fato que pode ser usado de forma heurística para acelerar a computação.
+
+A caixa delimitadora alinhada aos eixos (em inglês "axis-aligned bounding box", ou AABB) é um dos volumes delimitadores mais comuns. É uma caixa retangular de seis lados (em 3D, quatro lados em 2D) sujeita à restrição de que as bordas da caixa devem ser paralelas aos eixos de coordenadas cartesianos.
+
+\textbf{INSERIR IMAGEM DE AABB}
+
+\begin{algorithm}
+	\caption{Teste de Intersecção AABB}
+	\KwIn{Objeto A, Objeto B}
+	\KwOut{Boolean}
+	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
+		\KwResult{False}
+	}
+	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
+		\KwResult{False}
+	}
+	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
+		\KwResult{False}
+	}
+	\KwResult{True}
+\end{algorithm}
+
 \section{Quickhull}
+
+Quickhull é um algoritmo incremental para Fecho Convexo de um conjunto finito de pontos de qualquer dimensão. Ele usa uma abordagem de divisão e conquista semelhante à do quicksort, da qual seu nome deriva \cite{barber1996quickhull}.
+
+O algoritmo de 2 dimensões pode ser dividido nas seguintes etapas:
+
+\begin{algorithm}[H]
+	\caption{Quickhull 2D}
+	\LinesNumbered
+	\SetAlgoLined
+	\KwIn{Polígono Convexo}
+	\KwOut{Lista dos vértices que representam o fecho convexo}
+	Encontre os pontos com coordenadas mínimas e máximas x, pois estes sempre farão parte do casco convexo. Se muitos pontos com o mesmo mínimo/máximo x existirem, use os com o mínimo/máximo y, respectivamente. \\
+	Use a linha formada pelos dois pontos para dividir o conjunto em dois subconjuntos de pontos, que serão processados de forma recursiva. Em seguida, descrevemos como determinar a parte do casco acima da linha; a parte do casco abaixo da linha pode ser determinada de forma semelhante. \\
+	Determine o ponto acima da linha com a distância máxima da linha. Este ponto forma um triângulo com os dois pontos na linha. \\
+	Os pontos dentro desse triângulo não podem ser parte do casco convexo e, portanto, podem ser ignorados nos próximos passos. \\
+	Repita recursivamente os dois passos anteriores nas duas linhas formadas pelos dois novos lados do triângulo. \\
+	Continue até que não mais pontos sejam deixados, a recursão chegou ao fim e os pontos selecionados constituem o casco convexo.
+	\label{al:quickhull_2d}
+\end{algorithm}
+
+Para dimensões maiores extrapola o escopo desse trabalho, consulte \citeonline{barber1996quickhull} para melhores definições.
