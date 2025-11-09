@@ -1,9 +1,36 @@
 \chapter{Otimizações}
 
-\section{Broad Phase e Narrow Phase}
+Como qualquer objeto pode potencialmente colidir com qualquer outro objeto, uma simulação com $n$ objetos requer $(n-1)+(n-2) + \dots + 1 = n(n-1)/2 = O(n^2)$ testes de pares, no pior caso. Devido à complexidade de tempo quadrática, testar ingenuamente cada par de objetos para verificar colisões rapidamente se torna muito caro, mesmo para valores moderados de n. 
 
-\section{Divisão espacial em grade uniforme}
+Reduzir o custo associado ao teste de pares afetará o tempo de execução apenas linearmente. Para realmente acelerar o processo, o número de pares testados deve ser reduzido. Essa redução é realizada separando o tratamento de colisões de múltiplos objetos em duas fases: Narrow Phase e Broad Phase.
 
-\subsection{Uso na Broad Phase}
+\section{Broad Phase}
+
+Segundo \citeonline{ericson2004real}, o princípio fundamental da otimização é que nada é mais rápido do que não ter que realizar uma tarefa. Dessa forma, as melhores otimizações para acelerar uma rotina giram em torno de reduzir o trabalho ao mínimo possível o mais cedo possível.
+
+A Broad Phase identifica grupos menores de objetos que podem estar colidindo e rejeita rapidamente aqueles que não estão. Como os objetos só podem atingir coisas que estão próximas a eles, os testes contra objetos distantes podem ser evitados dividindo as coisas espacialmente.
+
+A consulta de colisão mais simples é o problema teste de interseção: responder à pergunta booleana se dois objetos (estáticos), A e B, estão se sobrepondo em suas posições e orientações dadas. As consultas de interseção booleanas são rápidas e fáceis de implementar e, portanto, são ideias para Broad Phase.
+
+\subsection{Divisão espacial em grade uniforme}
+
+As técnicas de particionamento espacial são ótimas candidatas para Broad Phase, dividindo o espaço em regiões e verificando se os objetos se sobrepõem à mesma região do espaço. Como os objetos só podem se interceptar se se sobrepuserem à mesma região do espaço, o número de testes de pares de objetos é drasticamente reduzido.
+
+Um esquema muito eficaz de subdivisão espacial consiste em sobrepor um espaço com uma grade regular. Essa grade divide o espaço em várias células de tamanho igual. Cada objeto é então associado às células com as quais se sobrepõem.
+
+Devido à uniformidade da grade, acessar uma célula correspondente a uma determinada coordenada é simples e rápido: os valores das coordenadas do mundo são simplesmente divididos pelo tamanho da célula para obter as coordenadas da célula. Dadas as coordenadas de uma célula específica, localizar as células vizinhas também é trivial.
+
+Em termos de desempenho, um dos aspectos mais importantes dos métodos baseados em grade é a escolha de um tamanho de célula apropriado. Existem quatro questões relacionadas ao tamanho da célula que podem prejudicar o desempenho:
+
+\begin{enumerate}
+	\item Se as células forem muito pequenas, um grande número de células precisará ser atualizado.
+	\item Se os objetos forem pequenos e as células da grade forem grandes, haverá muitos objetos em cada célula.
+	\item Se os objetos tiverem uma geometria muito complexa isso irá afetar os testes de interseção, eles devem ser divididos em partes menores.
+	\item É possível que os objetos tenham ambas características anteriores. Sendo necessário outra abordagem como grade hierárquicas.
+\end{enumerate}
+
+\section{Narrow Phase}
+
+A fase restrita consiste nos testes pareados dentro dos subgrupos. Ela é responsável por determinar as colisões exatas, se houver.
 
 \section{Separando simulação da Thread principal}

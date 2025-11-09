@@ -10,5 +10,35 @@ A resposta à uma colisão é composta de dois passos. O primeiro passo consiste
 
 O segundo passo é um processo de relaxamento iterativo no qual os elementos dos objetos que estão envolvidos na colisão encontram as suas posições apropriadas usando as restrições como suporte.
 
-\section{Algoritmo de expansão de politopos (EPA)}
+Se dois objetos convexos A e B colidem o processo de separação requer três parâmetros: os pontos $p_A$ de contato de A, os pontos $p_B$ de contato de B e o ponto $q$ que a simulação assume onde os dois objetos estão em contato chamado de ponto de projeção.
 
+O ponto de projeção coincide com o plano de separação $H(\vec{v}, \delta)$ nas coordenadas locais do objeto, dessa forma como regra geral basta mover os pontos de $p_A$ em direção $H(\vec{v}, \delta)$. Considere dois casos de colisão:
+
+\section{Algoritmo de Expansão de Politopos (EPA)}
+
+Para realizar a separação de dois objetos usando o algoritmo SAT basta calcularmos o MTV como visto na seção \ref{sec:sat}. Já para o GJK é preciso fazer um segundo passo, uma extensão do algoritmo que nos permite encontrar a normal correta e profundidade das colisões.
+
+O Algoritmo de Expansão de Politopos (do inglês Expanding Polytope Algorithm, EPA) cria um polítopo (ou polígono) dentro da Diferença de Minkowski e iterativamente expandi-lo até atingirmos a borda da Diferença de Minkowski. EPA executa essa tarefa utilizando a mesma função de suporte utilizada nos demais algoritmos e a mesma noção de um simplex.
+
+Este algoritmo é uma extensão porque sua entrada é o Simplex final do GJK que contém a origem e encontra o MTV. A distância entre o ponto mais próximo com a origem é a profundidade de penetração ($\delta$). Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar o normal da face mais próxima da origem, porém um simplex não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
+
+O algoritmo expande o Simplex adicionando vértices a ele até encontrarmos a normal mais próxima de uma face que está no polígono original.
+
+\begin{algorithm}
+	\caption{EPA}
+	\KwIn{Simplex}
+	\KwOut{separation $v$, penetration $\delta$}
+	
+	\For{$i \leftarrow 0$ \KwTo $i < MAX\_ITERATION$}{
+		e $\leftarrow$ Encontrar aresta mais próxima a origem \\
+		p $\leftarrow$ Calcular novo ponto de suporte na direção da normal de e \\
+		$\delta \leftarrow p \cdot normal(e)$ \\
+		\If{$|\delta - length(e)| < TOLERANCE$}{
+			\KwRet{normal(e), $\delta$}
+		}
+		
+		Adicionar ponto ao simplex
+	}
+\end{algorithm}
+
+É importante limitar o número de iterações para evitar que a rotina entre em loop infinito em casos degenerados, como esse algoritmo converge rapidamente uma constante igual a 30 é um bom limite superior. Matematicamente a distância deve ser igual a zero, mas por conta da artimética de ponto flutuante, uma tolerância pequena deve ser aceita, como $10^{-3}$.
