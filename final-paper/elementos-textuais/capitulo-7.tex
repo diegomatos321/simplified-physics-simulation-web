@@ -6,17 +6,39 @@ Reduzir o custo associado ao teste de pares afetará o tempo de execução apena
 
 \section{Broad Phase}
 
-Segundo \citeonline{ericson2004real}, o princípio fundamental da otimização é que nada é mais rápido do que não ter que realizar uma tarefa. Dessa forma, as melhores otimizações para acelerar uma rotina giram em torno de reduzir o trabalho ao mínimo possível o mais cedo possível.
+Segundo \citeonline{ericson2004real}, o primeiro princípio da otimização é que nada é mais rápido do que não ter que realizar uma tarefa. Dessa forma, as melhores otimizações para acelerar uma rotina giram em torno de reduzir o trabalho ao mínimo possível o mais cedo possível.
 
 A Broad Phase identifica grupos menores de objetos que podem estar colidindo e rejeita rapidamente aqueles que não estão. Como os objetos só podem atingir coisas que estão próximas a eles, os testes contra objetos distantes podem ser evitados dividindo as coisas espacialmente.
 
 A consulta de colisão mais simples é o problema teste de interseção: responder à pergunta booleana se dois objetos (estáticos), A e B, estão se sobrepondo em suas posições e orientações dadas. As consultas de interseção booleanas são rápidas e fáceis de implementar e, portanto, são ideias para Broad Phase.
 
+\begin{algorithm}
+	\caption{Broad Phase generalizada}
+	\KwOut{Conjunto de pares de objetos passíveis a colisão}
+	vistos $\leftarrow$ \{\} \\
+	pares de contato $\leftarrow$ \{\} \\
+	\ForEach{bodyA em bodies}{
+		candidates $\leftarrow$ consultar pares próximos de bodyA \\
+		\ForEach{bodyB}{
+			\If{par \{bodyA, bodyB\} já foi visto}{
+				ir para próximo par
+			}
+			marcar par como visto \\
+			\If{teste de intersecção barata}{
+				pares de contato $\leftarrow$ \{bodyA, bodyB\}
+			}	
+		}
+	}
+	\KwRet{pares de contato}
+\end{algorithm}
+
 \subsection{Divisão espacial em grade uniforme}
 
-As técnicas de particionamento espacial são ótimas candidatas para Broad Phase, dividindo o espaço em regiões e verificando se os objetos se sobrepõem à mesma região do espaço. Como os objetos só podem se interceptar se se sobrepuserem à mesma região do espaço, o número de testes de pares de objetos é drasticamente reduzido.
+As técnicas de partição do espaço é o processo pelo qual o espaço é subdividido em regiões convexas, chamadas células. Cada célula na partição mantém uma lista de referências a objetos que nela estão (parcialmente) contidos. Como os objetos só podem se interceptar se sobrepuserem à mesma região do espaço, o número de testes de pares de objetos é drasticamente reduzido.
 
 Um esquema muito eficaz de subdivisão espacial consiste em sobrepor um espaço com uma grade regular. Essa grade divide o espaço em várias células de tamanho igual. Cada objeto é então associado às células com as quais se sobrepõem.
+
+\textbf{INSERIR IMAGEM DE DIVISÃO ESPACIAL EM GRANDE UNIFORME}
 
 Devido à uniformidade da grade, acessar uma célula correspondente a uma determinada coordenada é simples e rápido: os valores das coordenadas do mundo são simplesmente divididos pelo tamanho da célula para obter as coordenadas da célula. Dadas as coordenadas de uma célula específica, localizar as células vizinhas também é trivial.
 
@@ -29,8 +51,67 @@ Em termos de desempenho, um dos aspectos mais importantes dos métodos baseados 
 	\item É possível que os objetos tenham ambas características anteriores. Sendo necessário outra abordagem como grade hierárquicas.
 \end{enumerate}
 
+O ideal é que cada objeto caiba exatamente no tamanho de uma célula.
+
 \section{Narrow Phase}
 
-A fase restrita consiste nos testes pareados dentro dos subgrupos. Ela é responsável por determinar as colisões exatas, se houver.
+Essa etapa consiste em determinar as colisões exatas entre os pares dos subgrupos aceitos pela Broad Phase. Aqui deve-se usar o solver desejável como SAT ou GJK.
 
-\section{Separando simulação da Thread principal}
+\section{Física com tamanho de passo fixo}
+
+A tamanho do passo da simulação física é tradicionalmente atribuída como a variação do tempo que o último quadro demorou para finalizar. Essa abordagem trás um passo variável que será executada mais rápido ou mais lento dependendo do computador do usuário.
+
+\begin{algorithm}
+	\caption{Simulação física com passo variável}
+	tempo passado $\leftarrow$ agora() \\
+	\While{!sair}{
+		tempo agora $\leftarrow$ agora() \\
+		dt $\leftarrow$ tempo agora - tempo anterior \\
+		tempo anterior $\leftarrow$ tempo agora \\
+		
+		Física(dt) \\
+		Renderizar() 
+	}
+\end{algorithm}
+
+O problema dessa abordagem é que o comportamento da sua simulação física depende do tempo que seu computador leva em cada quadro. O efeito pode ser sutil como sua simulação ter comportamento ligeiramente diferente dependendo da taxa de quadros ou pode ser tão ruim quanto para FPS altos sua simulação explodindo para o infinito e para baixos FPS objetos em movimento atravessando paredes
+
+Essa rotina pode ser reescrita considerando que a simulação é bem comportada apenas se o tempo delta é menor ou igual a algum valor máximo. Avance a simulação em passos fixos de tempo e garanta que ela acompanhe os valores de tempo do render.
+
+\begin{algorithm}
+	\caption{Simulação física com passo fixo}
+	tempo passado $\leftarrow$ agora() \\
+	fixed dt $\leftarrow$ $\frac{1}{50}$ \\
+	acumulador $\leftarrow$ 0 \\
+	\While{!sair}{
+		tempo agora $\leftarrow$ agora() \\
+		dt $\leftarrow$ tempo agora - tempo anterior \\
+		tempo anterior $\leftarrow$ tempo agora \\
+		acumulador $\leftarrow$ acumulador + dt
+		
+		\While{acumulador <= fixed dt}{
+			Física(dt) \\
+			acumulador $\leftarrow$ acumulador - fixed dt
+		}
+		
+		Física(dt) \\
+		Renderizar() 
+	}
+\end{algorithm}
+
+\section{Simulação física multi-thread}
+
+A maioria dos programas interativos segue uma rotina tradicional single-thread: os inputs do usuário são lidos, enviados para lógica do programa acionando atualizações físicas que são renderizadas na tela.
+
+\textbf{INSERIR DIAGRAMA}
+
+Para um sistema single-thread, a renderização só pode começar depois que a física tiver sido simulada, ou seja, é impossível renderizar antes que a simulação física seja feita. 
+
+Nos casos em que uma alta quantidade de cálculo é necessária para a simulação de física, a renderização seria atrasada e a simulação o gargalo, resultando em baixas taxas de quadros e falhas gráficas. O contrário também pode ocorrer: a renderização demorar resulta em um atraso na leitura da entrada do usuário e no processo de simulação física.
+
+Tudo isso é devido a todo o processo que está sendo realizado em um único loop. Um sistema de single-thread seria adequado nos casos em que não é necessário muito cálculo e onde não são renderizado muitos elementos. No entanto, problemas ocorrerão se houver uma carga pesada.
+
+\textbf{INSERIR NOVO DIAGRAMA}
+
+Para resolver esse problema devemos executar a simulação física numa thread separada enquanto o thread principal apenas renderiza os dados de física calculados mais recentes. Dessa forma, a thread principal não precisa esperar a simulação física terminar para renderizar a configuração mais recente dos objetos. Mesmo em situações em que há uma carga pesada na renderização, o cálculo da física pode ser realizado em paralelo.
+
