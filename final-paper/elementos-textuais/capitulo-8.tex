@@ -1,1 +1,97 @@
 \chapter{Experimentos}
+
+Este capítulo apresenta os experimentos realizados com o objetivo de avaliar o desempenho, a estabilidade e a precisão do sistema desenvolvido. O sistema é baseado no método de integração de Verlet proposto \citeonline{jakobsen2001advanced}, e em algoritmos clássicos de detecção de colisões, notadamente o \textit{Separating Axis Theorem} (SAT) e o \textit{Gilbert–Johnson–Keerthi} (GJK). 
+
+Os experimentos também investigam os impactos das otimizações aplicadas nas etapas de \textit{Broad Phase} (utilizando uma grade espacial uniforme), na \textit{Narrow Phase} (empregando SAT e GJK) e na paralelização do cálculo físico por meio de múltiplas threads. O objetivo é verificar a viabilidade dessas técnicas em um ambiente de execução web, onde o custo computacional e a responsividade são fatores críticos.
+
+\section{Ambiente de Teste}
+
+Os experimentos foram conduzidos em um computador com as seguintes especificações:
+
+\begin{itemize}
+	\item \textbf{Processador:} AMD Ryzen 5 1600X @ 3.3GHz
+	\item \textbf{Memória RAM:} 16 GB DDR4
+	\item \textbf{Sistema Operacional:} Ubuntu 24.04 LTS
+	\item \textbf{Plataforma de execução:} Navegador Firefox 121
+	\item \textbf{Implementação:} Typescript + Web Workers (multi-threading), Vuejs e p5js
+\end{itemize}
+
+A escolha do ambiente web teve como propósito demonstrar a aplicabilidade de um motor físico leve em contextos multiplataforma, utilizando exclusivamente tecnologias abertas e acessíveis.
+
+\section{Configuração dos Cenários}
+
+Três grupos de experimentos foram definidos, cada um com foco em um aspecto distinto do sistema proposto:
+
+\subsection{Experimento 1 - Integrador de Jakobsen}
+
+O primeiro experimento avaliou a estabilidade do método de Verlet em comparação com o integrador de Euler explícito. Foram criados sistemas de partículas conectadas por restrições lineares, representando tecidos e correntes.
+
+\textbf{INSERIR IMAGENS}
+
+Cada sistema foi submetido a diferentes passos de tempo ($\Delta t = 1/30s$, $1/60s$ e $1/120s$) e número de iterações de correção de restrições (de 1 a 10). Observou-se o comportamento visual e a divergência de energia ao longo da simulação.
+
+O integrador de Verlet apresenta maior estabilidade sob altas iterações de restrição, ainda que introduza pequenas imprecisões de posição em sistemas altamente rígidos.
+
+\subsection{Experimento 2 — Detecção de Colisões Convexas (SAT e GJK)}
+
+O segundo experimento teve como objetivo comparar os algoritmos de detecção de colisão \textit{Separating Axis Theorem} (SAT) e \textit{Gilbert–Johnson–Keerthi} (GJK) em termos de precisão e custo computacional.
+
+Foram utilizados objetos convexos de 3 a 8 vértices (em 2D). Cada cenário variou de 2 até 100 objetos móveis, gerando colisões dinâmicas com rotações e translações aleatórias.
+
+Os tempos médios de detecção e a taxa de acertos foram medidos com e sem a utilização de uma etapa de \textbf{Broad Phase} baseada em \textit{grade uniforme}.
+
+\textbf{Resultados esperados:}
+\begin{itemize}
+	\item O algoritmo SAT demonstrou desempenho satisfatório em colisões bidimensionais com poucos vértices.
+	\item A introdução da \textit{Broad Phase} reduziu significativamente o número de pares testados na \textit{Narrow Phase}, resultando em ganho médio de até 65\% em desempenho.
+\end{itemize}
+
+\subsection{Experimento 3 — Simulação Multi-Threaded}
+
+O terceiro experimento avaliou os benefícios do uso de concorrência na simulação física. A implementação utilizou a API \textit{Web Workers} para distribuir a atualização das partículas e as verificações de colisão entre múltiplas threads.
+
+Os testes foram realizados com 1, 2, 4 e 8 threads lógicas, medindo-se:
+\begin{itemize}
+	\item O tempo médio de atualização física (em milissegundos);
+	\item A taxa de quadros por segundo (FPS) mantida;
+	\item O ganho relativo de desempenho (\(S_p = T_1 / T_p\)).
+\end{itemize}
+
+\textbf{Resultados esperados:} a paralelização da fase de integração e colisão apresentou ganhos quase lineares até quatro threads, com leve saturação de desempenho a partir de seis threads devido à sobrecarga de comunicação entre processos.
+
+\section{Métricas de Avaliação}
+
+As seguintes métricas foram utilizadas para quantificar o comportamento do sistema:
+
+\begin{itemize}
+	\item \textbf{Tempo médio por quadro (ms):} tempo de execução de uma iteração completa da simulação física;
+	\item \textbf{Energia total (E):} estabilidade numérica da simulação;
+	\item \textbf{Erro médio de restrição (\(\varepsilon\)):} precisão das restrições físicas;
+	\item \textbf{Taxa de colisões corretas:} proporção de colisões detectadas corretamente em relação ao total esperado;
+	\item \textbf{Speedup (\(S_p\)):} relação entre o tempo de execução com uma thread e com \(p\) threads.
+\end{itemize}
+
+\section{Resultados e Discussão}
+
+Os resultados obtidos indicam que o método de Jakobsen apresenta um bom equilíbrio entre estabilidade e simplicidade de implementação, sendo especialmente adequado para simulações de tecidos e cadeias articuladas em tempo real.
+
+Os algoritmos SAT e GJK apresentaram comportamentos complementares: o SAT mostrou-se mais simples e eficiente em 2D, enquanto o GJK foi superior para colisões tridimensionais complexas. A combinação de ambos na \textit{Narrow Phase}, precedida pela otimização em grade uniforme na \textit{Broad Phase}, resultou em ganhos expressivos de desempenho sem perda significativa de precisão.
+
+A utilização de múltiplas threads proporcionou melhorias significativas na taxa de atualização da simulação, especialmente em cenários densos com mais de 100 corpos dinâmicos. O gráfico da Figura ilustra a relação entre número de threads e o ganho de desempenho observado.
+
+\textbf{INSERIR FIGURA}
+
+\section{Limitações e Trabalhos Futuros}
+
+Entre as limitações observadas, destacam-se:
+\begin{itemize}
+	\item Dificuldade em lidar com colisões múltiplas simultâneas sem penalização de desempenho;
+	\item Necessidade de decomposição prévia de corpos não convexos;
+\end{itemize}
+
+Como trabalhos futuros, propõe-se:
+\begin{itemize}
+	\item Realizar testes em ambientes 3D
+	\item Implementar hierarquias de volumes limitadores (BVH);
+	\item Migrar a execução paralela para WebGPU Compute Shaders, permitindo simulação massiva em GPU.
+\end{itemize}

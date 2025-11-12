@@ -8,9 +8,9 @@ Reduzir o custo associado ao teste de pares afetará o tempo de execução apena
 
 Segundo \citeonline{ericson2004real}, o primeiro princípio da otimização é que nada é mais rápido do que não ter que realizar uma tarefa. Dessa forma, as melhores otimizações para acelerar uma rotina giram em torno de reduzir o trabalho ao mínimo possível o mais cedo possível.
 
-A Broad Phase identifica grupos menores de objetos que podem estar colidindo e rejeita rapidamente aqueles que não estão. Como os objetos só podem atingir coisas que estão próximas a eles, os testes contra objetos distantes podem ser evitados dividindo as coisas espacialmente.
+A Broad Phase identifica grupos menores de objetos que podem estar colidindo e rejeita rapidamente aqueles que não estão. Como os objetos só podem atingir coisas que estão próximas a eles, os testes contra objetos distantes podem ser evitados. Isso é feito realizando uma consulta espacial para objetos próximos.
 
-A consulta de colisão mais simples é o problema teste de interseção: responder à pergunta booleana se dois objetos (estáticos), A e B, estão se sobrepondo em suas posições e orientações dadas. As consultas de interseção booleanas são rápidas e fáceis de implementar e, portanto, são ideias para Broad Phase.
+A consulta de colisão mais simples é o problema teste de interseção: responder à pergunta booleana se dois objetos A e B estão se sobrepondo em suas posições e orientações dadas. As consultas de interseção booleanas são rápidas e fáceis de implementar e, portanto, são ideias para Broad Phase.
 
 \begin{algorithm}
 	\caption{Broad Phase generalizada}
@@ -63,7 +63,7 @@ A tamanho do passo da simulação física é tradicionalmente atribuída como a 
 
 \begin{algorithm}
 	\caption{Simulação física com passo variável}
-	tempo passado $\leftarrow$ agora() \\
+	tempo anterior $\leftarrow$ agora() \\
 	\While{!sair}{
 		tempo agora $\leftarrow$ agora() \\
 		dt $\leftarrow$ tempo agora - tempo anterior \\
@@ -99,6 +99,8 @@ Essa rotina pode ser reescrita considerando que a simulação é bem comportada 
 	}
 \end{algorithm}
 
+Dessa forma a física da simulação fica controlável e ainda com um parâmetro ajustável que permite aumentarmos a precisão da simulação caso necessário e forma independente da máquina do usuário.
+
 \section{Simulação física multi-thread}
 
 A maioria dos programas interativos segue uma rotina tradicional single-thread: os inputs do usuário são lidos, enviados para lógica do programa acionando atualizações físicas que são renderizadas na tela.
@@ -109,7 +111,7 @@ Para um sistema single-thread, a renderização só pode começar depois que a f
 
 Nos casos em que uma alta quantidade de cálculo é necessária para a simulação de física, a renderização seria atrasada e a simulação o gargalo, resultando em baixas taxas de quadros e falhas gráficas. O contrário também pode ocorrer: a renderização demorar resulta em um atraso na leitura da entrada do usuário e no processo de simulação física.
 
-Tudo isso é devido a todo o processo que está sendo realizado em um único loop. Um sistema de single-thread seria adequado nos casos em que não é necessário muito cálculo e onde não são renderizado muitos elementos. No entanto, problemas ocorrerão se houver uma carga pesada.
+Tudo isso é devido a todo o processo que está sendo realizado em um único loop. Um sistema de single-thread seria adequado nos casos em que não é necessário muito cálculo e onde não são renderizados muitos elementos. No entanto, problemas ocorrerão se houver uma carga pesada.
 
 \textbf{INSERIR NOVO DIAGRAMA}
 
