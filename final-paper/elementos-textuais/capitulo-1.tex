@@ -1,26 +1,36 @@
 \chapter{INTRODUÇÃO}
 
-A computação gráfica é matemática e arte. Esta ferramenta proporciona um maior poder de abstração, ajudando na criação de imagens complexas e em muitos casos não imaginadas. A computação gráfica pode ser encarada como uma ferramenta não convencional que permite ao artista transcender das técnicas tradicionais de desenho ou modelagem \cite{azevedo2003}.
+A evolução da capacidade computacional e das placas gráficas nas últimas décadas permitiu o desenvolvimento de simulações visuais cada vez mais realistas. Dentro desse contexto, a \textbf{Computação Gráfica} surge como uma área fundamental da ciência da computação responsável por estudar técnicas e algoritmos para gerar, manipular e representar imagens digitais de maneira eficiente e visualmente convincente. Essa área abrange desde o simples desenho de primitivas geométricas até a renderização de ambientes tridimensionais complexos, sendo amplamente utilizada em aplicações de engenharia, design, entretenimento e educação.
 
-A computação gráfica vista como ferramenta indicaria que temos um artista responsável pela arte gerada. Mesmo as imagens geradas a partir de equações podem ser consideradas arte, se essas equações forem fruto da criatividade e da capacidade do descobridor que manifesta sua habilidade e originalidade inventiva. A habilidade de simular a natureza em computadores tem sido objeto de atenção e curiosidade de toda a comunidade científica.
+Segundo \citeonline{azevedo2003}, a computação gráfica é matemática e arte. Esta ferramenta proporciona um maior poder de abstração, ajudando na criação de imagens complexas e em muitos casos não imaginadas. A computação gráfica pode ser encarada como uma ferramenta não convencional que permite ao artista transcender das técnicas tradicionais de desenho ou modelagem.
 
-De acordo com \citeonline{moller2018} renderização em tempo real refere-se à criação rápida de imagens no computador. É a área mais interativa da computação gráfica. Uma imagem aparece na tela, o usuário interage ou reage, e esse feedback afeta o que será gerado em seguida.
+Em paralelo, o avanço dos \textbf{programas interativos}, especialmente jogos eletrônicos e simulações físicas em tempo real, intensificou a necessidade de técnicas capazes de combinar realismo visual com desempenho computacional. De acordo com \citeonline{moller2018} renderização em tempo real refere-se à criação rápida de imagens no computador. É a área mais interativa da computação gráfica. Uma imagem aparece na tela, o usuário interage ou reage, e esse feedback afeta o que será gerado em seguida.
 
 Esse ciclo de reação e renderização acontece em uma velocidade suficientemente alta para que o usuário não veja imagens individuais, mas sim se sinta imerso em um processo dinâmico. A taxa na qual as imagens são exibidas é medida em quadros por segundo (FPS) ou Hertz (Hz). Com um quadro por segundo, há pouca sensação de interatividade; o usuário percebe claramente a chegada de cada nova imagem. A partir de cerca de 6 FPS, a sensação de interatividade começa a aumentar.
 
-Uma taxa de quadros mais alta é importante para minimizar o tempo de resposta. Um atraso temporal de apenas 15 milissegundos pode prejudicar e interferir na interação. Como exemplo, os óculos de realidade virtual geralmente exigem 90 FPS para minimizar a latência.
+Tais programas exigem que o computador responda dinamicamente às ações do usuário, atualizando continuamente o estado do mundo virtual de acordo com as leis físicas e as interações entre objetos. Para isso, é essencial empregar algoritmos otimizados de \textit{detecção de colisões}, \textit{resposta física} e \textit{atualização de estados} em tempo real.
 
-Modelagem e animação baseada em física vêm sendo pesquisadas desde início desse século, encontrando aplicação em todas áreas de entretenimento, simulação, desenho assistido por computador e várias outras áreas.
+\section{Contextualização do Problema}
+
+Em animações tradicionais baseadas em quadros-chave (\textit{keyframe animation}), o movimento dos objetos é previamente definido pelo animador. Embora essa abordagem seja adequada para diversas aplicações, ela se torna limitada quando se deseja obter comportamentos emergentes e reações físicas naturais entre múltiplos objetos. Surge, então, a necessidade de sistemas de \textbf{animação baseada em física}, onde o movimento é resultado direto da aplicação de forças, restrições e colisões simuladas numericamente.
+
+No entanto, a implementação de animações físicas envolve desafios significativos. A simulação de forças, restrições e colisões deve ser precisa o suficiente para produzir resultados visuais plausíveis, mas também eficiente para manter o desempenho em tempo real. O custo computacional cresce rapidamente com o número de objetos simulados, especialmente na etapa de detecção de colisões, que pode demandar verificações entre milhares de pares potenciais.
 
 Uma animação realista requer que os objetos em movimento obedeçam a leis físicas. Para tanto, vários aspectos precisam ser considerados como, por exemplo: no mundo real, dois objetos não podem ocupar o mesmo lugar no espaço ao mesmo tempo. Isto significa que objetos podem empurrar outros objetos dependendo de suas massas e velocidades; podem ser empilhados uns sobre os outros; não podem atravessar o chão, e assim por diante. Para incorporar um mecanismo que permita tratar estas situações uma tarefa importante para este mecanismo é detectar configurações onde haja interpenetração entre objetos, as quais são chamadas de "colisões". 
 
 Porém, sendo o processo de detecção de colisões geralmente muito custoso computacionalmente, a simulação de ambientes interativos dificilmente pode ser alcançada em tempo real. Isto se deve ao fato de que, a cada instante de tempo da simulação, diversas características físicas têm que ser computadas, tais como velocidades, forças, torques, momentos e outros.
 
-O tratamento de colisões pode ser dividido em duas fases: na detecção de colisões, objetos que se interpenetram ou que estão em vias de o fazer são identificados, na resposta a colisões envolve a modificação dos diversos parâmetros físicos dos objetos envolvidos – tipicamente posição, orientação e velocidade – de tal forma que uma configuração fisicamente plausível seja obtida. 
+Para contornar esses desafios, técnicas como a \textbf{detecção de colisão em múltiplas fases} (Broad Phase e Narrow Phase), o uso de \textbf{estruturas espaciais otimizadas} (como grades uniformes) e o \textbf{processamento paralelo} têm se tornado estratégias essenciais. 
 
 Há muitas abordagens para esse problema na literatura que envolve uso de métodos precisos que requerem computar diversas equações que regem as leis físicas, particularmente as da dinâmica como método do impulso, método da penalização %(CITAR OUTROS MÉTODOS)
 
-\citeonline{jakobsen2001advanced} propôs um esquema simplificado de simulação baseada em física, conseguindo simular ambientes com objetos deformáveis e rígidos sem a necessidade de calcular explicitamente matrizes de orientação, torques ou tensores de inércia. Este esquema é baseado principalmente na implementação de restrições lineares e a com binação de diversas técnicas que se complementam:
+\section{Justificativa}
+
+O estudo e a implementação de um sistema de animação física simplificada representam uma oportunidade de unir teoria e prática em Computação Gráfica e Física Computacional. Além de contribuir para a compreensão de conceitos fundamentais de simulação, o desenvolvimento de um motor físico otimizado tem aplicações diretas em áreas como jogos digitais, visualização científica, engenharia e realidade virtual.
+
+O foco em técnicas de detecção e resposta a colisões, bem como em otimizações de desempenho, torna o trabalho relevante tanto do ponto de vista acadêmico quanto profissional, pois reflete problemas reais enfrentados na indústria de desenvolvimento de jogos e simulações.
+
+\citeonline{jakobsen2001advanced} propôs um esquema simplificado de simulação baseada em física, conseguindo simular ambientes com objetos deformáveis e rígidos sem a necessidade de calcular explicitamente matrizes de orientação, torques ou tensores de inércia. Este esquema é baseado principalmente na implementação de restrições lineares e a combinação de diversas técnicas que se complementam:
 
 \begin{itemize}
 	\item A dinâmica das partículas é simulada usando o integrador de Verlet.
@@ -32,6 +42,18 @@ Há muitas abordagens para esse problema na literatura que envolve uso de métod
 
 Entretanto, vários detalhes importantes foram suprimidos. Em particular, a ligação entre o mecanismo de detecção de colisão e os algoritmos de resposta a colisões é descrita apenas superficialmente, nenhuma estratégia é sugerida para tratar objetos que requeiram um número maior de restrições lineares e não é apresentado estruturas de otimizações para lidar com muitos objetos. Isto é relevante, já que o emprego de muitas restrições lineares pode comprometer o desempenho do sistema.
 
+\section{Objetivos}
+
 Neste trabalho estaremos focando em um protótipo de sistema baseado no Jakobsen apresentando soluções para detecção e resposta a colisão. Ele é adequado para situações de aplicações em tempo real e beneficia áreas que exigem alta imersão entre a simulação e o humano.
+
+\begin{itemize}
+	\item Revisar os principais conceitos de animação baseada em física e integração numérica;
+	\item Implementar algoritmos de detecção de colisão Broad Phase e Narrow Phase (utilizando SAT e GJK);
+	\item Desenvolver uma simulação física baseada em partículas e restrições utilizando o método de Jakobsen;
+	\item Aplicar técnicas de otimização, como grade uniforme e processamento multi-threaded;
+	\item Avaliar o desempenho e a estabilidade do sistema em diferentes cenários de simulação.
+\end{itemize}
+
+\section{Estrutura do Trabalho}
 
 O restante deste trabalho é dividido nos seguintes capítulos: O Capítulo 2 apresenta as técnicas principais descritas por \citeauthor{jakobsen2001advanced} para animação baseada em física. No Capítulo 3 mostra as diversas representações de objetos aceitas pelos métodos anteriores. O Capítulo 4 aborda as principais metodologias para detecção de colisões e seus casos degenerados. O Capítulo 5 apresenta como calcular de forma simplificada as fronteiras dos objetos. No Capítulo 6 mostra como realizar a resposta a colisão por projeção das posições. O Capítulo 7 apresenta as otimizações usados neste trabalho. No Capítulo 8 os experimentos e comparação de resultados com outras bibliotecas. Finalmente, o Capítulo 9 aborda alguns comentários finais e sugestões para trabalhos futuros.

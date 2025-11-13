@@ -1,144 +1,101 @@
 \chapter{Animação baseado em física}
 
-Na maioria dos casos, é preciso usar métodos sofisticados e exatos para simular a dinâmica. Porém, em aplicações de jogos interativos, a precisão não é realmente o mais importante, mas sim que o resultado final tenha uma aparência realista e que possa ser executado rapidamente. 
+A animação baseada em física é uma abordagem para gerar movimento em ambientes virtuais a partir da aplicação de leis físicas simplificadas. Diferentemente da animação tradicional, na qual o animador define manualmente as posições e rotações dos objetos ao longo do tempo (\textit{keyframe animation}), a animação física permite que o comportamento do sistema surja de forma natural como resultado das forças, restrições e interações entre os corpos simulados.
 
-\citeonline{jakobsen2001advanced} apresentou um conjunto de métodos e técnicas que, unidas, conseguem atingir em grande parte estes objetivos. Estes métodos são relativamente simples de implementar (comparados com outros esquemas) e têm um bom desempenho. O algoritmo é iterativo e permite aumentar a precisão do método sacrificando parte de sua rapidez: se uma pequena fonte de imprecisão é aceita, o código pode conseguir uma execução mais rápida. Esta margem de erro ainda pode ser ajustada de forma adaptativa em tempo de execução.
+Essa técnica é amplamente utilizada em jogos eletrônicos, simulações científicas, filmes e aplicações interativas, pois permite reproduzir movimentos realistas e dinâmicos, adaptando-se automaticamente a mudanças no ambiente. No entanto, ela exige uma modelagem matemática cuidadosa e algoritmos eficientes para garantir estabilidade e desempenho em tempo real.
+
+Na maioria dos casos, é preciso usar métodos sofisticados e exatos para simular a dinâmica. Porém, em aplicações de jogos eletrônicos, a precisão não é realmente o mais importante, mas sim que o resultado final tenha uma aparência realista e que possa ser executado rapidamente. 
+
+\section{Conceitos e Definições}
+
+O objetivo principal da animação baseada em física é resolver numericamente as equações que descrevem o movimento dos objetos em um mundo virtual. Essas equações derivam das leis fundamentais da mecânica clássica, formuladas por Isaac Newton
+
+\begin{quote}
+	\textbf{Primeira lei de Newton.} 
+	Na ausência de forças externas, um objeto em repouso permanece em repouso, e se o objeto está em movimento ele permanece em movimento com velocidade constante. 
+	Isto é, só forças externas podem mudar o movimento de um objeto.
+\end{quote}
+
+\medskip
+
+\begin{quote}
+	\textbf{Segunda lei de Newton.} 
+	Para um corpo de massa constante $m$ experimentando uma força $\vec{F}$, o movimento do corpo sobre o tempo é dado por:
+	
+	\begin{equation}
+		\vec{F} = m \vec{a} = m \frac{d\vec{v}}{dt} = m \frac{d^2\vec{x}}{dt^2}
+	\end{equation}
+\end{quote}
+
+\medskip
+
+\begin{quote}
+	\textbf{Terceira lei de Newton.} 
+	Se aplicada uma força externa sobre um objeto, há uma força de igual magnitude mas em direção oposta exercida sobre o causador da força. 
+	Isto é, a toda ação corresponde uma reação.
+\end{quote}
+
+onde $\vec{F}$ representa a força resultante aplicada a um corpo, $m$ é a sua massa e $\vec{a}$ é a aceleração resultante.  
+Integrando essa aceleração ao longo do tempo, obtêm-se a velocidade e a posição dos objetos, que determinam sua trajetória e comportamento.
+
+A simulação física deve considerar também aspectos como colisões, atrito, restituição e restrições entre corpos (por exemplo, juntas ou conexões). Em implementações simplificadas, esses efeitos são representados por aproximações numéricas e regras empíricas que buscam equilibrar precisão e desempenho.
+
+Do ponto de vista computacional, um sistema de animação física pode ser descrito pelo ciclo:
+\begin{enumerate}
+	\item Coleta de forças aplicadas (como gravidade, vento, empuxo);
+	\item Integração temporal das equações de movimento;
+	\item Detecção e resposta a colisões;
+	\item Atualização das posições e renderização dos objetos.
+\end{enumerate}
+
+\citeonline{jakobsen2001advanced} apresentou um conjunto de métodos e técnicas que, unidas, conseguem atingir em grande parte estes objetivos. Estes métodos são relativamente simples de implementar (comparados com outros esquemas) e são rápidas e estáveis. O algoritmo é iterativo e permite aumentar a precisão do método sacrificando parte de sua rapidez: se uma pequena fonte de imprecisão é aceita, o código pode conseguir uma execução mais rápida. Esta margem de erro ainda pode ser ajustada de forma adaptativa em tempo de execução.
 
 Em geral, o sucesso deste método vem da combinação de varias técnicas que se beneficiam umas das outras, principalmente o uso do integrador Verlet, o tratamento de colisões usando projeção, e a resolução de restrições de distância usando relaxamento. A seguir serão descritas as componentes mais importantes da abordagem proposta por Jakobsen.
 
-\section{Integrador Verlet}
+\section{Representação de Corpos Rígidos}
 
-O núcleo da simulação é um sistema de partículas, sua implementação mais simples é para cada passo calcular sua nova posição \textbf{x} e nova velocidade \textbf{v} com o sistema abaixo:
+Um \textbf{corpo rígido} é um objeto cuja forma e volume não se deformam durante a simulação. Ou seja, a distância entre quaisquer dois pontos do corpo permanece constante, independentemente das forças aplicadas. Essa suposição simplifica o cálculo do movimento, permitindo que o corpo seja descrito apenas por sua posição, orientação, velocidade linear e velocidade angular.
 
-$$
-\begin{cases}
-	x' = x + v \cdot \Delta t \\
-	v' = v + a \cdot \Delta t
-\end{cases}
-$$
+A representação matemática de um corpo rígido envolve:
+\begin{itemize}
+	\item \textbf{Posição} $\vec{p}$: coordenadas do centro de massa no espaço;
+	\item \textbf{Orientação} $R$: matriz de rotação ou quaternion que define a orientação do corpo;
+	\item \textbf{Velocidade linear} $\vec{v}$: taxa de variação da posição;
+	\item \textbf{Velocidade angular} $\vec{\omega}$: taxa de variação da orientação;
+	\item \textbf{Massa} $m$ e \textbf{tensor de inércia} $I$: determinam a resistência à aceleração linear e angular, respectivamente.
+\end{itemize}
 
+A dinâmica de um corpo rígido é regida pelas equações diferenciais:
+\begin{align}
+	m \cdot \frac{d\vec{v}}{dt} &= \sum \vec{F} \\
+	I \cdot \frac{d\vec{\omega}}{dt} &= \sum \vec{\tau}
+\end{align}
 
-Esse é o método de Euler sendo $\Delta t$ o tamanho do passo, \textbf{a} é aceleração calculado a partir da lei de newton $F = ma$ onde F é a força acumulada agindo na partícula.
-%. É comum esses tipos de sistemas serem implementados com duas variáveis principais: posição x e velocidade v. Então para cada passo da simulação  
+onde $\sum \vec{F}$ representa a soma das forças externas e $\sum \vec{\tau}$ o somatório dos torques aplicados.  
+Essas equações descrevem o movimento translacional e rotacional dos corpos, respectivamente.
 
-Existem muitos outros esquemas de integração como Runge-Kutta e outras variantes. Um método que é bem estável, sua velocidade é calculada implicitamente o quê mantém sua posição e velocidade em sincronia é o integrador de Verlet, muito popular em simulação de dinâmica molecular.
+Em simulações simplificadas (como tecidos, cordas ou partículas), é comum ignorar a rotação e modelar apenas o movimento linear, o que reduz significativamente a complexidade computacional.
+\section{Dinâmica de Partículas}
 
-$$
-\begin{cases}
-	x' = 2x - x^* + a \cdot \Delta t^2 \\
-	x^* = x
-\end{cases}
-$$
+A \textbf{dinâmica de partículas} é uma abordagem alternativa à simulação de corpos rígidos, na qual um sistema é representado como um conjunto de partículas independentes. Cada partícula possui propriedades como posição, velocidade e massa, e as interações entre elas são definidas por restrições ou forças (como gravidade, molas ou colisões).
 
-Sendo \textbf{x} sua posição corrente e \textbf{$x^*$} sua posição anterior, essa é chamada representação sem velocidade. Ao fim de cada passo conseguimos representar o sistema de partículas como:
+O estado de uma partícula no instante t é descrito por sua posição x(t) e sua velocidade v(t), e é representado por um vetor X(t) da forma
 
-$$
-X = \begin{pmatrix}
-	x_1 \\
-	x^*_1 \\
-	a_1 \\
-	\vdots \\
-	x_n \\
-	x^*_n \\
-	a_n \\
-\end{pmatrix}
-$$
+$$X(t) = \begin{pmatrix}
+	x(t) \\
+	v(t)
+\end{pmatrix} $$
 
-O algoritmo para o integrador verlet segue como
-
-\begin{algorithm}[H]
-	\caption{Verlet}
-	\KwIn{Tamanho do passo dt}
-	\For{$i \leftarrow 0$ \KwTo n}{
-		$x \leftarrow X[i]$ \\
-		$x^* \leftarrow X[i+1]$ \\
-		$a \leftarrow X[i+2]$  \\
-		$x_{tmp} \leftarrow x$ \\
-		
-		$X[i] \leftarrow 2*x-x^* + a*dt$ \\
-		$X[i+1] \leftarrow x_{tmp}$ \\
-		$X[i+2] = 0$ \tcp{Limpa as forças para próxima iteração}
-	}
-\end{algorithm}
-
-Como dito anteriormente, as vantagens de usar esse esquema proposta por \citeauthor{jakobsen2001advanced} serão evidenciadas quando combinadas com as próximas técnicas.
-
-\section{Restrição Linear}
-
-O sucesso de \citeonline{jakobsen2001advanced} não está relacionado apenas ao método numérico, mas foi conectar ideias simples para construir objetos maiores e complexos. Isso é feito atribuindo as partículas algo em comum, um conjunto de propriedades que devem ser respeitadas para atingir o efeito desejado.
-
-A primeira propriedade - também é a base para as próximas - é chamada restrição linear ou restrição de distância. Ela apenas dita que duas partículas $p_0$ e $p_1$ devem sempre estar a uma distância d entre si. Dessa forma o conjunto de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
+Além disso para simular o movimento de uma partícula é necessário conhecer as forças que agem nela no instante t. Seja m a massa da partícula e $F(t)$ a soma de todas as forças que agem na a partícula: gravidade, vento, atrito, etc. O movimento da partícula pode ser definido como:
 
 \begin{equation}
-	|x_2 - x_1| = d
-	\label{eq:linear_constraint}
+	\frac{d}{dt} X(t) = \frac{d}{dt} \begin{pmatrix}
+		x(t) \\
+		v(t) \\
+	\end{pmatrix} = \begin{pmatrix}
+		v(t) \\
+		\frac{F(t)}{m}
+	\end{pmatrix}
 \end{equation}
 
-Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválidas (através de forças externas, por exemplo). Para corrigir sua distância devemos mover (projetar) elas de tal forma que satisfaça \ref{eq:linear_constraint}.
-
-\textbf{Inserir figura}
-
-A essência de uma restrição é a projeção. Deve-se encontrar o movimento mínimo que a satisfaça. O efeito de uma restrição linear pode representar conectar duas partículas com uma haste rígida mas também projetar o ponto em um círculo ao redor do ponto de ancoragem.
-
-\begin{algorithm}[H]
-	\caption{Restrição Linear}
-	$\vec{\delta} \leftarrow x_2 - x_1$ \\
-	$\epsilon \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
-	$x_1 \leftarrow x_1 - \vec{\delta}*0.5*\epsilon$ \\
-	$x_2 \leftarrow x_2 + \vec{\delta}*0.5*\epsilon$ \\
-	\label{al:linear_constraint}
-\end{algorithm}
-
-O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas.
-
-\section{Restrição de Revolução}
-
-Na animação física queremos muitas vezes que uma partícula gire em torno de um eixo. Isso é feito de forma simples, basta ter uma partícula em comum cuja função seja ser um eixo de rotação.
-
-\textbf{Inserir figura}
-
-Uma outra forma de fazer isso é usar uma restrição linear com $d=0$.
-
-\section{Restrição Angular}
-
-Em muitas situações em animação física é desejável que o ângulo formado entre duas partículas esteja restrito a um intervalo válido. Isso pode ser feito de forma simples aplicando uma restrição linear caso a distância entre duas partículas seja menor que um limiar. Ou seja, satisfazer a inequação abaixo
-
-$$|x_2 - x_1| > 100$$
-
-Com essa restrição conseguimos modelar propriedades como joelhos e cotovelos de uma criatura que não podem dobrar além de ângulo máximo.
-
-A rotina para essa restrição é tão simples quanto usar um condicional junto com o algoritmo de restrição linear.
-
-\begin{algorithm}
-	\caption{Restrição Angular}
-	$\vec{\delta} \leftarrow x_2 - x_1$ \\
-	\If{$\vec{|\delta|} < d$}{
-		$\epsilon \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
-		$x_1 \leftarrow x_1 - \vec{\delta}*0.5*\epsilon$ \\
-		$x_2 \leftarrow x_2 + \vec{\delta}*0.5*\epsilon$ \\
-	}
-\end{algorithm}
-
-Um outro método de restringir os ângulos é satisfazer a restrição de produto interno
-
-$$(x_2-x_0) \cdot (x_1 - x_0) < \alpha$$
-
-
-\section{Resolvendo restrições concorrentes por relaxamento}
-
-Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas as inequações sequencialmente, isso seria o equivalente a encontrar a solução de um sistema de equações.
-
-Entretanto \citeonline{jakobsen2001advanced} propõe uma abordagem de solução indireta por iteração local, basta satisfazer todas restrições e repetir um número $N$ vezes a cada passo da simulação
-
-\begin{algorithm}
-	\caption{Satisfazer Restrições}
-	\KwIn{n: número de repetições}
-	\For{$i \leftarrow 0$ \KwTo n}{
-		ResolverRestrição(i)
-	}
-	\label{al:satisfazer_restricoes}
-\end{algorithm}
-
-Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução e também a animação irá parecer mais rígida para o usuário.
-
-Além disso para o \ref{al:linear_constraint} a constante 0,5 também tem o efeito de aumentar o passo local de convergência para solução ideal. Fisicamente pode ser interpretado como um coeficiente de restituição. Pode ser usado para representar quão abrupto as partículas se aproximam ou afastam.
+O método de partículas é amplamente utilizado em simulações de tecidos, fluidos e efeitos visuais (fumaça, explosões, poeira), pois permite representar comportamentos complexos emergentes a partir de regras simples de interação.

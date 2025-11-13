@@ -1,25 +1,129 @@
-\chapter{Modelando corpos}
+\chapter{Método Simplificado de Jakobsen}
 
-Em animação física, convencionalmente são usadas funções paramétricas para representar sólidos simples, tais como cubos, cilindros, cones, esferas, toros, etc. Isto é feito frequentemente em ambientes interativos complexos, como jogos, onde é preciso animar milhares de objetos simples.
+O método proposto por \citeonline{jakobsen2001advanced} introduziu uma abordagem simples e eficiente para simulação de sistemas físicos em tempo real, especialmente voltada para jogos e animações interativas.  
+Ele descreve uma abordagem eficiente e intuitiva para simular corpos deformáveis e sistemas articulados, utilizando um modelo de partículas e restrições geométricas. 
 
-Um objeto geométrico é um conjunto fechado de pontos, limitado e não vazio. É fechado, pois a borda faz parte do objeto e é limitado significa que existe uma esfera de raio finito que limita o objeto. Assim, por exemplo, um plano é fechado mas não limitado. Tais objetos geométricos podem ser de dois tipos: objetos convexos e objetos côncavos. Um objeto é convexo se contém todos os segmentos de reta que conectam pares de pontos, caso contrário é chamado côncavo. 
+A principal motivação do método é eliminar a necessidade de resolver sistemas diferenciais rígidos e instáveis em tempo real, substituindo a abordagem de forças por correções geométricas iterativas entre partículas conectadas.  
+Essa simplificação permite que a simulação mantenha um comportamento visualmente realista, mesmo sob grandes forças ou passos de tempo relativamente amplos.
 
-Objetos complexos podem ser compostos de objetos mais simples – tipicamente convexos.
+\section{Métodos Numéricos em Simulação}
 
-\section{Corpos rígidos}
+A simulação de movimento depende da solução numérica das equações diferenciais que descrevem a dinâmica dos corpos.  
+Diversos métodos de integração podem ser utilizados, cada um com um equilíbrio distinto entre precisão, estabilidade e custo computacional.
 
-Usando as ferramentas vistas no capítulo anterior a representação de corpos rígidos torna-se um passo quase natural a ser feito. Basta decompor a geometria desejada em partes menores e mais simples usando partículas para representar seus vértices e restrições lineares com coeficiente de restituição igual a 1 para representar suas arestas. No caso de 2D um quadrado pode ser representado com 4 partículas, 4 restrições lineares e mais 2 restrições internas para garantir rigidez.
+\subsection{Método de Euler}
 
-Dessa forma ao colocar o objeto na simulação a integração Verlet das partículas e o relaxamento das restrições são responsáveis por mover o corpo de forma plausível, conservando momento e torque.
+O método de Euler explícito é o mais simples e intuitivo. Ele atualiza a posição e a velocidade de acordo com a aceleração atual:
 
-\section{Corpos deformáveis}
+\begin{align}
+	\vec{v}_{t+\Delta t} &= \vec{v}_t + \vec{a}_t \Delta t \\
+	\vec{x}_{t+\Delta t} &= \vec{x}_t + \vec{v}_t \Delta t
+\end{align}
 
-A modelagem de um corpo deformável é análoga a um corpo rígido, com a principal diferença que o coeficiente de restituição é menor que 1. Dessa forma será necessário alguns passos da simulação para a restrição convergir para configuração ideal, gerando efeito de deformação do corpo.
+Apesar de sua simplicidade, o método de Euler tende a ser numericamente instável, especialmente em sistemas oscilatórios (como molas), pois o erro de integração cresce rapidamente ao longo do tempo.
 
-\section{Corpos articulados}
+\subsection{Método Semi-implícito de Euler}
 
-Essa abordagem permite construir um modelo completo de corpo articulado bem realista usando uma combinação de: restrição linear, restrição de revolução e restrição angular.
+Uma variação estável do método de Euler consiste em atualizar primeiro a velocidade e depois a posição, utilizando a nova velocidade no cálculo:
 
-\section{Tecidos}
+\begin{align}
+	\vec{v}_{t+\Delta t} &= \vec{v}_t + \vec{a}_t \Delta t \\
+	\vec{x}_{t+\Delta t} &= \vec{x}_t + \vec{v}_{t+\Delta t} \Delta t
+\end{align}
 
-O tecido pode ser facilmente representado como uma grade uniforme de partículas conectadas por restrições lineares com coeficientes de restituição menor que 1 e apenas um passo de relaxamento.
+Essa pequena modificação melhora a conservação de energia e reduz a instabilidade numérica, sendo amplamente utilizada em motores de física em tempo real.
+
+\subsection{Integração de Verlet}
+
+O método de Verlet é uma alternativa amplamente adotada em simulações físicas de partículas. É um método estável, sua velocidade é calculada implicitamente o quê mantém sua posição e velocidade em sincronia, muito popular em simulação de dinâmica molecular. 
+
+\begin{equation}
+	\vec{x}_{t+\Delta t} = 2\vec{x}_t - \vec{x}_{t-\Delta t} + \vec{a}_t \Delta t^2
+\end{equation}
+
+O método de Verlet é estável e eficiente, especialmente em sistemas sujeitos a restrições geométricas além de eliminar a necessidade de armazenar explicitamente a velocidade, utilizando as posições atual e anterior para estimar a nova posição:
+
+\section{Restrições Geométricas}
+
+O sucesso de \citeonline{jakobsen2001advanced} não está relacionado apenas ao método numérico, mas foi conectar ideias simples para construir objetos maiores e complexos. Isso é feito atribuindo relações geométrica entre partículas.
+
+Dessa forma objetos físicos são representados como um conjunto de \textbf{partículas} conectadas por \textbf{restrições} geométricas. As restrições definem relações que devem ser mantidas entre partículas.  
+
+\subsection{Restrição Linear}
+
+O caso mais comum é a \textbf{restrição linear} (ou restrição de distância), que mantém uma distância fixa $d$ entre duas partículas $i$ e $j$. Dessa forma o conjunto de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
+
+\begin{equation}
+	|\vec{x_i} - \vec{x_j}| - d = 0
+	\label{eq:linear_constraint}
+\end{equation}
+
+Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválidas (através de forças externas, por exemplo). Para corrigir sua distância devemos mover (projetar) elas de tal forma que satisfaça \ref{eq:linear_constraint}.
+
+\textbf{Inserir figura}
+
+A essência de uma restrição é a projeção. Deve-se encontrar o movimento mínimo que a satisfaça. O efeito de uma restrição linear pode representar conectar duas partículas com uma haste rígida mas também projetar o ponto em um círculo ao redor do ponto de ancoragem.
+
+\begin{algorithm}[H]
+	\caption{Restrição Linear}
+	$\vec{\delta} \leftarrow x_2 - x_1$ \\
+	$c \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
+	$x_1 \leftarrow x_1 - \vec{\delta}*\epsilon*c$ \\
+	$x_2 \leftarrow x_2 + \vec{\delta}*\epsilon*c$ \\
+	\label{al:linear_constraint}
+\end{algorithm}
+
+O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas.
+
+\subsection{Restrição de Revolução}
+
+Na animação física queremos muitas vezes que uma partícula gire em torno de um eixo. Isso é feito de forma simples, basta ter uma partícula em comum cuja função seja ser um eixo de rotação.
+
+\textbf{Inserir figura}
+
+Uma outra forma de fazer isso é usar uma restrição linear entre duas partículas com $d=0$.
+
+\subsection{Restrição Angular}
+
+Em muitas situações em animação física é desejável que o ângulo formado entre duas partículas esteja restrito a um intervalo válido. Isso pode ser feito de forma simples aplicando uma restrição linear caso a distância entre duas partículas seja menor que um limiar. Ou seja, satisfazer a inequação abaixo
+
+$$|x_2 - x_1| > d$$
+
+Com essa restrição conseguimos relações geométricas para joelhos e cotovelos de uma criatura que não podem dobrar além de ângulo máximo.
+
+A rotina para essa restrição é tão simples quanto usar um condicional junto com o algoritmo de restrição linear.
+
+\begin{algorithm}
+	\caption{Restrição Angular}
+	$\vec{\delta} \leftarrow \vec{x_2} - \vec{x_1}$ \\
+	\If{$\vec{|\delta|} < d$}{
+		$c \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
+		$x_1 \leftarrow x_1 - \vec{\delta}*\epsilon*c$ \\
+		$x_2 \leftarrow x_2 + \vec{\delta}*\epsilon*c$ \\
+	}
+\end{algorithm}
+
+Um outro método de restringir os ângulos é satisfazer a restrição de produto interno
+
+$$(x_2-x_0) \cdot (x_1 - x_0) < \alpha$$
+
+\subsection{Resolvendo restrições concorrentes por relaxamento}
+
+Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas as inequações sequencialmente, como as restrições entre partículas são interdependentes, não é possível satisfazê-las todas simultaneamente de maneira exata em um único passo.
+
+\citeonline{jakobsen2001advanced} propõe um método iterativo de relaxamento, também conhecido como \textit{Gauss-Seidel relaxation}, para resolver as restrições de forma aproximada.
+
+Uma abordagem de solução indireta por iteração local que consiste em aplicar pequenas correções de posição para cada par de partículas conectado, repetindo o procedimento diversas vezes até que todas as restrições estejam aproximadamente satisfeitas. Cada iteração contribui para reduzir o erro acumulado, e a convergência ocorre rapidamente mesmo com poucas iterações (geralmente entre 3 e 5).
+
+\begin{algorithm}
+	\caption{Satisfazer Restrições}
+	\KwIn{n: número de repetições}
+	\For{$i \leftarrow 0$ \KwTo n}{
+		ResolverRestrição(i)
+	}
+	\label{al:satisfazer_restricoes}
+\end{algorithm}
+
+Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução e também a animação irá parecer mais rígida para o usuário.
+
+Além disso para o algoritmo \ref{al:linear_constraint} o valor e $\epsilon$ tem o efeito de aumentar o passo local de convergência para solução ideal. Fisicamente pode ser interpretado como um coeficiente de restituição. Pode ser usado para representar quão abrupto as partículas se aproximam ou afastam.
