@@ -1,10 +1,7 @@
 \chapter{Método Simplificado de Jakobsen}
 
-O método proposto por \citeonline{jakobsen2001advanced} introduziu uma abordagem simples e eficiente para simulação de sistemas físicos em tempo real, especialmente voltada para jogos e animações interativas.  
-Ele descreve uma abordagem eficiente e intuitiva para simular corpos deformáveis e sistemas articulados, utilizando um modelo de partículas e restrições geométricas. 
-
-A principal motivação do método é eliminar a necessidade de resolver sistemas diferenciais rígidos e instáveis em tempo real, substituindo a abordagem de forças por correções geométricas iterativas entre partículas conectadas.  
-Essa simplificação permite que a simulação mantenha um comportamento visualmente realista, mesmo sob grandes forças ou passos de tempo relativamente amplos.
+O método proposto por \citeonline{jakobsen2001advanced} apresenta uma abordagem simples e eficiente para simulação física em tempo real, especialmente voltada para jogos e animações interativas.  
+Sua formulação utiliza um modelo baseado em partículas e restrições geométricas, evitando explicitamente a solução de equações diferenciais rígidas e instáveis. Em vez disso, correções iterativas são aplicadas diretamente às posições das partículas, proporcionando estabilidade numérica elevada e comportamento visualmente plausível mesmo sob passos de tempo grandes.
 
 \section{Métodos Numéricos em Simulação}
 
@@ -45,9 +42,8 @@ O método de Verlet é estável e eficiente, especialmente em sistemas sujeitos 
 
 \section{Restrições Geométricas}
 
-O sucesso de \citeonline{jakobsen2001advanced} não está relacionado apenas ao método numérico, mas foi conectar ideias simples para construir objetos maiores e complexos. Isso é feito atribuindo relações geométrica entre partículas.
-
-Dessa forma objetos físicos são representados como um conjunto de \textbf{partículas} conectadas por \textbf{restrições} geométricas. As restrições definem relações que devem ser mantidas entre partículas.  
+O sucesso do método de \citeonline{jakobsen2001advanced} está na utilização de restrições geométricas simples para compor estruturas complexas.  
+Objetos físicos são representados como conjuntos de \textbf{partículas} conectadas por \textbf{restrições}, que impõem relações a serem satisfeitas a cada passo de simulação.
 
 \subsection{Restrição Linear}
 
@@ -66,22 +62,22 @@ A essência de uma restrição é a projeção. Deve-se encontrar o movimento m�
 
 \begin{algorithm}[H]
 	\caption{Restrição Linear}
-	$\vec{\delta} \leftarrow x_2 - x_1$ \\
-	$c \leftarrow \frac{|\vec{\delta}| - d}{|\vec{\delta}|}$ \\
-	$x_1 \leftarrow x_1 - \vec{\delta}*\epsilon*c$ \\
-	$x_2 \leftarrow x_2 + \vec{\delta}*\epsilon*c$ \\
+	$\vec{\delta} \leftarrow \vec{x}_2 - \vec{x}_1$ \\
+	$c \leftarrow \frac{\|\vec{\delta}\| - d}{\|\vec{\delta}\|}$ \\
+	$\vec{x}_1 \leftarrow \vec{x}_1 - \epsilon \, \vec{\delta} \, c$ \\
+	$\vec{x}_2 \leftarrow \vec{x}_2 + \epsilon \, \vec{\delta} \, c$
 	\label{al:linear_constraint}
 \end{algorithm}
 
-O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas.
+O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas. Quando $\epsilon = 0.5$, as partículas se movem proporcionalmente, valores maiores simulam uma haste mais rígida. 
 
 \subsection{Restrição de Revolução}
 
-Na animação física queremos muitas vezes que uma partícula gire em torno de um eixo. Isso é feito de forma simples, basta ter uma partícula em comum cuja função seja ser um eixo de rotação.
+Para permitir que uma partícula gire em torno de um ponto fixo, basta impor uma restrição de distância entre a partícula e um ponto-âncora.
 
-\textbf{Inserir figura}
+\textbf{(Inserir figura ilustrativa.)}
 
-Uma outra forma de fazer isso é usar uma restrição linear entre duas partículas com $d=0$.
+Uma forma equivalente é definir uma restrição linear com distância $d = 0$ entre duas partículas, fazendo com que uma permaneça colada à outra.
 
 \subsection{Restrição Angular}
 
@@ -107,7 +103,7 @@ Um outro método de restringir os ângulos é satisfazer a restrição de produt
 
 $$(x_2-x_0) \cdot (x_1 - x_0) < \alpha$$
 
-\subsection{Resolvendo restrições concorrentes por relaxamento}
+\section{Resolvendo restrições concorrentes por relaxamento}
 
 Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas as inequações sequencialmente, como as restrições entre partículas são interdependentes, não é possível satisfazê-las todas simultaneamente de maneira exata em um único passo.
 

@@ -1,101 +1,92 @@
-\chapter{Animação baseado em física}
+\chapter{Animação Baseada em Física}
 
-A animação baseada em física é uma abordagem para gerar movimento em ambientes virtuais a partir da aplicação de leis físicas simplificadas. Diferentemente da animação tradicional, na qual o animador define manualmente as posições e rotações dos objetos ao longo do tempo (\textit{keyframe animation}), a animação física permite que o comportamento do sistema surja de forma natural como resultado das forças, restrições e interações entre os corpos simulados.
+A animação baseada em física é uma abordagem de geração de movimento que aparenta seguir princípios físicos básicos, mesmo que as equações envolvidas sejam tratadas de forma aproximada ou altamente simplificada. Diferentemente da animação tradicional, na qual o animador define manualmente posições e rotações ao longo do tempo (\textit{keyframe animation}), a animação física permite que o comportamento dos objetos emerja naturalmente das forças, restrições e interações entre os corpos simulados.
 
-Essa técnica é amplamente utilizada em jogos eletrônicos, simulações científicas, filmes e aplicações interativas, pois permite reproduzir movimentos realistas e dinâmicos, adaptando-se automaticamente a mudanças no ambiente. No entanto, ela exige uma modelagem matemática cuidadosa e algoritmos eficientes para garantir estabilidade e desempenho em tempo real.
-
-Na maioria dos casos, é preciso usar métodos sofisticados e exatos para simular a dinâmica. Porém, em aplicações de jogos eletrônicos, a precisão não é realmente o mais importante, mas sim que o resultado final tenha uma aparência realista e que possa ser executado rapidamente. 
+Nesse contexto, a animação física simplificada busca um equilíbrio entre precisão e desempenho: modelos matemáticos são utilizados como guia, mas a prioridade está na estabilidade visual e na resposta interativa. Diferentemente da simulação científica, onde precisão e correção numérica são cruciais, na animação para fins gráficos ou interativos \textbf{o objetivo não é obter resultados fisicamente corretos, mas sim um comportamento verossímil}. O foco está em transmitir sensação de peso, inércia e colisões de maneira convincente ao usuário, mesmo quando obtidos por heurísticas.
 
 \section{Conceitos e Definições}
 
-O objetivo principal da animação baseada em física é resolver numericamente as equações que descrevem o movimento dos objetos em um mundo virtual. Essas equações derivam das leis fundamentais da mecânica clássica, formuladas por Isaac Newton
+O objetivo central da animação baseada em física é resolver numericamente as equações que descrevem o movimento de objetos em um mundo virtual. Tais equações derivam das leis fundamentais da mecânica clássica, formuladas por Isaac Newton.
 
 \begin{quote}
-	\textbf{Primeira lei de Newton.} 
-	Na ausência de forças externas, um objeto em repouso permanece em repouso, e se o objeto está em movimento ele permanece em movimento com velocidade constante. 
-	Isto é, só forças externas podem mudar o movimento de um objeto.
+	\textbf{Primeira lei de Newton.}
+	Na ausência de forças externas, um objeto em repouso permanece em repouso e um objeto em movimento continua em movimento com velocidade constante. Apenas forças externas podem alterar o estado de movimento.
 \end{quote}
 
-\medskip
-
 \begin{quote}
-	\textbf{Segunda lei de Newton.} 
-	Para um corpo de massa constante $m$ experimentando uma força $\vec{F}$, o movimento do corpo sobre o tempo é dado por:
-	
+	\textbf{Segunda lei de Newton.}
+	Para um corpo de massa constante $m$ submetido a uma força $\vec{F}$, o movimento é descrito por:
 	\begin{equation}
-		\vec{F} = m \vec{a} = m \frac{d\vec{v}}{dt} = m \frac{d^2\vec{x}}{dt^2}
+		\vec{F} = m\vec{a} = m\frac{d\vec{v}}{dt} = m\frac{d^2\vec{x}}{dt^2}.
 	\end{equation}
 \end{quote}
 
-\medskip
-
 \begin{quote}
-	\textbf{Terceira lei de Newton.} 
-	Se aplicada uma força externa sobre um objeto, há uma força de igual magnitude mas em direção oposta exercida sobre o causador da força. 
-	Isto é, a toda ação corresponde uma reação.
+	\textbf{Terceira lei de Newton.}
+	Para toda força exercida em um corpo existe uma força de igual magnitude e direção oposta exercida no corpo que a gerou.
 \end{quote}
 
-onde $\vec{F}$ representa a força resultante aplicada a um corpo, $m$ é a sua massa e $\vec{a}$ é a aceleração resultante.  
-Integrando essa aceleração ao longo do tempo, obtêm-se a velocidade e a posição dos objetos, que determinam sua trajetória e comportamento.
+Integrando a aceleração ao longo do tempo obtêm-se velocidade e posição, que determinam a trajetória dos objetos. Além das forças, a simulação deve também considerar colisões, atrito, restituição e restrições entre corpos (como juntas). Em implementações simplificadas, esses efeitos são aproximados por regras empíricas e técnicas numéricas que priorizam eficiência computacional.
 
-A simulação física deve considerar também aspectos como colisões, atrito, restituição e restrições entre corpos (por exemplo, juntas ou conexões). Em implementações simplificadas, esses efeitos são representados por aproximações numéricas e regras empíricas que buscam equilibrar precisão e desempenho.
-
-Do ponto de vista computacional, um sistema de animação física pode ser descrito pelo ciclo:
+De maneira geral, um ciclo de simulação física engloba:
 \begin{enumerate}
-	\item Coleta de forças aplicadas (como gravidade, vento, empuxo);
-	\item Integração temporal das equações de movimento;
-	\item Detecção e resposta a colisões;
-	\item Atualização das posições e renderização dos objetos.
+	\item coleta e soma das forças aplicadas (gravidade, vento, atrito etc.);
+	\item integração temporal das equações de movimento;
+	\item detecção e resposta a colisões;
+	\item atualização das posições e posterior renderização.
 \end{enumerate}
 
-\citeonline{jakobsen2001advanced} apresentou um conjunto de métodos e técnicas que, unidas, conseguem atingir em grande parte estes objetivos. Estes métodos são relativamente simples de implementar (comparados com outros esquemas) e são rápidas e estáveis. O algoritmo é iterativo e permite aumentar a precisão do método sacrificando parte de sua rapidez: se uma pequena fonte de imprecisão é aceita, o código pode conseguir uma execução mais rápida. Esta margem de erro ainda pode ser ajustada de forma adaptativa em tempo de execução.
-
-Em geral, o sucesso deste método vem da combinação de varias técnicas que se beneficiam umas das outras, principalmente o uso do integrador Verlet, o tratamento de colisões usando projeção, e a resolução de restrições de distância usando relaxamento. A seguir serão descritas as componentes mais importantes da abordagem proposta por Jakobsen.
+O método descrito por \citeonline{jakobsen2001advanced} reúne um conjunto de técnicas simples, estáveis e eficientes, que permitem obter resultados visualmente satisfatórios mesmo com aproximações físicas significativas. Seu algoritmo iterativo permite aumentar a precisão ao custo de desempenho, ajustando dinamicamente essa relação conforme a necessidade. O sucesso da abordagem se deve à combinação entre o integrador Verlet, a solução de restrições por relaxamento e uma estratégia de resolução de colisões baseada em projeção. A seguir, descrevem-se os principais componentes desse método.
 
 \section{Representação de Corpos Rígidos}
 
-Um \textbf{corpo rígido} é um objeto cuja forma e volume não se deformam durante a simulação. Ou seja, a distância entre quaisquer dois pontos do corpo permanece constante, independentemente das forças aplicadas. Essa suposição simplifica o cálculo do movimento, permitindo que o corpo seja descrito apenas por sua posição, orientação, velocidade linear e velocidade angular.
+Um \textbf{corpo rígido} é um objeto cuja forma e volume permanecem invariáveis durante a simulação. Em termos matemáticos, a distância entre quaisquer dois pontos do corpo é constante, independentemente das forças aplicadas. Essa suposição simplifica o problema, permitindo representar o corpo apenas por grandezas globais: posição, orientação e velocidades linear e angular.
 
-A representação matemática de um corpo rígido envolve:
+A representação matemática de um corpo rígido é dada por:
 \begin{itemize}
-	\item \textbf{Posição} $\vec{p}$: coordenadas do centro de massa no espaço;
-	\item \textbf{Orientação} $R$: matriz de rotação ou quaternion que define a orientação do corpo;
-	\item \textbf{Velocidade linear} $\vec{v}$: taxa de variação da posição;
-	\item \textbf{Velocidade angular} $\vec{\omega}$: taxa de variação da orientação;
-	\item \textbf{Massa} $m$ e \textbf{tensor de inércia} $I$: determinam a resistência à aceleração linear e angular, respectivamente.
+	\item \textbf{Posição} $\vec{p}$: coordenadas do centro de massa;
+	\item \textbf{Orientação} $R$: matriz de rotação ou quaternion;
+	\item \textbf{Velocidade linear} $\vec{v}$: variação temporal da posição;
+	\item \textbf{Velocidade angular} $\vec{\omega}$: variação temporal da orientação;
+	\item \textbf{Massa} $m$ e \textbf{tensor de inércia} $I$: medidas de resistência à aceleração.
 \end{itemize}
 
-A dinâmica de um corpo rígido é regida pelas equações diferenciais:
+A dinâmica translacional e rotacional é governada pelas equações:
 \begin{align}
-	m \cdot \frac{d\vec{v}}{dt} &= \sum \vec{F} \\
-	I \cdot \frac{d\vec{\omega}}{dt} &= \sum \vec{\tau}
+	m \cdot \frac{d\vec{v}}{dt} &= \sum \vec{F}, \\
+	I \cdot \frac{d\vec{\omega}}{dt} &= \sum \vec{\tau},
 \end{align}
 
-onde $\sum \vec{F}$ representa a soma das forças externas e $\sum \vec{\tau}$ o somatório dos torques aplicados.  
-Essas equações descrevem o movimento translacional e rotacional dos corpos, respectivamente.
+onde $\sum \vec{F}$ é o somatório das forças externas e $\sum \vec{\tau}$ o somatório dos torques. Em simulações mais simples — como tecidos, cordas ou partículas — a rotação é frequentemente ignorada, reduzindo a complexidade computacional.
 
-Em simulações simplificadas (como tecidos, cordas ou partículas), é comum ignorar a rotação e modelar apenas o movimento linear, o que reduz significativamente a complexidade computacional.
 \section{Dinâmica de Partículas}
 
-A \textbf{dinâmica de partículas} é uma abordagem alternativa à simulação de corpos rígidos, na qual um sistema é representado como um conjunto de partículas independentes. Cada partícula possui propriedades como posição, velocidade e massa, e as interações entre elas são definidas por restrições ou forças (como gravidade, molas ou colisões).
+A \textbf{dinâmica de partículas} é uma abordagem na qual o sistema é composto por partículas independentes. Cada partícula possui posição, velocidade e massa, e suas interações são modeladas por forças (como gravidade ou molas) ou por restrições geométricas (como manter distâncias constantes).
 
-O estado de uma partícula no instante t é descrito por sua posição x(t) e sua velocidade v(t), e é representado por um vetor X(t) da forma
-
-$$X(t) = \begin{pmatrix}
+O estado de uma particula no instante $t$ é dado por:
+\[
+X(t) =
+\begin{pmatrix}
 	x(t) \\
 	v(t)
-\end{pmatrix} $$
+\end{pmatrix}.
+\]
 
-Além disso para simular o movimento de uma partícula é necessário conhecer as forças que agem nela no instante t. Seja m a massa da partícula e $F(t)$ a soma de todas as forças que agem na a partícula: gravidade, vento, atrito, etc. O movimento da partícula pode ser definido como:
-
+Seja $F(t)$ a soma das forças que atuam sobre a partícula e $m$ sua massa. O movimento pode ser descrito por:
 \begin{equation}
-	\frac{d}{dt} X(t) = \frac{d}{dt} \begin{pmatrix}
+	\frac{d}{dt} X(t)
+	=
+	\frac{d}{dt}
+	\begin{pmatrix}
 		x(t) \\
-		v(t) \\
-	\end{pmatrix} = \begin{pmatrix}
-		v(t) \\
-		\frac{F(t)}{m}
+		v(t)
 	\end{pmatrix}
+	=
+	\begin{pmatrix}
+		v(t) \\
+		\dfrac{F(t)}{m}
+	\end{pmatrix}.
 \end{equation}
 
-O método de partículas é amplamente utilizado em simulações de tecidos, fluidos e efeitos visuais (fumaça, explosões, poeira), pois permite representar comportamentos complexos emergentes a partir de regras simples de interação.
+A dinâmica de partículas é amplamente utilizada para simular tecidos, fluidos e efeitos visuais (como fumaça, poeira ou explosões) devido à sua flexibilidade e à capacidade de gerar comportamentos complexos emergentes a partir de regras simples.
+
