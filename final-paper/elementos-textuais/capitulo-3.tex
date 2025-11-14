@@ -111,15 +111,15 @@ $$(x_2-x_0) \cdot (x_1 - x_0) < \alpha$$
 
 Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas as inequações sequencialmente, como as restrições entre partículas são interdependentes, não é possível satisfazê-las todas simultaneamente de maneira exata em um único passo.
 
-\citeonline{jakobsen2001advanced} propõe um método iterativo de relaxamento, também conhecido como \textit{Gauss-Seidel relaxation}, para resolver as restrições de forma aproximada.
-
-Uma abordagem de solução indireta por iteração local que consiste em aplicar pequenas correções de posição para cada par de partículas conectado, repetindo o procedimento diversas vezes até que todas as restrições estejam aproximadamente satisfeitas. Cada iteração contribui para reduzir o erro acumulado, e a convergência ocorre rapidamente mesmo com poucas iterações (geralmente entre 3 e 5).
+\citeonline{jakobsen2001advanced} propõe um método iterativo de relaxamento, também conhecido como \textit{Gauss-Seidel relaxation}, para resolver as restrições de forma aproximada. É uma abordagem de solução indireta por iteração local que consiste em aplicar pequenas correções de posição para cada par de partículas conectado, repetindo o procedimento diversas vezes até que todas as restrições estejam aproximadamente satisfeitas. Cada iteração contribui para reduzir o erro acumulado, e a convergência ocorre rapidamente mesmo com poucas iterações (geralmente entre 3 e 5).
 
 \begin{algorithm}
 	\caption{Satisfazer Restrições}
 	\KwIn{n: número de repetições}
 	\For{$i \leftarrow 0$ \KwTo n}{
-		ResolverRestrição(i)
+		\ForEach{restrição em restrições}{
+			SatisfazerRestricao(restrição)
+		}
 	}
 	\label{al:satisfazer_restricoes}
 \end{algorithm}

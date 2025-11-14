@@ -2,11 +2,9 @@
 
 O Fecho Convexo (FC) de um conjunto é definido como a menor região convexa que contenha todos os pontos (também chamado como volume delimitador). Achar o fecho convexo de um conjunto de pontos, por exemplo, é um problema que aparece quando queremos organizar o conjunto, agrupar os pontos em uma região simples. 
 
-Em 2 dimensões, temos um polígono, que pode ser descrito por uma lista ordenada de seus vértices. Em 3 dimensões, temos um poliedro, que precisa de estruturas um pouco mais complicadas para armazenar as faces que compõem a fronteira. Em dimensões maiores, as coisas se complicam ainda mais, pois precisaríamos de estruturas que representassem as faces de todas as dimensões. 
+Em sistemas de simulação física e detecção de colisões, a representação geométrica dos objetos tem impacto direto na eficiência dos cálculos. Formas complexas, compostas por muitos vértices e superfícies não convexas, tornam os testes geométricos computacionalmente caros.  
 
-\textbf{INSERIR FIGURA COM EXEMPLOS DE USO}
-
-Testar diretamente a geometria de dois objetos para verificar se há colisão entre eles é frequentemente muito caro, especialmente quando os objetos consistem em centenas ou até milhares de polígonos. Para minimizar esse custo, o fecho convexo dos objetos geralmente são testados quanto à sobreposição antes que o teste de interseção geométrica seja realizado.
+Para contornar esse problema, é comum empregar aproximações convexas ou volumes delimitadores — denominados \textit{fechos convexos} — que permitem realizar testes mais rápidos sem comprometer significativamente a precisão da simulação.
 
 \textbf{INSERIR FIGURA DO FECHO CONVEXO DE OBJETOS EM INTERSECÇÃO E SEM INTERSECÇÃO}
 
@@ -30,31 +28,53 @@ A ideia principal por trás dos volumes delimitadores é preceder testes geomét
 
 A caixa delimitadora mínima para um conjunto de pontos em N dimensões é a caixa com a menor medida (área, volume, ou hipervolume em dimensões superiores) possível que englobe todos os pontos. A caixa delimitadora mínima de um conjunto de pontos é a mesma que a caixa delimitadora mínima de seu FC, um fato que pode ser usado de forma heurística para acelerar a computação.
 
-A caixa delimitadora alinhada aos eixos (em inglês "axis-aligned bounding box", ou AABB) é um dos volumes delimitadores mais comuns. É uma caixa retangular de seis lados (em 3D, quatro lados em 2D) sujeita à restrição de que as bordas da caixa devem ser paralelas aos eixos de coordenadas cartesianos.
+A caixa delimitadora alinhada aos eixos (em inglês "axis-aligned bounding box", ou AABB) é um dos volumes delimitadores mais comuns. É um paralelepípedo (ou retângulo em 2D) cujas faces são paralelas aos eixos de coordenadas.
 
-\textbf{INSERIR IMAGEM DE AABB}
-
-\begin{algorithm}
+\begin{algorithm}[H]
 	\caption{Teste de Intersecção AABB}
-	\KwIn{Objeto A, Objeto B}
-	\KwOut{Boolean}
+	\KwIn{Polígonos convexos A e B}
+	\KwOut{Verdadeiro se estão colidindo}
+	
 	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
-		\KwResult{False}
+		\Return{False}
 	}
 	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
-		\KwResult{False}
+		\Return{False}
 	}
 	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
-		\KwResult{False}
+		\Return{False}
 	}
-	\KwResult{True}
+	\Return{True}
 \end{algorithm}
+
+\section{Caixa Orientada (OBB)}
+
+Uma \textbf{Oriented Bounding Box} (OBB) é uma caixa retangular que pode estar rotacionada em relação aos eixos globais.  
+Ela é definida por um ponto central $c$, um conjunto de vetores ortogonais $\hat{u}_i$ representando a orientação, e comprimentos semi-extensões $e_i$ em cada direção:
+
+\begin{equation}
+	OBB = \left\{ c + \sum_{i=1}^{3} \alpha_i \hat{u}_i \; \middle| \; -e_i \le \alpha_i \le e_i \right\}
+\end{equation}
+
+OBBs geralmente fornecem um ajuste mais justo em torno de objetos alongados ou rotacionados, reduzindo falsos positivos de colisão.  
+O custo computacional é maior que o de AABBs, mas compensado em simulações com poucos objetos ou com formas muito irregulares.
+
+\section{Esferas e Elipsoides}
+
+As \textbf{esferas} são os volumes mais simples de todos, definidas apenas por um centro $c$ e um raio $r$:
+
+\begin{equation}
+	\text{Sphere} = \{ x \in \mathbb{R}^3 \; | \; \|x - c\| \le r \}
+\end{equation}
+
+Elas permitem testes de colisão extremamente rápidos, mas representam mal objetos com proporções muito distintas.  
+Por esse motivo, esferas e elipsoides são frequentemente empregadas apenas em fases preliminares de detecção, ou como volumes intermediários em hierarquias de limitação (Bounding Volume Hierarchies, BVH).
 
 \section{Quickhull}
 
 Quickhull é um algoritmo incremental para Fecho Convexo de um conjunto finito de pontos de qualquer dimensão. Ele usa uma abordagem de divisão e conquista semelhante à do quicksort, da qual seu nome deriva \cite{barber1996quickhull}.
 
-O algoritmo de 2 dimensões pode ser dividido nas seguintes etapas:
+O Quickhull parte de um conjunto de pontos $S$ e constrói o polígono (ou poliedro) convexo que os contém.  O processo para 2 dimensões pode ser descrito em linhas gerais da seguinte forma:
 
 \begin{algorithm}[H]
 	\caption{Quickhull 2D}
@@ -62,13 +82,14 @@ O algoritmo de 2 dimensões pode ser dividido nas seguintes etapas:
 	\SetAlgoLined
 	\KwIn{Polígono Convexo}
 	\KwOut{Lista dos vértices que representam o fecho convexo}
-	Encontre os pontos com coordenadas mínimas e máximas x, pois estes sempre farão parte do casco convexo. Se muitos pontos com o mesmo mínimo/máximo x existirem, use os com o mínimo/máximo y, respectivamente. \\
-	Use a linha formada pelos dois pontos para dividir o conjunto em dois subconjuntos de pontos, que serão processados de forma recursiva. Em seguida, descrevemos como determinar a parte do casco acima da linha; a parte do casco abaixo da linha pode ser determinada de forma semelhante. \\
+	Encontre os pontos com coordenadas mínimas e máximas x, pois estes sempre farão parte do casco convexo. \\
+	Use a linha formada pelos dois pontos para dividir o conjunto em dois subconjuntos de pontos, que serão processados de forma recursiva. \\
 	Determine o ponto acima da linha com a distância máxima da linha. Este ponto forma um triângulo com os dois pontos na linha. \\
 	Os pontos dentro desse triângulo não podem ser parte do casco convexo e, portanto, podem ser ignorados nos próximos passos. \\
 	Repita recursivamente os dois passos anteriores nas duas linhas formadas pelos dois novos lados do triângulo. \\
-	Continue até que não mais pontos sejam deixados, a recursão chegou ao fim e os pontos selecionados constituem o casco convexo.
+	Repete-se o processo recursivamente para as novas regiões formadas, descartando pontos interiores \\
+	O processo termina quando todos os subconjuntos estão vazios.
 	\label{al:quickhull_2d}
 \end{algorithm}
 
-Para dimensões maiores extrapola o escopo desse trabalho, consulte \citeonline{barber1996quickhull} para melhores definições.
+O Quickhull apresenta, em média, complexidade $O(n \log n)$ em duas dimensões, embora em casos degenerados possa chegar a $O(n^2)$. Em três dimensões, o algoritmo é adaptado para construir uma casca poliedral usando o mesmo princípio recursivo, consulte \citeonline{barber1996quickhull} para melhores definições.

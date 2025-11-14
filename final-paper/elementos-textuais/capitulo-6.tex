@@ -1,8 +1,24 @@
 \chapter{Resposta a colisão}
 
-Os chamados métodos baseados em penalidades tratam o contato inserindo molas nos pontos de penetração. Embora seja muito simples de implementar, esse método apresenta diversas desvantagens sérias. Por exemplo, é difícil escolher constantes de mola adequadas de forma que, por um lado, os objetos não penetrem demais e, por outro lado, o sistema resultante não se torne instável. Em outros métodos para simulação física, as colisões são tratadas retrocedendo o tempo (por meio de busca binária, por exemplo) até o ponto exato da colisão, tratando a colisão analiticamente a partir desse ponto e, em seguida, reiniciando a simulação. Isso não é muito prático do ponto de vista de tempo real, pois o código pode se tornar muito lento quando há muitas colisões.
+A resposta a colisões é uma etapa fundamental em qualquer sistema de simulação física interativa. Após detectar que dois corpos estão penetrando um ao outro, é necessário aplicar um conjunto de correções que restaurem a plausibilidade física do movimento sem introduzir instabilidades.  Neste capítulo apresentamos os princípios clássicos, as formulações modernas e a relação direta entre métodos geométricos da fase de detecção, tais como o vetor de translação mínima (MTV), e métodos baseados em partículas e restrições, como o modelo proposto por \citeonline{jakobsen2001advanced}.
 
-\citeonline{jakobsen2001advanced} propõe uma estratégia mais simples, os vértices que fazem parte da colisão são simplesmente projetados para fora do obstáculo. Por projeção, em termos gerais, entendemos mover o ponto o mínimo possível até que ele esteja livre do obstáculo. Normalmente, isso significa mover o ponto perpendicularmente para fora, em direção à superfície de colisão.
+\section{Contexto Histórico e Motivação}
+
+Os primeiros motores de física utilizados em gráficos interativos nos anos 1990 empregavam modelos altamente simplificados baseados em impulsos (impulse-based methods), com foco especial em simulações rígidas newtonianas. Embora fisicamente corretos, esses métodos eram computacionalmente caros e exigiam sistemas robustos para resolver forças, torques e empilhamentos estáveis em tempo real.
+
+Já os chamados métodos baseados em penalidades tratam o contato inserindo molas nos pontos de penetração. Embora seja muito simples de implementar, esse método apresenta diversas desvantagens sérias. Por exemplo, é difícil escolher constantes de mola adequadas de forma que, por um lado, os objetos não penetrem demais e, por outro lado, o sistema resultante não se torne instável.
+
+\citeonline{jakobsen2001advanced} apresentou um método de simulação baseado em projeção de posição (Position Based Dynamics). Em vez de trabalhar com forças e integrações diferenciais sobre acelerações, os vértices que fazem parte da colisão são simplesmente projetados para fora do obstáculo. Por projeção, em termos gerais, entendemos mover o ponto o mínimo possível até que ele esteja livre do obstáculo.
+
+\section{Fundamentos da Resposta a Colisão}
+
+A resposta a colisões consiste, essencialmente, em duas operações principais:
+\begin{enumerate}
+	\item \textbf{Correção de Posição}: remover a interpenetração entre dois corpos.
+	\item \textbf{Correção de Velocidade}: ajustar ou anular componentes da velocidade que provoquem novo contato imediato.
+\end{enumerate}
+
+Embora os motores tradicionais realizem ambas as etapas, muitos sistemas baseados em PBD focam totalmente na correção de posições, derivando velocidades implicitamente a partir da diferença entre posições sucessivas.
 
 \section{Projeção da posição pelo método Jakobsen}
 
@@ -24,7 +40,7 @@ Este algoritmo é uma extensão porque sua entrada é o Simplex final do GJK que
 
 O algoritmo expande o Simplex adicionando vértices a ele até encontrarmos a normal mais próxima de uma face que está no polígono original.
 
-\begin{algorithm}
+\begin{algorithm}[H]
 	\caption{EPA}
 	\KwIn{Simplex}
 	\KwOut{separation $v$, penetration $\delta$}

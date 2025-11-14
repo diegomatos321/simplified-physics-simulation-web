@@ -1,10 +1,25 @@
 \chapter{Otimizações}
 
+A eficiência computacional é um dos fatores determinantes para o desempenho de um motor de 
+física em tempo real. Em jogos, animações interativas, simulações físicas e aplicações 
+gráficas, a demanda por atualizações contínuas e a necessidade de operar dentro de limites 
+rigorosos de tempo tornam indispensável o uso de técnicas de otimização em todos os estágios 
+do pipeline de simulação. 
+
 Como qualquer objeto pode potencialmente colidir com qualquer outro objeto, uma simulação com $n$ objetos requer $(n-1)+(n-2) + \dots + 1 = n(n-1)/2 = O(n^2)$ testes de pares, no pior caso. Devido à complexidade de tempo quadrática, testar ingenuamente cada par de objetos para verificar colisões rapidamente se torna muito caro, mesmo para valores moderados de n. 
 
 Reduzir o custo associado ao teste de pares afetará o tempo de execução apenas linearmente. Para realmente acelerar o processo, o número de pares testados deve ser reduzido. Essa redução é realizada separando o tratamento de colisões de múltiplos objetos em duas fases: Narrow Phase e Broad Phase.
 
+Neste capítulo descrevemos as principais estratégias empregadas 
+na otimização da detecção e resolução de colisões, com foco na divisão entre \emph{Broad Phase} 
+e \emph{Narrow Phase}, no uso de estruturas espaciais, na adoção de passos de simulação fixos 
+e em técnicas de paralelização por múltiplos núcleos de processamento.
+
 \section{Broad Phase}
+
+A fase de \emph{Broad Phase} tem como objetivo eliminar pares de objetos que certamente 
+não estão colidindo, reduzindo o conjunto de pares candidatos antes da execução de testes 
+mais complexos.  
 
 Segundo \citeonline{ericson2004real}, o primeiro princípio da otimização é que nada é mais rápido do que não ter que realizar uma tarefa. Dessa forma, as melhores otimizações para acelerar uma rotina giram em torno de reduzir o trabalho ao mínimo possível o mais cedo possível.
 
@@ -14,7 +29,7 @@ A consulta de colisão mais simples é o problema teste de interseção: respond
 
 \begin{algorithm}
 	\caption{Broad Phase generalizada}
-	\KwOut{Conjunto de pares de objetos passíveis a colisão}
+	\KwOut{Pares de objetos passíveis a colisão}
 	vistos $\leftarrow$ \{\} \\
 	pares de contato $\leftarrow$ \{\} \\
 	\ForEach{bodyA em bodies}{
@@ -32,7 +47,7 @@ A consulta de colisão mais simples é o problema teste de interseção: respond
 	\KwRet{pares de contato}
 \end{algorithm}
 
-\subsection{Divisão espacial em grade uniforme}
+\subsection{Grade uniforme}
 
 As técnicas de partição do espaço é o processo pelo qual o espaço é subdividido em regiões convexas, chamadas células. Cada célula na partição mantém uma lista de referências a objetos que nela estão (parcialmente) contidos. Como os objetos só podem se interceptar se sobrepuserem à mesma região do espaço, o número de testes de pares de objetos é drasticamente reduzido.
 
@@ -55,7 +70,16 @@ O ideal é que cada objeto caiba exatamente no tamanho de uma célula.
 
 \section{Narrow Phase}
 
-Essa etapa consiste em determinar as colisões exatas entre os pares dos subgrupos aceitos pela Broad Phase. Aqui deve-se usar o solver desejável como SAT ou GJK.
+Após a Broad Phase reduzir a lista de pares, a \emph{Narrow Phase} realiza testes 
+geométricos precisos. Esta fase utiliza algoritmos complexos como:
+
+\begin{itemize}
+	\item SAT (Separating Axis Theorem) para polígonos/poliedros convexos.
+	\item GJK (Gilbert–Johnson–Keerthi) para formas convexas arbitrárias.
+	\item EPA (Expanding Polytope Algorithm) para obtenção da profundidade de penetração.
+\end{itemize}
+
+A complexidade é reduzida aos pares realmente necessários, tipicamente em número linear no tamanho da cena.
 
 \section{Física com tamanho de passo fixo}
 
@@ -99,7 +123,13 @@ Essa rotina pode ser reescrita considerando que a simulação é bem comportada 
 	}
 \end{algorithm}
 
-Dessa forma a física da simulação fica controlável e ainda com um parâmetro ajustável que permite aumentarmos a precisão da simulação caso necessário e forma independente da máquina do usuário.
+Isso garante:
+\begin{itemize}
+	\item estabilidade numérica,
+	\item previsibilidade temporal,
+	\item resultados reprodutíveis,
+	\item funcionamento adequado de restrições e colisões.
+\end{itemize}
 
 \section{Simulação física multi-thread}
 

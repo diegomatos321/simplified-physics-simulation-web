@@ -1,6 +1,6 @@
 \chapter{Detecção de Colisões}
 
-O mecanismo de detecção de colisão é um componente fundamental para um sistema de simulação baseada em física [26, 40, 29, 32, 33]. Este componente permite efetuar consultas rápidas de proximidade geométrica entre objetos durante a simulação. Isso não somente inclui verificações de como dois objetos se intersectam, mas também quando e onde a colisão ocorreu.
+O mecanismo de detecção de colisão é um componente fundamental para um sistema de simulação baseada em física. É uma etapa essencial em qualquer sistema de simulação física ou animação baseada em partículas. Seu propósito é identificar quando dois ou mais objetos entram em contato, determinar o ponto de interseção e, opcionalmente, calcular as informações necessárias para a resposta física, como o vetor de penetração e a normal de colisão. Em animações físicas simplificadas, a precisão geométrica pode ser relaxada em favor da eficiência computacional, especialmente em aplicações interativas em tempo real.
 
 Neste capítulo introduzimos conceitos relevantes dentro do contexto deste trabalho e discutimos métodos que geralmente são usados para representar objetos, assim como algoritmos para fazer consultas de proximidade e interseção entre objetos.
 
@@ -15,10 +15,12 @@ Uma forma é considerada convexa se, para qualquer linha desenhada através da f
 \section{Teorema do Eixo Separador (SAT)}
 \label{sec:sat}
 
-O Teorema do Eixo Separador (do inglês Separating Axis Theorem, SAT) é um método para determinar se duas formas convexas estão se cruzando. O algoritmo também pode ser usado para encontrar o vetor de penetração mínimo que é útil para simulação de física e uma série de outras aplicações. O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter código de detecção de colisão para cada par tipo de forma, reduzindo assim o código e a manutenção.
+O Teorema do Eixo Separador (do inglês Separating Axis Theorem, SAT) é um dos algoritmos mais utilizados para detecção de colisões entre polígonos convexos. O algoritmo também pode ser usado para encontrar o vetor de penetração mínimo que é útil para simulação de física e uma série de outras aplicações. 
+
+O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter código de detecção de colisão para cada par tipo de forma, reduzindo assim o código e a manutenção. Ele se baseia no teorema geométrico que afirma:
 
 \begin{teorema}
-	Se dois objetos convexos não estiverem penetrando, existe um eixo para o qual a projeção dos objetos não se sobreporá.
+	Dois polígonos convexos $A$ e $B$ não se intersectam se, e somente se, existir um eixo (reta) sobre o qual as projeções de $A$ e $B$ não se sobrepõem.
 	\label{theo:sat}
 \end{teorema}
 
@@ -28,80 +30,81 @@ Se $v$ é um eixo de separação, então existe um escalar $\delta$ tal que o pl
 
 \textbf{INSERIR IMAGEM POLIGONO SEPARADO E POLIGONO EM COLISÃO}
 
-Isso pode ser verificado calculando a linha perpendicular à linha que separa as duas formas e projetarmos as formas nessa linha. Caso haja sobreposição das projeções os objetos estão em interseção, caso contrário não há colisão. Uma linha onde as projeções (sombras) das formas não se sobrepõem é chamada de eixo de separação.
+Em termos computacionais, o SAT testa um conjunto finito de eixos candidatos — tipicamente os vetores normais às arestas de ambos os polígonos — e verifica se existe algum eixo que separa os dois conjuntos.
+
+\subsection{Projeção sobre um eixo}
+
+Dado um eixo unitário $\hat{n}$ e um conjunto de vértices $\{ v_i \}$, a projeção escalar do polígono sobre $\hat{n}$ é dada pelos extremos:
+\begin{align}
+	\text{min}_A &= \min_i (\hat{n} \cdot v_i^A) \\
+	\text{max}_A &= \max_i (\hat{n} \cdot v_i^A)
+\end{align}
+
+De forma análoga, para o segundo polígono $B$:
+\begin{align}
+	\text{min}_B &= \min_j (\hat{n} \cdot v_j^B) \\
+	\text{max}_B &= \max_j (\hat{n} \cdot v_j^B)
+\end{align}
+
+Se os intervalos $[\text{min}_A, \text{max}_A]$ e $[\text{min}_B, \text{max}_B]$ não se sobrepõem em algum eixo $\hat{n}$, então os polígonos não colidem.
+
+\subsection{Teste de interseção booleana}
 
 O SAT deve testar todos os eixos candidatos a separação para determinar se há ou não sobreposição. Devido a isso ele não é muito prático em ambientes 3D. No entanto, o teorema \ref{theo:sat} nos garante que o primeiro eixo onde as projeções não estão sobrepostas, o algoritmo pode sair imediatamente determinando que as formas não estão se cruzando.
 
-\begin{algorithm}
-	\caption{SAT 1}
-	\KwIn{objetoA e objetoB}
-	\ForEach{eixo do objetoA}{
-		p1 $\leftarrow$ Projetar objetoA no eixo \\
-		p2 $\leftarrow$ Projetar objetoB no eixo \\
-		\If{p1 sobrepoe p2}{
-			\KwResult{False}
+O teste de colisão entre dois polígonos convexos $A$ e $B$ via SAT é implementado conforme o seguinte pseudocódigo:
+
+\begin{algorithm}[H]
+	\caption{Teste booleano de colisão via SAT}
+	\KwIn{Polígonos convexos $A$ e $B$}
+	\KwOut{Verdadeiro se houver interseção}
+	\ForEach{aresta e de A e B}{
+		$\hat{n} \leftarrow$ normal unitária de $e$ \\
+		$p_i \leftarrow$ Projetar $A$ no eixo $n$ \\
+		$p_j \leftarrow$ Projetar $B$ no eixo $n$ \\
+		\If{$p_i$ sobrepoe $p_j$}{
+			\Return{False}
 		}
 	}
 	
-	\ForEach{eixo do objetoB}{
-		p1 $\leftarrow$ Projetar objetoA no eixo \\
-		p2 $\leftarrow$ Projetar objetoB no eixo \\
-		\If{p1 sobrepoe p2}{
-			\KwResult{False}
-		}
-	}
-	
-	\KwResult{True}
+	\Return{True}
 	\label{al:sat_1}
 \end{algorithm}
 
-O algoritmo SAT precisa responder duas perguntas fundamentais:
+Este procedimento tem complexidade linear no número total de arestas e fornece um resultado booleano eficiente para corpos convexos.
 
-\begin{enumerate}
-	\item \textbf{Quais eixos de separação testar?}  deve-se testar a normal de todas faces (3D) ou arestas (2D) dos objetos que estão participando da colisão.
-	\item \textbf{Como projetar um geometria no eixo?} Para projetar um polígono em um eixo é relativamente simples; loop sobre todos os vértices e faça o produto interno com o eixo, armazenando o mínimo e máximo.
-\end{enumerate}
+\subsection{Cálculo do Vetor de Translação Mínima (MTV)}
 
-Dessa forma o algoritmo apenas retorna verdadeiro ou falso se as duas formas estão se sobrepondo. Além disso, o SAT pode retornar um vetor de translação mínima (MTV). A MTV é o vetor usado para empurrar as formas para fora da colisão, na direção de separação com tamanho da penetração.
+Além de determinar se há colisão, muitas vezes é necessário calcular o \textit{vetor de translação mínima} (\textit{Minimum Translation Vector}, MTV), que indica o menor deslocamento necessário para separar dois polígonos sobrepostos.
 
 Para o SAT a direção é equivalente ao eixo de separação e a penetração (magnitude do MTV) é o tamanho da menor projeção do polígono com o eixo de separação. Podemos adaptar nosso pseudocódigo como
 
 \begin{algorithm}
-	\caption{SAT 2}
-	\KwIn{objetoA e objetoB}
-	penetracao $\leftarrow$ 0 \\
-	separacao $\leftarrow$ Vector.Zero \\
-	\ForEach{eixo do objetoA}{
-		p1 $\leftarrow$ Projetar objetoA no eixo \\
-		p2 $\leftarrow$ Projetar objetoB no eixo \\
+	\caption{SAT completo}
+	\KwIn{Polígonos convexos $A$ e $B$}
+	\KwOut{separacao $v$ e penetracao $\delta$ ou falso}
+	$v \leftarrow$ Vector.Zero \\
+	$\delta \leftarrow$ 0 \\
+	\ForEach{aresta e de A e B}{
+		$\hat{n} \leftarrow$ unitária de e \\
+		p1 $\leftarrow$ Projetar A no eixo $\hat{n}$ \\
+		p2 $\leftarrow$ Projetar B no eixo $\hat{n}$ \\
 		$\delta \leftarrow$ projeção p1 com p2 \\
 		\If{$\delta \leq$ TOLERANCIA}{
-			\KwResult{False}
+			\Return{False}
 		} \Else{
-			penetracao $\leftarrow \delta$ \\
-			separacao $\leftarrow$ eixo
+			$\delta \leftarrow \delta$ \\
+			$v \leftarrow$ eixo
 		}
 	}
 	
-	\ForEach{eixo do objetoB}{
-		p1 $\leftarrow$ Projetar objetoA no eixo \\
-		p2 $\leftarrow$ Projetar objetoB no eixo \\
-		$\delta \leftarrow$ projeção p1 com p2 \\
-		\If{$\delta \leq$ TOLERANCIA}{
-			\KwResult{False}
-		} \Else{
-			penetracao $\leftarrow \delta$ \\
-			separacao $\leftarrow$ eixo
-		}
-	}
-	
-	\KwResult{penetracao, separacao}
+	\Return{$v$, $\delta$}
 	\label{al:sat_2}
 \end{algorithm}
 
 \section{Algoritmo Gilbert–Johnson–Keerthi (GJK)}
 
-O algoritmo de distância Gilbert-Johnson-Keerthi (GJK) é um método de determinar a distância mínima entre dois conjuntos convexos, publicado pela primeira vez por \citeauthor{gjk} em \citeyear{gjk}. Ao contrário de muitos outros algoritmos de distância, não requer que os dados de geometria sejam armazenados em qualquer formato específico, mas depende apenas de uma função de suporte para gerar iterativamente Simplex mais próximas da resposta correta usando a diferença de Minkowski.
+O algoritmo de distância Gilbert-Johnson-Keerthi (GJK) é um método de determinar a distância mínima entre dois conjuntos convexos, publicado pela primeira vez por \citeonline{gjk}. Ao contrário de muitos outros algoritmos de distância, não requer que os dados de geometria sejam armazenados em qualquer formato específico, mas depende apenas de uma função de suporte para gerar iterativamente Simplex mais próximas da resposta correta usando a diferença de Minkowski.
 
 O GJK, como a SAT, só opera em formas convexas. GJK é um método iterativo, mas converge muito rápido. É uma alternativa melhor para o SAT para ambientes 3D devido ao número de eixos que o SAT deve testar.
 
@@ -130,63 +133,77 @@ Executar essa operação exige $|A| * |B| * 2$ subtrações. Isso é significati
 A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
 
 \begin{teorema}
-	Se duas formas estiverem sobrepostas/em interseção a Diferença de Minkowski dessas formas conterá a origem.
+	Os conjuntos $A$ e $B$ colidem se, e somente se, o ponto de origem $(0, 0)$ estiver contido em $A \ominus B$.
 \end{teorema}
 
 Dessa forma, não queremos calcular a diferença de Minkowski. Em vez disso, queremos apenas saber se a Diferença de Minkowski contém ou não a origem. Se isso acontecer, então sabemos que as formas estão se cruzando, se não o faz, então elas não são.
 
 Isso é feito construindo iterativamente um polígono dentro da diferença de Minkowski que tenta incluir a origem. Se o polígono que construímos contém a origem, então podemos dizer que a Diferença de Minkowski contém a origem, e também que há interseção entre os dois objetos. Este polígono que queremos construir deve ser da forma mais elementar possível, no caso de 2D um triângulo, no caso de 3D um poliedro, por isso é chamado de Simplex.
 
-\subsection{Função Suporte}
+\subsection{Função de Suporte}
 
 O algoritmo GJK começa com um simplex inicial e o refina iterativamente adicionando pontos encontrados usando a função de suporte em uma direção que aponta para a origem. Esse processo continua até que a origem seja encontrada dentro do simplex, indicando uma colisão, ou até que se determine que a origem não está contida, o que significa que não há colisão.
 
 A função de suporte deve retornar o ponto mais distante em uma direção dentro da Diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da Diferença Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a Diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
 
-\subsection{Iteração}
+\subsection{Construção iterativa do simplex}
 
-Mesmo seguindo todos esses critérios ainda podemos não obter um Simplex que contém a origem nessas três etapas. Devemos criar iterativamente o Simplex de tal forma que o Simplex esteja se aproximando de conter a origem. Também precisamos verificar duas condições ao longo do caminho: 1) o simplex atual contém a origem? e 2) somos capazes de incluir a origem?
+O GJK constrói iterativamente um \textit{simplex} (ponto, segmento, triângulo ou tetraedro, dependendo da dimensão) que aproxima a origem dentro de $A \ominus B$.  
 
-\begin{algorithm}
+%Mesmo seguindo todos esses critérios ainda podemos não obter um Simplex que contém a origem nessas três etapas. Devemos criar iterativamente o Simplex de tal forma que o Simplex esteja se aproximando de conter a origem. Também precisamos verificar duas condições ao longo do caminho: 1) o simplex atual contém a origem? e 2) somos capazes de incluir a origem?
+
+\begin{algorithm}[H]
 	\caption{GJK}
-	\KwIn{objeto A e objeto B}
+	\KwIn{Polígonos convexos A e B}
+	\KwOut{Veradadeiro se ocorreu colisão}
 	
-	d $\leftarrow$ B - A \tcp{Direção inicial aponta para o centro de B}
-	simplex $\leftarrow$ support(A, B, d) \\
-	d $\leftarrow$ -d \tcp{Inverte a direção para próxima iteração}
-	\For{$i \leftarrow 0$ \KwTo MAX\_INTERATION}{
-		$a \leftarrow support(A, B, d)$ \\
-		\If{$a \cdot d \leq 0$}{
-			\KwRet{false}
-		}
-		
-		simplex $\leftarrow$ a \\
-		\If{simplex contém a origem}{
-			\KwRet{true}
-		}
-		
-		d $\leftarrow$ calcular próxima direção
-	}
-	
-	\label{al:gjk}
+	Escolhe-se uma direção $\vec{d}$; \\
+	Obtém-se um novo ponto $p = \text{support}(A \ominus B, \vec{d})$ \\
+	Se o novo ponto não avança em direção à origem ($p \cdot \vec{d} < 0$), não há colisão \\
+	Caso contrário, atualiza-se o simplex e redefine-se $\vec{d}$ em direção à origem. \\
 \end{algorithm}
 
-Podemos determinar onde está a origem com relação ao simplex através da realização de uma série de testes em plano (testes de linha para 2D) onde cada teste consiste em produtos de pontos simples. O primeiro caso que deve ser tratado é o caso do segmento de linha. Podemos determinar se o simplex contém a origem examinando as regiões de Voronoi
+%\begin{algorithm}[H]
+%	\caption{GJK}
+%	\KwIn{Polígonos convexos A e B}
+%	\KwOut{Verdadeiro se ocorreu colisão}
+%	
+%	d $\leftarrow$ B - A \tcp{Direção inicial aponta para o centro de B}
+%	simplex $\leftarrow$ support(A, B, d) \\
+%	d $\leftarrow$ -d \tcp{Inverte a direção para próxima iteração}
+%	\For{$i \leftarrow 0$ \KwTo MAX\_INTERATION}{
+%		$a \leftarrow support(A, B, d)$ \\
+%		\If{$a \cdot d \leq 0$}{
+%			\KwRet{false}
+%		}
+%		
+%		simplex $\leftarrow$ a \\
+%		\If{simplex contém a origem}{
+%			\KwRet{true}
+%		}
+%		
+%		d $\leftarrow$ calcular próxima direção
+%	}
+%	
+%	\label{al:gjk}
+%\end{algorithm}
 
-\begin{algorithm}
-	\caption{Contém Origem}
-	\KwIn{simplex}
-	\KwOut{Boolean}
-	
-	\If{|simplex| == 4}{ \tcp{Caso 3D}
-		\KwRet{TestePoliedro()}
-	} \ElseIf{|simplex| == 3} { \tcp{Caso 2D}
-		\KwRet{TesteTriangulo()}
-	} \Else{
-		\KwRet{TesteLinha()}
-	}
-\end{algorithm}
+%Podemos determinar onde está a origem com relação ao simplex através da realização de uma série de testes em plano (testes de linha para 2D) onde cada teste consiste em produtos de pontos simples. O primeiro caso que deve ser tratado é o caso do segmento de linha. Podemos determinar se o simplex contém a origem examinando as regiões de Voronoi
+%
+%\begin{algorithm}[H]
+%	\caption{Contém Origem}
+%	\KwIn{simplex}
+%	\KwOut{Boolean}
+%	
+%	\If{|simplex| == 4}{ \tcp{Caso 3D}
+%		\KwRet{TestePoliedro()}
+%	} \ElseIf{|simplex| == 3} { \tcp{Caso 2D}
+%		\KwRet{TesteTriangulo()}
+%	} \Else{
+%		\KwRet{TesteLinha()}
+%	}
+%\end{algorithm}
 
-\section{Polígonos côncavos}
-
-\section{Tratando casos degenerados}
+%\section{Polígonos côncavos}
+%
+%\section{Tratando casos degenerados}
