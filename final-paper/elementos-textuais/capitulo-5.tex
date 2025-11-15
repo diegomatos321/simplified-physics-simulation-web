@@ -1,14 +1,12 @@
 \chapter{O Fecho Convexo}
 
-O Fecho Convexo (FC) de um conjunto é definido como a menor região convexa que contenha todos os pontos (também chamado como volume delimitador). Achar o fecho convexo de um conjunto de pontos, por exemplo, é um problema que aparece quando queremos organizar o conjunto, agrupar os pontos em uma região simples. 
+O \textit{Fecho Convexo} (FC) de um conjunto é definido como a menor região convexa que contém todos os seus pontos, sendo frequentemente utilizado como um volume delimitador. Determinar o fecho convexo é um problema recorrente em computação geométrica, especialmente quando se deseja organizar pontos em estruturas mais simples ou acelerar operações posteriores, como testes de colisão.
 
-Em sistemas de simulação física e detecção de colisões, a representação geométrica dos objetos tem impacto direto na eficiência dos cálculos. Formas complexas, compostas por muitos vértices e superfícies não convexas, tornam os testes geométricos computacionalmente caros.  
+Em sistemas de simulação física e detecção de colisões, a representação geométrica dos objetos influencia diretamente a eficiência dos cálculos. Formas complexas, com muitos vértices ou superfícies não convexas, tornam tais testes significativamente mais custosos. Uma solução comum é empregar aproximações convexas ou volumes delimitadores que possibilitam testes rápidos sem sacrificar excessivamente a precisão da simulação.
 
-Para contornar esse problema, é comum empregar aproximações convexas ou volumes delimitadores — denominados \textit{fechos convexos} — que permitem realizar testes mais rápidos sem comprometer significativamente a precisão da simulação.
+A principal motivação para o uso de volumes delimitadores é que formas mais simples (como caixas ou esferas) permitem testes de sobreposição muito mais baratos do que a geometria original que envolvem. Dessa forma, o FC atua como um primeiro filtro: apenas quando o teste de interseção entre volumes delimitadores retorna positivo é que se procede para verificações mais detalhadas na geometria original. Em muitos casos, o próprio volume delimitador já é suficiente para caracterizar uma colisão.
 
 \textbf{INSERIR FIGURA DO FECHO CONVEXO DE OBJETOS EM INTERSECÇÃO E SEM INTERSECÇÃO}
-
-A ideia é que formas mais simples (como caixas e esferas) tenham testes de sobreposição mais baratos do que os objetos complexos que eles delimitam. O uso do FC permite testes rápidos de rejeição de sobreposição, pois só é necessário testar a geometria complexa delimitada quando a consulta inicial de sobreposição para os volumes delimitadores resulta em um resultado positivo. Em algumas aplicações, o próprio teste de interseção dos volumes delimitadores serve como prova suficiente de colisão.
 
 Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como volumes delimitadores eficazes. As propriedades desejáveis para volumes delimitadores incluem:
 
@@ -22,57 +20,54 @@ Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como v
 
 \textbf{INSERIR IMAGENS COM TIPOS DIFERENTES FORMAS DE FECHO CONVEXO}
 
-A ideia principal por trás dos volumes delimitadores é preceder testes geométricos complexos com testes menos dispendiosos que permitem que o teste seja interrompido precocemente. Para suportar testes de sobreposição de baixo custo, o volume delimitador deve ter uma forma geométrica simples. Ao mesmo tempo, para tornar o teste de corte antecipado o mais eficaz possível, o volume delimitador também deve ser o mais ajustado possível, resultando em um trade-off entre o ajuste e o custo do teste de interseção.
-
 \section{Caixa Delimitadora Alinhada ao Eixo Coordenado (AABB)}
 
-A caixa delimitadora mínima para um conjunto de pontos em N dimensões é a caixa com a menor medida (área, volume, ou hipervolume em dimensões superiores) possível que englobe todos os pontos. A caixa delimitadora mínima de um conjunto de pontos é a mesma que a caixa delimitadora mínima de seu FC, um fato que pode ser usado de forma heurística para acelerar a computação.
+A caixa delimitadora mínima para um conjunto de pontos em $N$ dimensões é aquela que possui o menor volume possível e ainda assim contém todos os pontos. Notavelmente, a AABB mínima para um conjunto é a mesma que a AABB mínima de seu fecho convexo, fato útil em heurísticas para computação eficiente.
 
-A caixa delimitadora alinhada aos eixos (em inglês "axis-aligned bounding box", ou AABB) é um dos volumes delimitadores mais comuns. É um paralelepípedo (ou retângulo em 2D) cujas faces são paralelas aos eixos de coordenadas.
+A caixa delimitadora alinhada aos eixos (Axis-Aligned Bounding Box, AABB) é um dos volumes delimitadores mais utilizados. Trata-se de um paralelepípedo (ou retângulo, em 2D) cujas faces são paralelas aos eixos do sistema de coordenadas. Seu teste de interseção é extremamente simples:
 
 \begin{algorithm}[H]
-	\caption{Teste de Intersecção AABB}
-	\KwIn{Polígonos convexos A e B}
-	\KwOut{Verdadeiro se estão colidindo}
+	\caption{Teste de Interseção AABB}
+	\KwIn{A e B: volumes AABB}
+	\KwOut{Verdadeiro se houver colisão}
 	
-	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
+	\If{$A.x_{max} < B.x_{min}$ \textbf{ou} $A.x_{min} > B.x_{max}$}{
 		\Return{False}
 	}
-	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
+	\If{$A.y_{max} < B.y_{min}$ \textbf{ou} $A.y_{min} > B.y_{max}$}{
 		\Return{False}
 	}
-	\If{$x_{max}$ de A < $x_{min}$ de B ou $x_{min}$ de A > $x_{max}$ de B}{
+	\If{$A.z_{max} < B.z_{min}$ \textbf{ou} $A.z_{min} > B.z_{max}$}{
 		\Return{False}
 	}
 	\Return{True}
 \end{algorithm}
 
+AABBs são eficientes, porém perdem precisão quando o objeto sofre rotações, pois a caixa permanece alinhada aos eixos globais.
+
 \section{Caixa Orientada (OBB)}
 
-Uma \textbf{Oriented Bounding Box} (OBB) é uma caixa retangular que pode estar rotacionada em relação aos eixos globais.  
-Ela é definida por um ponto central $c$, um conjunto de vetores ortogonais $\hat{u}_i$ representando a orientação, e comprimentos semi-extensões $e_i$ em cada direção:
+Uma Caixa Orientada (Oriented Bounding Box, OBB) é uma caixa retangular que pode estar arbitrariamente rotacionada em relação aos eixos do sistema de coordenadas. É definida por um ponto central $c$, por três vetores ortogonais $\hat{u}_i$ que compõem sua orientação e por semi-extensões $e_i$:
 
 \begin{equation}
 	OBB = \left\{ c + \sum_{i=1}^{3} \alpha_i \hat{u}_i \; \middle| \; -e_i \le \alpha_i \le e_i \right\}
 \end{equation}
 
-OBBs geralmente fornecem um ajuste mais justo em torno de objetos alongados ou rotacionados, reduzindo falsos positivos de colisão.  
-O custo computacional é maior que o de AABBs, mas compensado em simulações com poucos objetos ou com formas muito irregulares.
+OBBs geralmente oferecem melhor ajuste, especialmente para objetos alongados ou rotacionados, reduzindo falsos positivos. Porém, o teste de interseção é mais caro que o das AABBs, o que torna seu uso preferível em cenas com número reduzido de objetos ou em simulações nas quais a precisão de ajuste é particularmente importante.
 
 \section{Esferas e Elipsoides}
 
-As \textbf{esferas} são os volumes mais simples de todos, definidas apenas por um centro $c$ e um raio $r$:
+As \textbf{esferas} constituem o volume delimitador mais simples, definidas apenas por um centro $c$ e um raio $r$:
 
 \begin{equation}
 	\text{Sphere} = \{ x \in \mathbb{R}^3 \; | \; \|x - c\| \le r \}
 \end{equation}
 
-Elas permitem testes de colisão extremamente rápidos, mas representam mal objetos com proporções muito distintas.  
-Por esse motivo, esferas e elipsoides são frequentemente empregadas apenas em fases preliminares de detecção, ou como volumes intermediários em hierarquias de limitação (Bounding Volume Hierarchies, BVH).
+Testes de colisão entre esferas são extremamente rápidos, porém inadequados para objetos de proporções irregulares. Elipsoides oferecem melhor ajuste, mas aumentam o custo de teste. Por isso, essas formas são frequentemente utilizadas em fases preliminares da detecção, ou como nós intermediários em hierarquias de volumes delimitadores (BVH).
 
 \section{Quickhull}
 
-Quickhull é um algoritmo incremental para Fecho Convexo de um conjunto finito de pontos de qualquer dimensão. Ele usa uma abordagem de divisão e conquista semelhante à do quicksort, da qual seu nome deriva \cite{barber1996quickhull}.
+O \textit{Quickhull} é um algoritmo para o cálculo do fecho convexo de um conjunto finito de pontos em qualquer dimensão, adotando uma estratégia de divisão e conquista semelhante ao \textit{quicksort} \cite{barber1996quickhull}.
 
 O Quickhull parte de um conjunto de pontos $S$ e constrói o polígono (ou poliedro) convexo que os contém.  O processo para 2 dimensões pode ser descrito em linhas gerais da seguinte forma:
 
@@ -81,15 +76,15 @@ O Quickhull parte de um conjunto de pontos $S$ e constrói o polígono (ou polie
 	\LinesNumbered
 	\SetAlgoLined
 	\KwIn{Polígono Convexo}
-	\KwOut{Lista dos vértices que representam o fecho convexo}
-	Encontre os pontos com coordenadas mínimas e máximas x, pois estes sempre farão parte do casco convexo. \\
+	\KwOut{Lista dos vértices do fecho convexo}
+	
+	Encontre os pontos de menor e maior coordenada em $x$; eles pertencem ao fecho convexo.\\
 	Use a linha formada pelos dois pontos para dividir o conjunto em dois subconjuntos de pontos, que serão processados de forma recursiva. \\
-	Determine o ponto acima da linha com a distância máxima da linha. Este ponto forma um triângulo com os dois pontos na linha. \\
-	Os pontos dentro desse triângulo não podem ser parte do casco convexo e, portanto, podem ser ignorados nos próximos passos. \\
+	Para cada subconjunto, encontre o ponto mais distante da linha; ele forma um triângulo que exclui pontos interiores.\\
 	Repita recursivamente os dois passos anteriores nas duas linhas formadas pelos dois novos lados do triângulo. \\
-	Repete-se o processo recursivamente para as novas regiões formadas, descartando pontos interiores \\
 	O processo termina quando todos os subconjuntos estão vazios.
 	\label{al:quickhull_2d}
 \end{algorithm}
 
-O Quickhull apresenta, em média, complexidade $O(n \log n)$ em duas dimensões, embora em casos degenerados possa chegar a $O(n^2)$. Em três dimensões, o algoritmo é adaptado para construir uma casca poliedral usando o mesmo princípio recursivo, consulte \citeonline{barber1996quickhull} para melhores definições.
+O Quickhull apresenta complexidade média $O(n \log n)$ em 2D, podendo chegar a $O(n^2)$ em casos degenerados. Em 3D, adapta-se a construções poliedrais mais complexas, mantendo o mesmo princípio recursivo.
+

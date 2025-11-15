@@ -1,34 +1,23 @@
 \chapter{Resposta a colisão}
 
-A resposta a colisões é uma etapa fundamental em qualquer sistema de simulação física interativa. Após detectar que dois corpos estão penetrando um ao outro, é necessário aplicar um conjunto de correções que restaurem a plausibilidade física do movimento sem introduzir instabilidades.  Neste capítulo apresentamos os princípios clássicos, as formulações modernas e a relação direta entre métodos geométricos da fase de detecção, tais como o vetor de translação mínima (MTV), e métodos baseados em partículas e restrições, como o modelo proposto por \citeonline{jakobsen2001advanced}.
-
-\section{Contexto Histórico e Motivação}
-
-Os primeiros motores de física utilizados em gráficos interativos nos anos 1990 empregavam modelos altamente simplificados baseados em impulsos (impulse-based methods), com foco especial em simulações rígidas newtonianas. Embora fisicamente corretos, esses métodos eram computacionalmente caros e exigiam sistemas robustos para resolver forças, torques e empilhamentos estáveis em tempo real.
-
-Já os chamados métodos baseados em penalidades tratam o contato inserindo molas nos pontos de penetração. Embora seja muito simples de implementar, esse método apresenta diversas desvantagens sérias. Por exemplo, é difícil escolher constantes de mola adequadas de forma que, por um lado, os objetos não penetrem demais e, por outro lado, o sistema resultante não se torne instável.
-
-\citeonline{jakobsen2001advanced} apresentou um método de simulação baseado em projeção de posição (Position Based Dynamics). Em vez de trabalhar com forças e integrações diferenciais sobre acelerações, os vértices que fazem parte da colisão são simplesmente projetados para fora do obstáculo. Por projeção, em termos gerais, entendemos mover o ponto o mínimo possível até que ele esteja livre do obstáculo.
+A resposta a colisões é uma etapa fundamental em qualquer sistema de simulação física interativa. Após detectar que dois corpos estão em interpenetração, torna-se necessário aplicar um conjunto de correções que restaurem a plausibilidade física do movimento, evitando instabilidades numéricas. Neste capítulo discutimos os princípios clássicos, as formulações modernas e a relação direta entre métodos geométricos empregados na fase de detecção — como o vetor de translação mínima (MTV) — e métodos baseados em partículas e restrições, como o modelo proposto por \citeonline{jakobsen2001advanced}.
 
 \section{Fundamentos da Resposta a Colisão}
 
 A resposta a colisões consiste, essencialmente, em duas operações principais:
+
 \begin{enumerate}
-	\item \textbf{Correção de Posição}: remover a interpenetração entre dois corpos.
-	\item \textbf{Correção de Velocidade}: ajustar ou anular componentes da velocidade que provoquem novo contato imediato.
+	\item \textbf{Correção de Posição}: eliminar a interpenetração entre dois corpos.
+	\item \textbf{Correção de Velocidade}: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
 \end{enumerate}
 
 Embora os motores tradicionais realizem ambas as etapas, muitos sistemas baseados em PBD focam totalmente na correção de posições, derivando velocidades implicitamente a partir da diferença entre posições sucessivas.
 
 \section{Projeção da posição pelo método Jakobsen}
 
-A resposta à uma colisão é composta de dois passos. O primeiro passo consiste em separar os elementos dos objetos (vértice, aresta ou face) que estão se intersectando. Este passo é puramente geométrico, já que é executado movendo as partículas na geometria da colisão.
+A resposta à colisão envolve dois passos principais. O primeiro consiste em separar os elementos geométricos (vértices, arestas ou faces) que se encontram em interpenetração, o que caracteriza um processo estritamente geométrico. O segundo passo corresponde a um processo iterativo de relaxamento, no qual os elementos afetados ajustam suas posições de acordo com as restrições impostas pelo sistema físico.
 
-O segundo passo é um processo de relaxamento iterativo no qual os elementos dos objetos que estão envolvidos na colisão encontram as suas posições apropriadas usando as restrições como suporte.
-
-Se dois objetos convexos A e B colidem o processo de separação requer três parâmetros: os pontos $p_A$ de contato de A, os pontos $p_B$ de contato de B e o ponto $q$ que a simulação assume onde os dois objetos estão em contato chamado de ponto de projeção.
-
-O ponto de projeção coincide com o plano de separação $H(\vec{v}, \delta)$ nas coordenadas locais do objeto, dessa forma como regra geral basta mover os pontos de $p_A$ em direção $H(\vec{v}, \delta)$. Considere dois casos de colisão:
+Para dois objetos convexos $A$ e $B$ em colisão, o processo de separação requer três parâmetros principais: os pontos de contato $p_A$ de $A$, os pontos de contato $p_B$ de $B$ e o ponto de projeção $q$, assumido pela simulação como o ponto em que ambos os objetos estão em contato. O ponto de projeção coincide com o plano de separação $H(\vec{v}, \delta)$ definido na geometria local, de forma que, como regra geral, basta mover os pontos de $A$ ou $B$ na direção desse plano para remover a interpenetração.
 
 \section{Algoritmo de Expansão de Politopos (EPA)}
 
@@ -58,3 +47,51 @@ O algoritmo expande o Simplex adicionando vértices a ele até encontrarmos a no
 \end{algorithm}
 
 É importante limitar o número de iterações para evitar que a rotina entre em loop infinito em casos degenerados, como esse algoritmo converge rapidamente uma constante igual a 30 é um bom limite superior. Matematicamente a distância deve ser igual a zero, mas por conta da artimética de ponto flutuante, uma tolerância pequena deve ser aceita, como $10^{-3}$.
+
+\section{Desafios e Limitações das Abordagens de Animação Física Simplificada}
+\label{sec:limitacoes}
+
+Embora métodos de animação física simplificada sejam eficazes para aplicações interativas na Web, eles apresentam limitações e desafios inerentes às aproximações empregadas. Como discutido anteriormente, o objetivo principal dessas técnicas não é fidelidade física absoluta, mas sim a geração de comportamentos verossímeis, estáveis e visualmente plausíveis. No entanto, essa busca por simplicidade e desempenho resulta em compromissos importantes.
+
+\subsection{Jitter e Distribuição de Correções}
+
+Em sistemas baseados em posições — incluindo métodos inspirados em Jakobsen e frameworks modernos como PBD (\textit{Position-Based Dynamics}) — a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
+
+Outro aspecto crítico é o \textbf{tuning da distribuição de correções}: decidir como cada restrição contribui para o deslocamento final dos pontos ou corpos envolvidos. Distribuições mal balanceadas podem causar:
+
+\begin{itemize}
+	\item instabilidade numérica,
+	\item objetos que ``vazam'' através de outros,
+	\item corpos que recebem correções excessivas e oscilam,
+	\item propagação exagerada de energia através da cadeia de restrições.
+\end{itemize}
+
+A calibração ideal dessa distribuição varia com o tipo de geometria, número de restrições, massa relativa dos objetos e o passo temporal da simulação. Isso torna o ajuste fino (\textit{tuning}) uma tarefa empírica e frequentemente dependente de tentativa e erro.
+
+\subsection{Falhas Comuns: Empilhamento, Tunneling e Jittering}
+
+Sistemas simplificados frequentemente apresentam falhas clássicas observadas em simulações físicas:
+
+\begin{itemize}
+	\item \textbf{Empilhamento instável}: métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a ``escorregar'' ou colapsar devido à falta de amortecimento numérico adequado.
+	
+	\item \textbf{Tunneling}: ocorre quando objetos em alta velocidade atravessam outros sem detectar colisão. Métodos baseados exclusivamente em detecção discreta apresentam maior risco, especialmente quando o passo temporal é grande ou a geometria é fina.
+	
+	\item \textbf{Jittering}: pequenos movimentos involuntários causados por correções excessivas, flutuações numéricas ou conflito entre múltiplas restrições. Este problema é particularmente visível em objetos apoiados no chão, que parecem tremer continuamente.
+\end{itemize}
+
+Apesar de existirem soluções como CCD (\textit{Continuous Collision Detection}) ou múltiplas iterações de estabilidade, tais técnicas aumentam o custo computacional e podem não se alinhar ao objetivo da animação simplificada.
+
+\subsection{Limitações da Abordagem Simplificada}
+
+Ao adotar métodos simplificados, abre-se mão de características essenciais de motores físicos completos. Entre as limitações mais relevantes estão:
+
+\begin{itemize}
+	\item \textbf{Ausência de conservação precisa de energia e momento}, o que reduz o realismo de certas interações.
+	\item \textbf{Incapacidade de simular materiais complexos} (ex.: fricção anisotrópica, torques realistas, elasticidade avançada).
+	\item \textbf{Dependência de parâmetros empíricos}, sem interpretação física clara.
+	\item \textbf{Menor robustez para geometrias arbitrárias}, especialmente polígonos concavos ou mal escalonados.
+	\item \textbf{Dificuldade de lidar com sistemas altamente conectados} (estruturas rígidas, máquinas, esqueletos).
+\end{itemize}
+
+Essas limitações não invalidam o uso das técnicas, mas reforçam a necessidade do uso da aplicação a cenários onde a prioridade é a responsividade, e não a precisão física.

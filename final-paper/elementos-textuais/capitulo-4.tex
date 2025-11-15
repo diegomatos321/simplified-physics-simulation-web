@@ -1,21 +1,21 @@
 \chapter{Detecção de Colisões}
 
-O mecanismo de detecção de colisão é um componente fundamental para um sistema de simulação baseada em física. É uma etapa essencial em qualquer sistema de simulação física ou animação baseada em partículas. Seu propósito é identificar quando dois ou mais objetos entram em contato, determinar o ponto de interseção e, opcionalmente, calcular as informações necessárias para a resposta física, como o vetor de penetração e a normal de colisão. Em animações físicas simplificadas, a precisão geométrica pode ser relaxada em favor da eficiência computacional, especialmente em aplicações interativas em tempo real.
+A detecção de colisões é um componente fundamental em sistemas de simulação física e em animações baseadas em partículas. Esse processo identifica quando dois ou mais objetos entram em contato, determina pontos de interseção e, quando necessário, fornece informações como vetores de penetração e normais que servirão de entrada para a etapa subsequente de resposta física. Em contextos interativos em tempo real, a precisão geométrica absoluta costuma ser sacrificada em favor da eficiência computacional, desde que o comportamento resultante se mantenha visualmente verossímil.
 
-Neste capítulo introduzimos conceitos relevantes dentro do contexto deste trabalho e discutimos métodos que geralmente são usados para representar objetos, assim como algoritmos para fazer consultas de proximidade e interseção entre objetos.
+Este capítulo introduz os principais conceitos utilizados no âmbito deste trabalho, descrevendo as representações geométricas mais comuns para objetos convexos e apresentando dois algoritmos amplamente empregados em detecção de colisões: o Teorema do Eixo Separador (SAT) e o algoritmo Gilbert--Johnson--Keerthi (GJK). Ambos operam eficientemente em formas convexas e constituem a base de vários motores físicos modernos.
 
 \section{Polígonos convexos}
 
-Um objeto geométrico é um conjunto fechado de pontos, limitado e não vazio. É fechado, pois a borda faz parte do objeto e é limitado significa que existe uma esfera de raio finito que limita o objeto. Assim, por exemplo, um plano é fechado mas não limitado.
+Um objeto geométrico é definido como um conjunto não vazio, limitado e fechado de pontos. A propriedade de ser fechado implica que sua fronteira pertence ao próprio conjunto, enquanto a limitação garante que exista uma esfera de raio finito que contenha todos os seus pontos. Um plano, por exemplo, é fechado, mas não limitado.
 
-\textbf{(INSERIR IMAGEM FORMA CONVEXA X NAO CONVEXA)}
+\textbf{(INSERIR IMAGEM DE FORMA CONVEXA E NÃO-CONVEXA)}
 
-Uma forma é considerada convexa se, para qualquer linha desenhada através da forma, essa linha cruzar apenas duas vezes. Formas não convexas podem ser representadas por uma combinação de formas convexas.
+Uma forma é considerada \textit{convexa} se, para quaisquer dois pontos contidos nessa forma, todo o segmento que os une também estiver contido nela. Uma consequência prática é que, para qualquer linha que atravesse o objeto, esta o intersecta em no máximo dois pontos. Formas não convexas podem ser tratadas como composições de múltiplas partes convexas, o que permite a aplicação direta de algoritmos especializados.
 
 \section{Teorema do Eixo Separador (SAT)}
 \label{sec:sat}
 
-O Teorema do Eixo Separador (do inglês Separating Axis Theorem, SAT) é um dos algoritmos mais utilizados para detecção de colisões entre polígonos convexos. O algoritmo também pode ser usado para encontrar o vetor de penetração mínimo que é útil para simulação de física e uma série de outras aplicações. 
+O Teorema do Eixo Separador (\textit{Separating Axis Theorem}, SAT) é um dos métodos mais difundidos para detecção de colisão entre polígonos convexos. Além de identificar a presença ou ausência de interseção, o SAT também pode ser utilizado para calcular o \textit{vetor de translação mínima} (\textit{Minimum Translation Vector}, MTV), útil para correções geométricas e resposta física.
 
 O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter código de detecção de colisão para cada par tipo de forma, reduzindo assim o código e a manutenção. Ele se baseia no teorema geométrico que afirma:
 
@@ -24,13 +24,9 @@ O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter c�
 	\label{theo:sat}
 \end{teorema}
 
-Um plano de separação (PS) é um plano que está localizado entre dois objetos convexos, separando-os. Eventualmente, A está situado no lado positivo e B no lado negativo ou vice-versa. Matematicamente, um PS é definido por $H(v, \delta)$, onde $v$ é chamado de eixo de separação (ES).
-
-Se $v$ é um eixo de separação, então existe um escalar $\delta$ tal que o plano de separação possa ser definido.
-
 \textbf{INSERIR IMAGEM POLIGONO SEPARADO E POLIGONO EM COLISÃO}
 
-Em termos computacionais, o SAT testa um conjunto finito de eixos candidatos — tipicamente os vetores normais às arestas de ambos os polígonos — e verifica se existe algum eixo que separa os dois conjuntos.
+Um \textit{plano de separação} (PS), definido por um vetor normal $v$ e um escalar $\delta$, é um hiperplano que separa $A$ e $B$. Em termos computacionais, o SAT testa um conjunto finito de eixos candidatos — tipicamente as normais às arestas dos polígonos — verificando se existe algum eixo que sirva como separador.
 
 \subsection{Projeção sobre um eixo}
 
@@ -50,67 +46,60 @@ Se os intervalos $[\text{min}_A, \text{max}_A]$ e $[\text{min}_B, \text{max}_B]$
 
 \subsection{Teste de interseção booleana}
 
-O SAT deve testar todos os eixos candidatos a separação para determinar se há ou não sobreposição. Devido a isso ele não é muito prático em ambientes 3D. No entanto, o teorema \ref{theo:sat} nos garante que o primeiro eixo onde as projeções não estão sobrepostas, o algoritmo pode sair imediatamente determinando que as formas não estão se cruzando.
-
-O teste de colisão entre dois polígonos convexos $A$ e $B$ via SAT é implementado conforme o seguinte pseudocódigo:
+O pseudocódigo abaixo resume o teste booleano de interseção via SAT:
 
 \begin{algorithm}[H]
 	\caption{Teste booleano de colisão via SAT}
 	\KwIn{Polígonos convexos $A$ e $B$}
 	\KwOut{Verdadeiro se houver interseção}
-	\ForEach{aresta e de A e B}{
+	\ForEach{aresta $e$ de $A$ e $B$}{
 		$\hat{n} \leftarrow$ normal unitária de $e$ \\
-		$p_i \leftarrow$ Projetar $A$ no eixo $n$ \\
-		$p_j \leftarrow$ Projetar $B$ no eixo $n$ \\
-		\If{$p_i$ sobrepoe $p_j$}{
+		$p_i \leftarrow$ Projeção de $A$ ao longo de $\hat{n}$ \\
+		$p_j \leftarrow$ Projeção de $B$ ao longo de $\hat{n}$ \\
+		\If{$p_i$ não sobrepõe $p_j$}{
 			\Return{False}
 		}
 	}
-	
 	\Return{True}
 	\label{al:sat_1}
 \end{algorithm}
 
-Este procedimento tem complexidade linear no número total de arestas e fornece um resultado booleano eficiente para corpos convexos.
+O método possui complexidade linear no número de arestas e é bastante eficiente para polígonos convexos em 2D. Em 3D, entretanto, o número de eixos candidatos cresce significativamente, reduzindo sua praticidade em relação a alternativas como o GJK.
 
-\subsection{Cálculo do Vetor de Translação Mínima (MTV)}
+\subsection{Vetor de Translação Mínima (MTV)}
 
-Além de determinar se há colisão, muitas vezes é necessário calcular o \textit{vetor de translação mínima} (\textit{Minimum Translation Vector}, MTV), que indica o menor deslocamento necessário para separar dois polígonos sobrepostos.
-
-Para o SAT a direção é equivalente ao eixo de separação e a penetração (magnitude do MTV) é o tamanho da menor projeção do polígono com o eixo de separação. Podemos adaptar nosso pseudocódigo como
+Para aplicações que exigem resposta física, é necessário calcular não apenas a detecção de colisão, mas também o deslocamento mínimo para separar os objetos. O MTV é obtido identificando-se o eixo cuja sobreposição projetada é mínima.
 
 \begin{algorithm}
-	\caption{SAT completo}
+	\caption{SAT com cálculo do MTV}
 	\KwIn{Polígonos convexos $A$ e $B$}
-	\KwOut{separacao $v$ e penetracao $\delta$ ou falso}
-	$v \leftarrow$ Vector.Zero \\
-	$\delta \leftarrow$ 0 \\
-	\ForEach{aresta e de A e B}{
-		$\hat{n} \leftarrow$ unitária de e \\
-		p1 $\leftarrow$ Projetar A no eixo $\hat{n}$ \\
-		p2 $\leftarrow$ Projetar B no eixo $\hat{n}$ \\
-		$\delta \leftarrow$ projeção p1 com p2 \\
-		\If{$\delta \leq$ TOLERANCIA}{
+	\KwOut{Direção $v$ e penetração $\delta$, ou falso}
+	$v \leftarrow 0$ \\
+	$\delta \leftarrow \infty$ \\
+	\ForEach{aresta $e$ de A e B}{
+		$\hat{n} \leftarrow$ normal unitária de $e$ \\
+		$p_1 \leftarrow$ Projeção de $A$ \\
+		$p_2 \leftarrow$ Projeção de $B$ \\
+		$\Delta \leftarrow$ sobreposição entre $p_1$ e $p_2$ \\
+		\If{$\Delta \leq$ TOLERÂNCIA}{
 			\Return{False}
-		} \Else{
-			$\delta \leftarrow \delta$ \\
-			$v \leftarrow$ eixo
+		}
+		\If{$\Delta < \delta$}{
+			$\delta \leftarrow \Delta$ \\
+			$v \leftarrow \hat{n}$
 		}
 	}
-	
 	\Return{$v$, $\delta$}
 	\label{al:sat_2}
 \end{algorithm}
 
 \section{Algoritmo Gilbert–Johnson–Keerthi (GJK)}
 
-O algoritmo de distância Gilbert-Johnson-Keerthi (GJK) é um método de determinar a distância mínima entre dois conjuntos convexos, publicado pela primeira vez por \citeonline{gjk}. Ao contrário de muitos outros algoritmos de distância, não requer que os dados de geometria sejam armazenados em qualquer formato específico, mas depende apenas de uma função de suporte para gerar iterativamente Simplex mais próximas da resposta correta usando a diferença de Minkowski.
-
-O GJK, como a SAT, só opera em formas convexas. GJK é um método iterativo, mas converge muito rápido. É uma alternativa melhor para o SAT para ambientes 3D devido ao número de eixos que o SAT deve testar.
+O algoritmo de \citeonline{gjk} calcula a distância mínima entre dois conjuntos convexos utilizando apenas uma \textit{função de suporte} capaz de retornar o ponto mais distante de um conjunto em uma direção arbitrária. Esse algoritmo é particularmente eficiente em 3D e é amplamente adotado em motores físicos por sua robustez e excelente desempenho.
 
 \subsection{Soma de Minkowski}
 
-O algoritmo GJK depende muito de um conceito chamado soma de Minkowski de dois objetos convexos A e B é definida por:
+O algoritmo GJK depende muito de um conceito chamado soma de Minkowski de dois objetos convexos A e B que é definida por:
 
 \begin{equation}
 	A + B = \{\vec{x} + \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
@@ -126,11 +115,11 @@ Uma propriedade muito útil da soma de Minkowski é o fato de que a soma de dois
 	A - B = \{\vec{x} - \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
 \end{equation}
 
+A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
+
 Essa operação continua sendo a soma de Minkowski (a soma da diferença). Mas neste trabalho usaremos esse termo para referir a essa operação quando necessário.
 
 Executar essa operação exige $|A| * |B| * 2$ subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos. Uma vez que ambas as formas são convexas e definidas por vértices mais externos só precisamos realizar esta operação nos vértices. A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices.
-
-A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
 
 \begin{teorema}
 	Os conjuntos $A$ e $B$ colidem se, e somente se, o ponto de origem $(0, 0)$ estiver contido em $A \ominus B$.
@@ -152,16 +141,23 @@ O GJK constrói iterativamente um \textit{simplex} (ponto, segmento, triângulo 
 
 %Mesmo seguindo todos esses critérios ainda podemos não obter um Simplex que contém a origem nessas três etapas. Devemos criar iterativamente o Simplex de tal forma que o Simplex esteja se aproximando de conter a origem. Também precisamos verificar duas condições ao longo do caminho: 1) o simplex atual contém a origem? e 2) somos capazes de incluir a origem?
 
+
 \begin{algorithm}[H]
 	\caption{GJK}
-	\KwIn{Polígonos convexos A e B}
-	\KwOut{Veradadeiro se ocorreu colisão}
+	\LinesNumbered
+	\KwIn{Polígonos convexos $A$ e $B$}
+	\KwOut{Verdadeiro se ocorreu colisão}
 	
-	Escolhe-se uma direção $\vec{d}$; \\
-	Obtém-se um novo ponto $p = \text{support}(A \ominus B, \vec{d})$ \\
-	Se o novo ponto não avança em direção à origem ($p \cdot \vec{d} < 0$), não há colisão \\
-	Caso contrário, atualiza-se o simplex e redefine-se $\vec{d}$ em direção à origem. \\
+	Escolhe-se uma direção inicial $\vec{d}$; \\
+	$p \leftarrow \text{support}(A \ominus B, \vec{d})$ \\
+	\If{$p \cdot \vec{d} < 0$}{
+		\Return{False}
+	}
+	Atualiza-se o simplex com $p$ e calcula-se nova direção $\vec{d}$; \\
+	Itera-se até que o simplex contenha a origem ou seja possível concluir ausência de interseção.
 \end{algorithm}
+
+O GJK é eficiente e converge rapidamente na prática, sendo mais apropriado que o SAT em cenários tridimensionais e em motores físicos de uso geral.
 
 %\begin{algorithm}[H]
 %	\caption{GJK}
