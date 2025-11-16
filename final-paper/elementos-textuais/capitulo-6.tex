@@ -11,13 +11,49 @@ A resposta a colisões consiste, essencialmente, em duas operações principais:
 	\item \textbf{Correção de Velocidade}: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
 \end{enumerate}
 
-Embora os motores tradicionais realizem ambas as etapas, muitos sistemas baseados em PBD focam totalmente na correção de posições, derivando velocidades implicitamente a partir da diferença entre posições sucessivas.
+Embora os motores tradicionais realizem ambas as etapas, muitos sistemas baseados em PBD (\textit{Position-Based Dynamics}) focam totalmente na correção de posições, derivando velocidades implicitamente a partir da diferença entre posições sucessivas.
 
-\section{Projeção da posição pelo método Jakobsen}
+\section{Métodos Dinâmicos na Simulação Física}
+
+A literatura apresenta diversas abordagens para modelar o movimento de corpos rígidos e deformáveis. Embora este trabalho se baseie no método simplificado de Jakobsen, é importante contextualizar outras categorias amplamente utilizadas em motores físicos modernos: métodos \textit{impulse-based}, métodos \textit{penalty-based} e métodos \textit{constraint-based} via multiplicadores de Lagrange.
+
+\subsection{Método do Impulso}
+
+Os métodos \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é amplamente descrita em \citeonline{baraff1997rigid} e utilizada em motores como Havok e Bullet. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
+
+\subsection{Método de Penalidades}
+
+Nos métodos \textit{Metodo de Penalidades}, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração. Essas forças geralmente seguem modelos de mola e amortecimento, como apresentado por \citeonline{wyvill1986soft}. Trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
+
+\subsection{Método Constraint-Based com Multiplicadores de Lagrange}
+
+Os métodos baseados em restrições formulam os contatos como equações que devem ser satisfeitas exatamente. São resolvidos usando multiplicadores de Lagrange, como descrito em \citeonline{baraff1998large} e \citeonline{muller2007position}. Essa abordagem é robusta e adequada para sistemas complexos, mas exige a solução de sistemas lineares, tornando sua aplicação onerosa em plataformas Web.
+
+\section{Processo de Separação}
+
+A metodologia proposta por \citeonline{jakobsen2001advanced}, embora descrita em termos de integração Verlet e relaxamento de restrições geométricas, pode ser fundamentalmente entendida como uma precursora direta das modernas abordagens de \textit{Position-Based Dynamics} (PBD), popularizadas por \citeonline{muller2007109}. Esta conexão é crucial para contextualizar a relevância do método simplificado no panorama atual das simulações interativas.
+
+A principal característica que une as duas abordagens é a ênfase na manipulação direta das posições das partículas para satisfazer restrições, contornando a complexidade da formulação tradicional baseada em forças ou impulsos.
 
 A resposta à colisão envolve dois passos principais. O primeiro consiste em separar os elementos geométricos (vértices, arestas ou faces) que se encontram em interpenetração, o que caracteriza um processo estritamente geométrico. O segundo passo corresponde a um processo iterativo de relaxamento, no qual os elementos afetados ajustam suas posições de acordo com as restrições impostas pelo sistema físico.
 
-Para dois objetos convexos $A$ e $B$ em colisão, o processo de separação requer três parâmetros principais: os pontos de contato $p_A$ de $A$, os pontos de contato $p_B$ de $B$ e o ponto de projeção $q$, assumido pela simulação como o ponto em que ambos os objetos estão em contato. O ponto de projeção coincide com o plano de separação $H(\vec{v}, \delta)$ definido na geometria local, de forma que, como regra geral, basta mover os pontos de $A$ ou $B$ na direção desse plano para remover a interpenetração.
+Para dois objetos convexos $A$ e $B$ em colisão, o esquema de detecção de colisão deve retornar os pontos de contato de cada objeto e o tamanho da penetração. Com essas informações devemos tratar duas configurações possíveis: ponto de contato pertence a um vértice ou pertence a uma aresta.
+
+\textbf{INSERIR DIAGRAMA MOSTRANDO OS DOIS CASOS}
+
+No primeiro caso basta mover o vértice fora da região inválida. Já para o segundo caso o ponto de contato $p$ cai entre dois vértices $x_1$ e $x_2$ e nosso objetivo é corrigir as suas posições para configuração válida $x_1^*$ $x_2^*$, logo pela equação da reta ele pode ser descrito como uma combinação linear
+
+\begin{equation}
+	p = \alpha x_1 + (alpha-1) x_2
+\end{equation}
+
+Dessa forma Jakobsen computa as novas posições como
+
+\begin{align}
+	
+\end{align}
+
+%Para dois objetos convexos $A$ e $B$ em colisão, o processo de separação requer três parâmetros principais: os pontos de contato $p_A$ de $A$, os pontos de contato $p_B$ de $B$ e o ponto de projeção $q$, assumido pela simulação como o ponto em que ambos os objetos estão em contato. O ponto de projeção coincide com o plano de separação $H(\vec{v}, \delta)$ definido na geometria local, de forma que, como regra geral, basta mover os pontos de $A$ ou $B$ na direção desse plano para remover a interpenetração.
 
 \section{Algoritmo de Expansão de Politopos (EPA)}
 
@@ -55,7 +91,7 @@ Embora métodos de animação física simplificada sejam eficazes para aplicaç�
 
 \subsection{Jitter e Distribuição de Correções}
 
-Em sistemas baseados em posições — incluindo métodos inspirados em Jakobsen e frameworks modernos como PBD (\textit{Position-Based Dynamics}) — a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
+Em sistemas baseados em posições — incluindo métodos inspirados em Jakobsen e frameworks modernos como PBD — a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
 
 Outro aspecto crítico é o \textbf{tuning da distribuição de correções}: decidir como cada restrição contribui para o deslocamento final dos pontos ou corpos envolvidos. Distribuições mal balanceadas podem causar:
 
