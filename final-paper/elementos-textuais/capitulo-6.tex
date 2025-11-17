@@ -19,21 +19,21 @@ A literatura apresenta diversas abordagens para modelar o movimento de corpos r�
 
 \subsection{Método do Impulso}
 
-Os métodos \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é amplamente descrita em \citeonline{baraff1997rigid} e utilizada em motores como Havok e Bullet. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
+Os métodos \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok e Bullet. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
 
 \subsection{Método de Penalidades}
 
-Nos métodos \textit{Metodo de Penalidades}, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração. Essas forças geralmente seguem modelos de mola e amortecimento, como apresentado por \citeonline{wyvill1986soft}. Trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
+Nos métodos \textit{Metodo de Penalidades}, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração alterando diretamente a acelaração. Essas forças geralmente seguem modelos de mola e amortecimento, trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
 
 \subsection{Método Constraint-Based com Multiplicadores de Lagrange}
 
-Os métodos baseados em restrições formulam os contatos como equações que devem ser satisfeitas exatamente. São resolvidos usando multiplicadores de Lagrange, como descrito em \citeonline{baraff1998large} e \citeonline{muller2007position}. Essa abordagem é robusta e adequada para sistemas complexos, mas exige a solução de sistemas lineares, tornando sua aplicação onerosa em plataformas Web.
+Os métodos baseados em restrições formulam os contatos como equações que devem ser satisfeitas exatamente. São resolvidos usando multiplicadores de Lagrange, essa abordagem é robusta e adequada para sistemas complexos, mas exige a solução de sistemas lineares, tornando sua aplicação onerosa em plataformas Web.
 
 \section{Processo de Separação}
 
-A metodologia proposta por \citeonline{jakobsen2001advanced}, embora descrita em termos de integração Verlet e relaxamento de restrições geométricas, pode ser fundamentalmente entendida como uma precursora direta das modernas abordagens de \textit{Position-Based Dynamics} (PBD), popularizadas por \citeonline{muller2007109}. Esta conexão é crucial para contextualizar a relevância do método simplificado no panorama atual das simulações interativas.
+A metodologia proposta por \citeonline{jakobsen2001advanced}, embora descrita em termos de integração Verlet e relaxamento de restrições geométricas, pode ser fundamentalmente entendida como uma precursora direta das modernas abordagens de \textit{Position-Based Dynamics} (PBD), popularizadas por \citeonline{muller2007position}. 
 
-A principal característica que une as duas abordagens é a ênfase na manipulação direta das posições das partículas para satisfazer restrições, contornando a complexidade da formulação tradicional baseada em forças ou impulsos.
+Diferentemente de abordagens que atuam diretamente nas velocidades ou utilizam impulsos, Jakobsen trata colisões como restrições geométricas adicionais que devem ser satisfeitas durante o processo iterativo de relaxação da simulação. Assim, objetos penetrando um ao outro são corrigidos exclusivamente por modificações de posição, de forma estável e sem oscilações numéricas.
 
 A resposta à colisão envolve dois passos principais. O primeiro consiste em separar os elementos geométricos (vértices, arestas ou faces) que se encontram em interpenetração, o que caracteriza um processo estritamente geométrico. O segundo passo corresponde a um processo iterativo de relaxamento, no qual os elementos afetados ajustam suas posições de acordo com as restrições impostas pelo sistema físico.
 
@@ -41,19 +41,43 @@ Para dois objetos convexos $A$ e $B$ em colisão, o esquema de detecção de col
 
 \textbf{INSERIR DIAGRAMA MOSTRANDO OS DOIS CASOS}
 
-No primeiro caso basta mover o vértice fora da região inválida. Já para o segundo caso o ponto de contato $p$ cai entre dois vértices $x_1$ e $x_2$ e nosso objetivo é corrigir as suas posições para configuração válida $x_1^*$ $x_2^*$, logo pela equação da reta ele pode ser descrito como uma combinação linear
+Após a etapa de detecção de colisão, seja $\vec{d}$ o \textit{Minimum Translation Vector} (MTV), um vetor que representa a menor correção necessária para eliminar a interpenetração entre os objetos. O MTV é orientado do corpo $A$ em direção ao corpo $B$.
+
+A separação não é aplicada a um ponto rígido, mas distribuída entre as partículas que definem os corpos. Denotando por $\vec{p}$ e $\vec{q}$ os pontos de contato estimados em $A$ e $B$, respectivamente, a correção por projeção é dividida igualmente entre os dois corpos:
 
 \begin{equation}
-	p = \alpha x_1 + (alpha-1) x_2
+	\Delta \vec{p} = -\frac{1}{2}\vec{d}, \qquad
+	\Delta \vec{q} = +\frac{1}{2}\vec{d}.
 \end{equation}
 
-Dessa forma Jakobsen computa as novas posições como
+Caso o ponto de contato seja um vértice único, basta mover os vértice para fora da região inválida. Caso seja uma colisão tipo aresta-vértice o ponto de contato $p$ cai entre dois vértices $x_1$ e $x_2$ e o nosso objetivo é corrigir as suas posições para uma configuração válida $x_1^*$ $x_2^*$, logo pela equação da reta $p$ pode ser descrito como uma interpolação linear
+
+\begin{equation}
+	p = \alpha x_1 + (\alpha-1) x_2, \qquad 0 \leq \alpha \leq 1.
+	\label{eq:parametric_edge}
+\end{equation}
+
+Durante a separação, a correção $\Delta \vec{p}$ deve alterar indiretamente $\vec{x}_1$ e $\vec{x}_2$ de forma proporcional a essa parametrização. A partir da Eq.~\ref{eq:parametric_edge}, derivamos o valor de $\alpha$ projetando o vetor $\vec{p} - \vec{x}_2$ sobre o vetor da aresta $\vec{x}_1 - \vec{x}_2$:
+
+Dessa forma Jakobsen computa as novas posições movendo as partículas proporcionalmente a $\alpha$
 
 \begin{align}
-	
+	x_1 += \alpha \Delta_p \\
+	x_2 += (1-\alpha) \Delta_p
 \end{align}
 
-%Para dois objetos convexos $A$ e $B$ em colisão, o processo de separação requer três parâmetros principais: os pontos de contato $p_A$ de $A$, os pontos de contato $p_B$ de $B$ e o ponto de projeção $q$, assumido pela simulação como o ponto em que ambos os objetos estão em contato. O ponto de projeção coincide com o plano de separação $H(\vec{v}, \delta)$ definido na geometria local, de forma que, como regra geral, basta mover os pontos de $A$ ou $B$ na direção desse plano para remover a interpenetração.
+\begin{equation}
+	\alpha
+	= 
+	\frac{
+		(\vec{p} - \vec{x}_2) \cdot (\vec{x}_1 - \vec{x}_2)
+	}{
+		\|\vec{x}_1 - \vec{x}_2\|^2
+	}.
+	\label{eq:alpha_projection}
+\end{equation}
+
+Isso garante que a geometria original é preservada e que o ponto $\vec{p}$, definido implicitamente pelos vértices da aresta, é deslocado exatamente pela quantidade desejada.
 
 \section{Algoritmo de Expansão de Politopos (EPA)}
 
@@ -84,41 +108,24 @@ O algoritmo expande o Simplex adicionando vértices a ele até encontrarmos a no
 
 É importante limitar o número de iterações para evitar que a rotina entre em loop infinito em casos degenerados, como esse algoritmo converge rapidamente uma constante igual a 30 é um bom limite superior. Matematicamente a distância deve ser igual a zero, mas por conta da artimética de ponto flutuante, uma tolerância pequena deve ser aceita, como $10^{-3}$.
 
-\section{Desafios e Limitações das Abordagens de Animação Física Simplificada}
+\section{Desafios}
 \label{sec:limitacoes}
 
-Embora métodos de animação física simplificada sejam eficazes para aplicações interativas na Web, eles apresentam limitações e desafios inerentes às aproximações empregadas. Como discutido anteriormente, o objetivo principal dessas técnicas não é fidelidade física absoluta, mas sim a geração de comportamentos verossímeis, estáveis e visualmente plausíveis. No entanto, essa busca por simplicidade e desempenho resulta em compromissos importantes.
+Como discutido anteriormente, o objetivo principal dessas técnicas não é fidelidade física absoluta, mas sim a geração de comportamentos verossímeis, estáveis e visualmente plausíveis. No entanto, essa busca por simplicidade e desempenho resulta em compromissos importantes.
 
-\subsection{Jitter e Distribuição de Correções}
+\subsection{Jittering}
 
-Em sistemas baseados em posições — incluindo métodos inspirados em Jakobsen e frameworks modernos como PBD — a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
+Em sistemas baseados em posições a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
 
-Outro aspecto crítico é o \textbf{tuning da distribuição de correções}: decidir como cada restrição contribui para o deslocamento final dos pontos ou corpos envolvidos. Distribuições mal balanceadas podem causar:
+\subsection{Empilhamento}
 
-\begin{itemize}
-	\item instabilidade numérica,
-	\item objetos que ``vazam'' através de outros,
-	\item corpos que recebem correções excessivas e oscilam,
-	\item propagação exagerada de energia através da cadeia de restrições.
-\end{itemize}
+Métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a ``escorregar'' ou colapsar devido à falta de amortecimento numérico adequado.
 
-A calibração ideal dessa distribuição varia com o tipo de geometria, número de restrições, massa relativa dos objetos e o passo temporal da simulação. Isso torna o ajuste fino (\textit{tuning}) uma tarefa empírica e frequentemente dependente de tentativa e erro.
+\subsection{Tunneling}
 
-\subsection{Falhas Comuns: Empilhamento, Tunneling e Jittering}
+Ocorre quando objetos em alta velocidade atravessam outros sem detectar colisão. Métodos baseados exclusivamente em detecção discreta apresentam maior risco, especialmente quando o passo temporal é grande ou a geometria é fina.
 
-Sistemas simplificados frequentemente apresentam falhas clássicas observadas em simulações físicas:
-
-\begin{itemize}
-	\item \textbf{Empilhamento instável}: métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a ``escorregar'' ou colapsar devido à falta de amortecimento numérico adequado.
-	
-	\item \textbf{Tunneling}: ocorre quando objetos em alta velocidade atravessam outros sem detectar colisão. Métodos baseados exclusivamente em detecção discreta apresentam maior risco, especialmente quando o passo temporal é grande ou a geometria é fina.
-	
-	\item \textbf{Jittering}: pequenos movimentos involuntários causados por correções excessivas, flutuações numéricas ou conflito entre múltiplas restrições. Este problema é particularmente visível em objetos apoiados no chão, que parecem tremer continuamente.
-\end{itemize}
-
-Apesar de existirem soluções como CCD (\textit{Continuous Collision Detection}) ou múltiplas iterações de estabilidade, tais técnicas aumentam o custo computacional e podem não se alinhar ao objetivo da animação simplificada.
-
-\subsection{Limitações da Abordagem Simplificada}
+\section{Limitações}
 
 Ao adotar métodos simplificados, abre-se mão de características essenciais de motores físicos completos. Entre as limitações mais relevantes estão:
 
