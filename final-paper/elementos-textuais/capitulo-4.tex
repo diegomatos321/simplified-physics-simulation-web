@@ -28,7 +28,7 @@ O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter c�
 
 Um \textit{plano de separação} (PS), definido por um vetor normal $v$ e um escalar $\delta$, é um hiperplano que separa $A$ e $B$. Em termos computacionais, o SAT testa um conjunto finito de eixos candidatos — tipicamente as normais às arestas dos polígonos — verificando se existe algum eixo que sirva como separador.
 
-\subsection{Projeção sobre um eixo}
+\subsection*{Projeção sobre um eixo}
 
 Dado um eixo unitário $\hat{n}$ e um conjunto de vértices $\{ v_i \}$, a projeção escalar do polígono sobre $\hat{n}$ é dada pelos extremos:
 \begin{align}
@@ -44,7 +44,7 @@ De forma análoga, para o segundo polígono $B$:
 
 Se os intervalos $[\text{min}_A, \text{max}_A]$ e $[\text{min}_B, \text{max}_B]$ não se sobrepõem em algum eixo $\hat{n}$, então os polígonos não colidem.
 
-\subsection{Teste de interseção booleana}
+\subsection*{Teste de interseção booleana}
 
 O pseudocódigo abaixo resume o teste booleano de interseção via SAT:
 
@@ -66,15 +66,15 @@ O pseudocódigo abaixo resume o teste booleano de interseção via SAT:
 
 O método possui complexidade linear no número de arestas e é bastante eficiente para polígonos convexos em 2D. Em 3D, entretanto, o número de eixos candidatos cresce significativamente, reduzindo sua praticidade em relação a alternativas como o GJK.
 
-\subsection{Vetor de Translação Mínima (MTV)}
+\subsection*{Vetor de Translação Mínima (MTV)}
 
-Para aplicações que exigem resposta física, é necessário calcular não apenas a detecção de colisão, mas também o deslocamento mínimo para separar os objetos. O MTV é obtido identificando-se o eixo cuja sobreposição projetada é mínima.
+Para aplicações que exigem resposta física também é necessário computar o deslocamento mínimo para separação dos objetos. Seja $\vec{d}$ o \textit{Minimum Translation Vector} (MTV), um vetor que representa a menor correção necessária para eliminar a interpenetração entre os objetos orientado do corpo $A$ em direção ao corpo $B$.
 
 \begin{algorithm}
 	\caption{SAT com cálculo do MTV}
 	\KwIn{Polígonos convexos $A$ e $B$}
-	\KwOut{Direção $v$ e penetração $\delta$, ou falso}
-	$v \leftarrow 0$ \\
+	\KwOut{$\vec{d}$ e $\delta$, ou falso}
+	$\vec{d} \leftarrow 0$ \\
 	$\delta \leftarrow \infty$ \\
 	\ForEach{aresta $e$ de A e B}{
 		$\hat{n} \leftarrow$ normal unitária de $e$ \\
@@ -86,10 +86,10 @@ Para aplicações que exigem resposta física, é necessário calcular não apen
 		}
 		\If{$\Delta < \delta$}{
 			$\delta \leftarrow \Delta$ \\
-			$v \leftarrow \hat{n}$
+			$\vec{d} \leftarrow \hat{n}$
 		}
 	}
-	\Return{$v$, $\delta$}
+	\Return{$\vec{d}$, $\delta$}
 	\label{al:sat_2}
 \end{algorithm}
 
@@ -97,7 +97,7 @@ Para aplicações que exigem resposta física, é necessário calcular não apen
 
 O algoritmo de \citeonline{gjk} calcula a distância mínima entre dois conjuntos convexos utilizando apenas uma \textit{função de suporte} capaz de retornar o ponto mais distante de um conjunto em uma direção arbitrária. Esse algoritmo é particularmente eficiente em 3D e é amplamente adotado em motores físicos por sua robustez e excelente desempenho.
 
-\subsection{Soma de Minkowski}
+\subsection*{Soma de Minkowski}
 
 O algoritmo GJK depende muito de um conceito chamado soma de Minkowski de dois objetos convexos A e B que é definida por:
 
@@ -115,29 +115,27 @@ Uma propriedade muito útil da soma de Minkowski é o fato de que a soma de dois
 	A - B = \{\vec{x} - \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
 \end{equation}
 
-A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar a colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
-
-Essa operação continua sendo a soma de Minkowski (a soma da diferença). Mas neste trabalho usaremos esse termo para referir a essa operação quando necessário.
-
-Executar essa operação exige $|A| * |B| * 2$ subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos. Uma vez que ambas as formas são convexas e definidas por vértices mais externos só precisamos realizar esta operação nos vértices. A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices.
+A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Essa operação continua sendo a soma de Minkowski (a soma da diferença) mas, neste trabalho, usaremos esse termo para referir a essa operação quando necessário. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar há colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
 
 \begin{teorema}
-	Os conjuntos $A$ e $B$ colidem se, e somente se, o ponto de origem $(0, 0)$ estiver contido em $A \ominus B$.
+	Os conjuntos $A$ e $B$ colidem se, e somente se, o ponto de origem $(0, 0)$ estiver contido em $A - B$.
 \end{teorema}
+
+Executar essa operação exige $|A| * |B| * 2$ subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos.  A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices. Uma vez que ambas as formas são convexas e definidas por vértices só precisamos realizar esta operação nos vértices mais externos.
 
 Dessa forma, não queremos calcular a diferença de Minkowski. Em vez disso, queremos apenas saber se a Diferença de Minkowski contém ou não a origem. Se isso acontecer, então sabemos que as formas estão se cruzando, se não o faz, então elas não são.
 
 Isso é feito construindo iterativamente um polígono dentro da diferença de Minkowski que tenta incluir a origem. Se o polígono que construímos contém a origem, então podemos dizer que a Diferença de Minkowski contém a origem, e também que há interseção entre os dois objetos. Este polígono que queremos construir deve ser da forma mais elementar possível, no caso de 2D um triângulo, no caso de 3D um poliedro, por isso é chamado de Simplex.
 
-\subsection{Função de Suporte}
+\subsection*{Função de Suporte}
 
 O algoritmo GJK começa com um simplex inicial e o refina iterativamente adicionando pontos encontrados usando a função de suporte em uma direção que aponta para a origem. Esse processo continua até que a origem seja encontrada dentro do simplex, indicando uma colisão, ou até que se determine que a origem não está contida, o que significa que não há colisão.
 
-A função de suporte deve retornar o ponto mais distante em uma direção dentro da Diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da Diferença Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a Diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
+A função de suporte deve retornar o ponto mais distante em uma direção dentro da Diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da diferença de Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
 
-\subsection{Construção iterativa do simplex}
+\subsection*{Construção iterativa do simplex}
 
-O GJK constrói iterativamente um \textit{simplex} (ponto, segmento, triângulo ou tetraedro, dependendo da dimensão) que aproxima a origem dentro de $A \ominus B$.  
+O GJK constrói iterativamente um \textit{simplex} (ponto, segmento, triângulo ou tetraedro, dependendo da dimensão) que aproxima a origem dentro de $A - B$.  
 
 %Mesmo seguindo todos esses critérios ainda podemos não obter um Simplex que contém a origem nessas três etapas. Devemos criar iterativamente o Simplex de tal forma que o Simplex esteja se aproximando de conter a origem. Também precisamos verificar duas condições ao longo do caminho: 1) o simplex atual contém a origem? e 2) somos capazes de incluir a origem?
 
@@ -149,7 +147,7 @@ O GJK constrói iterativamente um \textit{simplex} (ponto, segmento, triângulo 
 	\KwOut{Verdadeiro se ocorreu colisão}
 	
 	Escolhe-se uma direção inicial $\vec{d}$; \\
-	$p \leftarrow \text{support}(A \ominus B, \vec{d})$ \\
+	$p \leftarrow \text{support}(A - B,\ \vec{d})$ \\
 	\If{$p \cdot \vec{d} < 0$}{
 		\Return{False}
 	}

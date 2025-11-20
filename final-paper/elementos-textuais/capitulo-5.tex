@@ -1,90 +1,132 @@
-\chapter{O Fecho Convexo}
+\chapter{Resposta a colisão}
 
-O \textit{Fecho Convexo} (FC) de um conjunto é definido como a menor região convexa que contém todos os seus pontos, sendo frequentemente utilizado como um volume delimitador. Determinar o fecho convexo é um problema recorrente em computação geométrica, especialmente quando se deseja organizar pontos em estruturas mais simples ou acelerar operações posteriores, como testes de colisão.
+A resposta a colisões é uma etapa fundamental em qualquer sistema de simulação física interativa. Após detectar que dois corpos estão em interpenetração, torna-se necessário aplicar um conjunto de correções que restaurem a plausibilidade física do movimento, evitando instabilidades numéricas. Neste capítulo discutimos os princípios clássicos, as formulações modernas e a relação direta entre métodos geométricos empregados na fase de detecção — como o vetor de translação mínima (MTV) — e métodos baseados em partículas e restrições, como o modelo proposto por \citeonline{jakobsen2001advanced}.
 
-Em sistemas de simulação física e detecção de colisões, a representação geométrica dos objetos influencia diretamente a eficiência dos cálculos. Formas complexas, com muitos vértices ou superfícies não convexas, tornam tais testes significativamente mais custosos. Uma solução comum é empregar aproximações convexas ou volumes delimitadores que possibilitam testes rápidos sem sacrificar excessivamente a precisão da simulação.
+\section{Fundamentos da Resposta a Colisão}
 
-A principal motivação para o uso de volumes delimitadores é que formas mais simples (como caixas ou esferas) permitem testes de sobreposição muito mais baratos do que a geometria original que envolvem. Dessa forma, o FC atua como um primeiro filtro: apenas quando o teste de interseção entre volumes delimitadores retorna positivo é que se procede para verificações mais detalhadas na geometria original. Em muitos casos, o próprio volume delimitador já é suficiente para caracterizar uma colisão.
+A resposta a colisões consiste, essencialmente, em duas operações principais:
 
-\textbf{INSERIR FIGURA DO FECHO CONVEXO DE OBJETOS EM INTERSECÇÃO E SEM INTERSECÇÃO}
+\begin{enumerate}
+	\item \textbf{Correção de Posição}: eliminar a interpenetração entre dois corpos.
+	\item \textbf{Correção de Velocidade}: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
+\end{enumerate}
 
-Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como volumes delimitadores eficazes. As propriedades desejáveis para volumes delimitadores incluem:
+Embora os motores tradicionais realizem ambas as etapas muitos sistemas focam totalmente na correção de posições, derivando velocidades implicitamente a partir da diferença entre posições sucessivas.
+
+\section{Métodos Dinâmicos na Simulação Física}
+
+A literatura apresenta diversas abordagens para modelar o movimento de corpos rígidos e deformáveis. Embora este trabalho se baseie no método simplificado de Jakobsen, é importante contextualizar outras categorias amplamente utilizadas em motores físicos modernos:
+
+\subsection*{Método do Impulso}
+
+Os \textit{Métodos do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok e Bullet. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
+
+\subsection*{Método de Penalidades}
+
+Nos \textit{Métodos de Penalidades}, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração alterando diretamente a aceleração. Essas forças geralmente seguem modelos de mola e amortecimento, trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
+
+\subsection*{Método Constraint-Based com Multiplicadores de Lagrange}
+
+Os métodos baseados em restrições formulam os contatos como equações que devem ser satisfeitas exatamente. São resolvidos usando multiplicadores de Lagrange, essa abordagem é robusta e adequada para sistemas complexos, mas exige a solução de sistemas lineares, tornando sua aplicação onerosa em plataformas Web.
+
+\section{Processo de Separação}
+
+A metodologia proposta por \citeonline{jakobsen2001advanced}, embora descrita em termos de integração Verlet e relaxamento de restrições geométricas, pode ser fundamentalmente entendida como uma precursora direta das modernas abordagens de \textit{Position-Based Dynamics} (PBD), popularizadas por \citeonline{muller2007position}. 
+
+Diferentemente de abordagens que atuam diretamente nas velocidades ou utilizam impulsos, Jakobsen trata colisões como restrições geométricas adicionais que devem ser satisfeitas durante o processo iterativo de relaxação da simulação. Assim, objetos penetrando um ao outro são corrigidos exclusivamente por modificações de posição, de forma estável e sem oscilações numéricas.
+
+A resposta à colisão envolve dois passos principais. O primeiro consiste em separar os elementos geométricos (vértices, arestas ou faces) que se encontram em interpenetração, o que caracteriza um processo estritamente geométrico. O segundo passo corresponde a um processo iterativo de relaxamento, no qual os elementos afetados ajustam suas posições de acordo com as restrições impostas pelo sistema físico.
+
+Para dois objetos convexos $A$ e $B$ em colisão, o esquema de detecção de colisão deve retornar os pontos de contato de cada objeto e o tamanho da penetração. Com essas informações devemos tratar duas configurações possíveis: ponto de contato pertence a um vértice ou pertence a uma aresta.
+
+\textbf{INSERIR DIAGRAMA MOSTRANDO OS DOIS CASOS}
+
+A separação não é aplicada a um ponto rígido, mas distribuída entre as partículas que definem os corpos. Denotando por $\vec{p}$ e $\vec{q}$ os pontos de contato estimados em $A$ e $B$, respectivamente, a correção por projeção é dividida igualmente entre os dois corpos:
+
+\begin{equation}
+	\Delta \vec{p} = -\frac{1}{2}\vec{d}, \qquad
+	\Delta \vec{q} = +\frac{1}{2}\vec{d}.
+\end{equation}
+
+Caso o ponto de contato seja um vértice único, basta mover os vértice para fora da região inválida. Caso seja uma colisão tipo aresta-vértice o ponto de contato $p$ cai entre dois vértices $x_1$ e $x_2$ e o nosso objetivo é corrigir as suas posições para uma configuração válida $x_1^*$, $x_2^*$, logo pela equação da reta $p$ pode ser descrito como uma interpolação linear
+
+\begin{equation}
+	p = \alpha x_1 + (\alpha-1) x_2, \qquad 0 \leq \alpha \leq 1.
+	\label{eq:parametric_edge}
+\end{equation}
+
+Durante a separação, a correção $\Delta \vec{p}$ deve alterar indiretamente $\vec{x}_1$ e $\vec{x}_2$ de forma proporcional a essa parametrização. A partir da Eq.~\ref{eq:parametric_edge}, derivamos o valor de $\alpha$ projetando o vetor $\vec{p} - \vec{x}_2$ sobre o vetor da aresta $\vec{x}_1 - \vec{x}_2$:
+
+Dessa forma Jakobsen computa as novas posições movendo as partículas proporcionalmente a $\alpha$
+
+\begin{align}
+	x_1 += \alpha \Delta_p \\
+	x_2 += (1-\alpha) \Delta_p \\
+	\alpha
+	= 
+	\frac{
+		(\vec{p} - \vec{x}_2) \cdot (\vec{x}_1 - \vec{x}_2)
+	}{
+		\|\vec{x}_1 - \vec{x}_2\|^2
+	}.
+	\label{eq:alpha_projection}
+\end{align}
+
+Isso garante que a geometria original é preservada e que o ponto $\vec{p}$, definido implicitamente pelos vértices da aresta, é deslocado exatamente pela quantidade desejada.
+
+\section{Algoritmo de Expansão de Politopos (EPA)}
+
+Para realizar a separação de dois objetos usando o algoritmo SAT basta calcularmos o MTV como visto na seção \ref{sec:sat}. Já para o GJK é preciso fazer um segundo passo, uma extensão do algoritmo que nos permite encontrar a normal correta e profundidade das colisões.
+
+O Algoritmo de Expansão de Politopos (do inglês Expanding Polytope Algorithm, EPA) cria um polítopo (ou polígono) dentro da Diferença de Minkowski e iterativamente expandi-lo até atingirmos a borda da Diferença de Minkowski. EPA executa essa tarefa utilizando a mesma função de suporte utilizada nos demais algoritmos e a mesma noção de um simplex.
+
+Este algoritmo é uma extensão porque sua entrada é o Simplex final do GJK que contém a origem e encontra o MTV. A distância entre o ponto mais próximo com a origem é a profundidade de penetração ($\delta$). Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar o normal da face mais próxima da origem, porém um simplex não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
+
+O algoritmo expande o Simplex adicionando vértices a ele até encontrarmos a normal mais próxima de uma face que está no polígono original.
+
+\begin{algorithm}[H]
+	\caption{EPA}
+	\KwIn{Simplex}
+	\KwOut{separation $v$, penetration $\delta$}
+	
+	\For{$i \leftarrow 0$ \KwTo $i < MAX\_ITERATION$}{
+		e $\leftarrow$ Encontrar aresta mais próxima a origem \\
+		p $\leftarrow$ Calcular novo ponto de suporte na direção da normal de e \\
+		$\delta \leftarrow p \cdot normal(e)$ \\
+		\If{$|\delta - length(e)| < TOLERANCE$}{
+			\KwRet{normal(e), $\delta$}
+		}
+		
+		Adicionar ponto ao simplex
+	}
+\end{algorithm}
+
+É importante limitar o número de iterações para evitar que a rotina entre em loop infinito em casos degenerados, como esse algoritmo converge rapidamente uma constante igual a 30 é um bom limite superior. Matematicamente a distância deve ser igual a zero, mas por conta da artimética de ponto flutuante, uma tolerância pequena deve ser aceita, como $10^{-3}$.
+
+\section{Limitações}
+\label{sec:limitacoes}
+
+Ao adotar métodos simplificados, abre-se mão de características essenciais de motores físicos completos. Entre as limitações mais relevantes estão:
 
 \begin{itemize}
-	\item Testes de interseção de baixo custo
-	\item Ajuste preciso
-	\item Cálculo econômico
-	\item Fácil de girar e transformar
-	\item Consome pouca memória
+	\item \textbf{Ausência de conservação precisa de energia e momento}, o que reduz o realismo de certas interações.
+	\item \textbf{Incapacidade de simular materiais complexos} (ex.: fricção anisotrópica, torques realistas, elasticidade avançada).
+	\item \textbf{Dependência de parâmetros empíricos}, sem interpretação física clara.
+	\item \textbf{Menor robustez para geometrias arbitrárias}, especialmente polígonos concavos ou mal escalonados.
+	\item \textbf{Dificuldade de lidar com sistemas altamente conectados} (estruturas rígidas, máquinas, esqueletos).
 \end{itemize}
 
-\textbf{INSERIR IMAGENS COM TIPOS DIFERENTES FORMAS DE FECHO CONVEXO}
+Essas limitações não invalidam o uso das técnicas, mas reforçam a necessidade do uso da aplicação a cenários onde a prioridade é a responsividade, e não a precisão física.
 
-\section{Caixa Delimitadora Alinhada ao Eixo Coordenado (AABB)}
+\subsection*{Jittering}
 
-A caixa delimitadora mínima para um conjunto de pontos em $N$ dimensões é aquela que possui o menor volume possível e ainda assim contém todos os pontos. Notavelmente, a AABB mínima para um conjunto é a mesma que a AABB mínima de seu fecho convexo, fato útil em heurísticas para computação eficiente.
+Em sistemas baseados em posições a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
 
-A caixa delimitadora alinhada aos eixos (Axis-Aligned Bounding Box, AABB) é um dos volumes delimitadores mais utilizados. Trata-se de um paralelepípedo (ou retângulo, em 2D) cujas faces são paralelas aos eixos do sistema de coordenadas. Seu teste de interseção é extremamente simples:
+\subsection*{Empilhamento}
 
-\begin{algorithm}[H]
-	\caption{Teste de Interseção AABB}
-	\KwIn{A e B: volumes AABB}
-	\KwOut{Verdadeiro se houver colisão}
-	
-	\If{$A.x_{max} < B.x_{min}$ \textbf{ou} $A.x_{min} > B.x_{max}$}{
-		\Return{False}
-	}
-	\If{$A.y_{max} < B.y_{min}$ \textbf{ou} $A.y_{min} > B.y_{max}$}{
-		\Return{False}
-	}
-	\If{$A.z_{max} < B.z_{min}$ \textbf{ou} $A.z_{min} > B.z_{max}$}{
-		\Return{False}
-	}
-	\Return{True}
-\end{algorithm}
+Métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a "escorregar" ou colapsar devido à falta de amortecimento numérico adequado.
 
-AABBs são eficientes, porém perdem precisão quando o objeto sofre rotações, pois a caixa permanece alinhada aos eixos globais.
+\subsection*{Tunneling}
 
-\section{Caixa Orientada (OBB)}
-
-Uma Caixa Orientada (Oriented Bounding Box, OBB) é uma caixa retangular que pode estar arbitrariamente rotacionada em relação aos eixos do sistema de coordenadas. É definida por um ponto central $c$, por três vetores ortogonais $\hat{u}_i$ que compõem sua orientação e por semi-extensões $e_i$:
-
-\begin{equation}
-	OBB = \left\{ c + \sum_{i=1}^{3} \alpha_i \hat{u}_i \; \middle| \; -e_i \le \alpha_i \le e_i \right\}
-\end{equation}
-
-OBBs geralmente oferecem melhor ajuste, especialmente para objetos alongados ou rotacionados, reduzindo falsos positivos. Porém, o teste de interseção é mais caro que o das AABBs, o que torna seu uso preferível em cenas com número reduzido de objetos ou em simulações nas quais a precisão de ajuste é particularmente importante.
-
-\section{Esferas e Elipsoides}
-
-As \textbf{esferas} constituem o volume delimitador mais simples, definidas apenas por um centro $c$ e um raio $r$:
-
-\begin{equation}
-	\text{Sphere} = \{ x \in \mathbb{R}^3 \; | \; \|x - c\| \le r \}
-\end{equation}
-
-Testes de colisão entre esferas são extremamente rápidos, porém inadequados para objetos de proporções irregulares. Elipsoides oferecem melhor ajuste, mas aumentam o custo de teste. Por isso, essas formas são frequentemente utilizadas em fases preliminares da detecção, ou como nós intermediários em hierarquias de volumes delimitadores (BVH).
-
-\section{Quickhull}
-
-O \textit{Quickhull} é um algoritmo para o cálculo do fecho convexo de um conjunto finito de pontos em qualquer dimensão, adotando uma estratégia de divisão e conquista semelhante ao \textit{quicksort} \cite{barber1996quickhull}.
-
-O Quickhull parte de um conjunto de pontos $S$ e constrói o polígono (ou poliedro) convexo que os contém.  O processo para 2 dimensões pode ser descrito em linhas gerais da seguinte forma:
-
-\begin{algorithm}[H]
-	\caption{Quickhull 2D}
-	\LinesNumbered
-	\SetAlgoLined
-	\KwIn{Polígono Convexo}
-	\KwOut{Lista dos vértices do fecho convexo}
-	
-	Encontre os pontos de menor e maior coordenada em $x$; eles pertencem ao fecho convexo.\\
-	Use a linha formada pelos dois pontos para dividir o conjunto em dois subconjuntos de pontos, que serão processados de forma recursiva. \\
-	Para cada subconjunto, encontre o ponto mais distante da linha; ele forma um triângulo que exclui pontos interiores.\\
-	Repita recursivamente os dois passos anteriores nas duas linhas formadas pelos dois novos lados do triângulo. \\
-	O processo termina quando todos os subconjuntos estão vazios.
-	\label{al:quickhull_2d}
-\end{algorithm}
-
-O Quickhull apresenta complexidade média $O(n \log n)$ em 2D, podendo chegar a $O(n^2)$ em casos degenerados. Em 3D, adapta-se a construções poliedrais mais complexas, mantendo o mesmo princípio recursivo.
+Ocorre quando objetos em alta velocidade atravessam outros sem detectar colisão. Métodos baseados exclusivamente em detecção discreta apresentam maior risco, especialmente quando o passo temporal é grande ou a geometria é fina.
 

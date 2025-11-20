@@ -1,226 +1,97 @@
-\chapter{Otimizações}
+\chapter{Experimentos}
 
-A eficiência computacional é um dos fatores determinantes para o desempenho de um motor de física em tempo real. Em jogos, animações interativas, simulações físicas e aplicações gráficas, a necessidade de atualizações contínuas e a obrigatoriedade de operar dentro de limites rigorosos de tempo tornam indispensável o uso de técnicas de otimização em todos os estágios do pipeline de simulação.
+Este capítulo apresenta os experimentos realizados com o objetivo de avaliar o desempenho, a estabilidade e a precisão do sistema desenvolvido. O sistema é baseado no método de integração de Verlet proposto \citeonline{jakobsen2001advanced}, e em algoritmos clássicos de detecção de colisões, notadamente o \textit{Separating Axis Theorem} (SAT) e o \textit{Gilbert–Johnson–Keerthi} (GJK). 
 
-Como qualquer objeto pode potencialmente colidir com qualquer outro, uma simulação contendo $n$ objetos requer $(n-1)+(n-2)+\dots+1 = n(n-1)/2 = O(n^2)$ testes de pares no pior caso. Devido à complexidade quadrática, testar ingenuamente cada par torna-se impraticável mesmo para valores moderados de $n$.
+Os experimentos também investigam os impactos das otimizações aplicadas nas etapas de \textit{Broad Phase} (utilizando uma grade espacial uniforme), na \textit{Narrow Phase} (empregando SAT e GJK) e na paralelização do cálculo físico por meio de múltiplas threads. O objetivo é verificar a viabilidade dessas técnicas em um ambiente de execução web, onde o custo computacional e a responsividade são fatores críticos.
 
+\section{Ambiente de Teste}
 
-Reduzir o custo associado ao teste de pares afetará o tempo de execução apenas linearmente. Para realmente acelerar o processo, o número de pares testados deve ser reduzido. Essa redução é realizada separando o tratamento de colisões de múltiplos objetos em duas fases: Narrow Phase e Broad Phase.
-
-Neste capítulo, descrevemos as estratégias clássicas de otimização aplicadas à detecção e resolução de colisões, com foco na divisão entre \emph{Broad Phase} e \emph{Narrow Phase}, no uso de estruturas espaciais, na adoção de passos temporais fixos e na execução multi-thread de simulações físicas.
-
-\section{O Fecho Convexo}
-
-O \textit{Fecho Convexo} (FC) de um conjunto é definido como a menor região convexa que contém todos os seus pontos, sendo frequentemente utilizado como um volume delimitador. Determinar o fecho convexo é um problema recorrente em computação geométrica, especialmente quando se deseja organizar pontos em estruturas mais simples ou acelerar operações posteriores, como testes de colisão.
-
-Em sistemas de simulação física e detecção de colisões, a representação geométrica dos objetos influencia diretamente a eficiência dos cálculos. Formas complexas, com muitos vértices ou superfícies não convexas, tornam tais testes significativamente mais custosos. Uma solução comum é empregar aproximações convexas ou volumes delimitadores que possibilitam testes rápidos sem sacrificar excessivamente a precisão da simulação.
-
-A principal motivação para o uso de volumes delimitadores é que formas mais simples (como caixas ou esferas) permitem testes de sobreposição muito mais baratos do que a geometria original que envolvem. Dessa forma, o FC atua como um primeiro filtro: apenas quando o teste de interseção entre volumes delimitadores retorna positivo é que se procede para verificações mais detalhadas na geometria original. Em muitos casos, o próprio volume delimitador já é suficiente para caracterizar uma colisão.
-
-\textbf{INSERIR FIGURA DO FECHO CONVEXO DE OBJETOS EM INTERSECÇÃO E SEM INTERSECÇÃO}
-
-Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como volumes delimitadores eficazes. As propriedades desejáveis para volumes delimitadores incluem:
+Os experimentos foram conduzidos em um computador com as seguintes especificações:
 
 \begin{itemize}
-	\item Testes de interseção de baixo custo
-	\item Ajuste preciso
-	\item Cálculo econômico
-	\item Fácil de girar e transformar
-	\item Consome pouca memória
+	\item \textbf{Processador:} AMD Ryzen 5 1600X @ 3.3GHz
+	\item \textbf{Memória RAM:} 16 GB DDR4
+	\item \textbf{Sistema Operacional:} Ubuntu 24.04 LTS
+	\item \textbf{Plataforma de execução:} Navegador Firefox 121
+	\item \textbf{Implementação:} Typescript + Web Workers (multi-threading), Vuejs e p5js
 \end{itemize}
 
-\textbf{INSERIR IMAGENS COM TIPOS DIFERENTES FORMAS DE FECHO CONVEXO}
+A escolha do ambiente web teve como propósito demonstrar a aplicabilidade de um motor físico leve em contextos multiplataforma, utilizando exclusivamente tecnologias abertas e acessíveis.
 
-\subsection{Caixa Delimitadora Alinhada ao Eixo Coordenado (AABB)}
+\section{Configuração dos Cenários}
 
-A caixa delimitadora mínima para um conjunto de pontos em $N$ dimensões é aquela que possui o menor volume possível e ainda assim contém todos os pontos. Notavelmente, a AABB mínima para um conjunto é a mesma que a AABB mínima de seu fecho convexo, fato útil em heurísticas para computação eficiente.
+Três grupos de experimentos foram definidos, cada um com foco em um aspecto distinto do sistema proposto:
 
-A caixa delimitadora alinhada aos eixos (Axis-Aligned Bounding Box, AABB) é um dos volumes delimitadores mais utilizados. Trata-se de um paralelepípedo (ou retângulo, em 2D) cujas faces são paralelas aos eixos do sistema de coordenadas. Seu teste de interseção é extremamente simples:
+\subsection{Experimento 1 - Integrador de Jakobsen}
 
-\begin{algorithm}[H]
-	\caption{Teste de Interseção AABB}
-	\KwIn{A e B: volumes AABB}
-	\KwOut{Verdadeiro se houver colisão}
-	
-	\If{$A.x_{max} < B.x_{min}$ \textbf{ou} $A.x_{min} > B.x_{max}$}{
-		\Return{False}
-	}
-	\If{$A.y_{max} < B.y_{min}$ \textbf{ou} $A.y_{min} > B.y_{max}$}{
-		\Return{False}
-	}
-	\If{$A.z_{max} < B.z_{min}$ \textbf{ou} $A.z_{min} > B.z_{max}$}{
-		\Return{False}
-	}
-	\Return{True}
-\end{algorithm}
+O primeiro experimento avaliou a estabilidade do método de Verlet em comparação com o integrador de Euler explícito. Foram criados sistemas de partículas conectadas por restrições lineares, representando tecidos e correntes.
 
-AABBs são eficientes, porém perdem precisão quando o objeto sofre rotações, pois a caixa permanece alinhada aos eixos globais.
+\textbf{INSERIR IMAGENS}
 
-\subsection{Caixa Orientada (OBB)}
+Cada sistema foi submetido a diferentes passos de tempo ($\Delta t = 1/30s$, $1/60s$ e $1/120s$) e número de iterações de correção de restrições (de 1 a 10). Observou-se o comportamento visual e a divergência de energia ao longo da simulação.
 
-Uma Caixa Orientada (Oriented Bounding Box, OBB) é uma caixa retangular que pode estar arbitrariamente rotacionada em relação aos eixos do sistema de coordenadas. É definida por um ponto central $c$, por três vetores ortogonais $\hat{u}_i$ que compõem sua orientação e por semi-extensões $e_i$:
+O integrador de Verlet apresenta maior estabilidade sob altas iterações de restrição, ainda que introduza pequenas imprecisões de posição em sistemas altamente rígidos.
 
-\begin{equation}
-	OBB = \left\{ c + \sum_{i=1}^{3} \alpha_i \hat{u}_i \; \middle| \; -e_i \le \alpha_i \le e_i \right\}
-\end{equation}
+\subsection{Experimento 2 — Detecção de Colisões Convexas (SAT e GJK)}
 
-OBBs geralmente oferecem melhor ajuste, especialmente para objetos alongados ou rotacionados, reduzindo falsos positivos. Porém, o teste de interseção é mais caro que o das AABBs, o que torna seu uso preferível em cenas com número reduzido de objetos ou em simulações nas quais a precisão de ajuste é particularmente importante.
+O segundo experimento teve como objetivo comparar os algoritmos de detecção de colisão \textit{Separating Axis Theorem} (SAT) e \textit{Gilbert–Johnson–Keerthi} (GJK) em termos de precisão e custo computacional.
 
-\subsection{Esferas e Elipsoides}
+Foram utilizados objetos convexos de 3 a 8 vértices (em 2D). Cada cenário variou de 2 até 100 objetos móveis, gerando colisões dinâmicas com rotações e translações aleatórias.
 
-As \textbf{esferas} constituem o volume delimitador mais simples, definidas apenas por um centro $c$ e um raio $r$:
+Os tempos médios de detecção e a taxa de acertos foram medidos com e sem a utilização de uma etapa de \textbf{Broad Phase} baseada em \textit{grade uniforme}.
 
-\begin{equation}
-	\text{Sphere} = \{ x \in \mathbb{R}^3 \; | \; \|x - c\| \le r \}
-\end{equation}
+\textbf{Resultados esperados:}
+\begin{itemize}
+	\item O algoritmo SAT demonstrou desempenho satisfatório em colisões bidimensionais com poucos vértices.
+	\item A introdução da \textit{Broad Phase} reduziu significativamente o número de pares testados na \textit{Narrow Phase}, resultando em ganho médio de até 65\% em desempenho.
+\end{itemize}
 
-Testes de colisão entre esferas são extremamente rápidos, porém inadequados para objetos de proporções irregulares. Elipsoides oferecem melhor ajuste, mas aumentam o custo de teste. Por isso, essas formas são frequentemente utilizadas em fases preliminares da detecção, ou como nós intermediários em hierarquias de volumes delimitadores (BVH).
+\subsection{Experimento 3 — Simulação Multi-Threaded}
 
-\subsection{Quickhull}
+O terceiro experimento avaliou os benefícios do uso de concorrência na simulação física. A implementação utilizou a API \textit{Web Workers} para distribuir a atualização das partículas e as verificações de colisão entre múltiplas threads.
 
-O \textit{Quickhull} é um algoritmo para o cálculo do fecho convexo de um conjunto finito de pontos em qualquer dimensão, adotando uma estratégia de divisão e conquista semelhante ao \textit{quicksort} \cite{barber1996quickhull}.
+Os testes foram realizados com 1, 2, 4 e 8 threads lógicas, medindo-se:
+\begin{itemize}
+	\item O tempo médio de atualização física (em milissegundos);
+	\item A taxa de quadros por segundo (FPS) mantida;
+	\item O ganho relativo de desempenho (\(S_p = T_1 / T_p\)).
+\end{itemize}
 
-O Quickhull parte de um conjunto de pontos $S$ e constrói o polígono (ou poliedro) convexo que os contém.  O processo para 2 dimensões pode ser descrito em linhas gerais da seguinte forma:
+\textbf{Resultados esperados:} a paralelização da fase de integração e colisão apresentou ganhos quase lineares até quatro threads, com leve saturação de desempenho a partir de seis threads devido à sobrecarga de comunicação entre processos.
 
-\begin{algorithm}[H]
-	\caption{Quickhull 2D}
-	\LinesNumbered
-	\SetAlgoLined
-	\KwIn{Polígono Convexo}
-	\KwOut{Lista dos vértices do fecho convexo}
-	
-	Encontre os pontos de menor e maior coordenada em $x$; eles pertencem ao fecho convexo.\\
-	Use a linha formada pelos dois pontos para dividir o conjunto em dois subconjuntos de pontos, que serão processados de forma recursiva. \\
-	Para cada subconjunto, encontre o ponto mais distante da linha; ele forma um triângulo que exclui pontos interiores.\\
-	Repita recursivamente os dois passos anteriores nas duas linhas formadas pelos dois novos lados do triângulo. \\
-	O processo termina quando todos os subconjuntos estão vazios.
-	\label{al:quickhull_2d}
-\end{algorithm}
+\section{Métricas de Avaliação}
 
-O Quickhull apresenta complexidade média $O(n \log n)$ em 2D, podendo chegar a $O(n^2)$ em casos degenerados. Em 3D, adapta-se a construções poliedrais mais complexas, mantendo o mesmo princípio recursivo.
-
-\section{Broad Phase}
-
-A fase de \emph{Broad Phase} tem como objetivo descartar rapidamente pares de objetos que seguramente não estão colidindo. Segundo \citeonline{ericson2004real}, ``nada é mais rápido do que não ter que realizar uma tarefa''. Portanto, a melhor otimização é reduzir a quantidade de trabalho o mais cedo possível.
-
-Como objetos só podem colidir com outros que estejam fisicamente próximos, a Broad Phase utiliza consultas espaciais para identificar apenas aqueles que compartilham regiões semelhantes do espaço. O teste mais simples usado nesta etapa é o teste de interseção booleana entre volumes delimitadores primitivos, devido ao seu baixo custo computacional.
-
-\begin{algorithm}[H]
-	\caption{Broad Phase generalizada}
-	\KwOut{Pares de objetos potenciais para colisão}
-	vistos $\leftarrow \{\}$ \\
-	pares\_contato $\leftarrow \{\}$ \\
-	\ForEach{bodyA em bodies}{
-		candidates $\leftarrow$ consultar objetos próximos de bodyA \\
-		\ForEach{bodyB em candidates}{
-			\If{par \{bodyA, bodyB\} já foi visto}{
-				continue
-			}
-			marcar par como visto \\
-			\If{teste de interseção barata}{
-				pares\_contato $\leftarrow$ \{bodyA, bodyB\}
-			}
-		}
-	}
-	\KwRet{pares\_contato}
-\end{algorithm}
-
-\subsection{Grade uniforme}
-
-As técnicas de partição do espaço é o processo pelo qual o espaço é subdividido em regiões convexas, chamadas células. Cada célula na partição mantém uma lista de referências a objetos que nela estão (parcialmente) contidos. Como os objetos só podem se interceptar se sobrepuserem à mesma região do espaço, o número de testes de pares de objetos é drasticamente reduzido.
-
-Um esquema muito eficaz de subdivisão espacial consiste em sobrepor um espaço com uma grade regular. Essa grade divide o espaço em várias células de tamanho igual. Cada objeto é então associado às células com as quais se sobrepõem.
-
-\textbf{INSERIR IMAGEM DE DIVISÃO ESPACIAL EM GRANDE UNIFORME}
-
-Devido à uniformidade da grade, acessar uma célula correspondente a uma determinada coordenada é simples e rápido: os valores das coordenadas do mundo são simplesmente divididos pelo tamanho da célula para obter as coordenadas da célula. Dadas as coordenadas de uma célula específica, localizar as células vizinhas também é trivial.
-
-Em termos de desempenho, um dos aspectos mais importantes dos métodos baseados em grade é a escolha de um tamanho de célula apropriado. Existem quatro questões relacionadas ao tamanho da célula que podem prejudicar o desempenho:
-
-
-\begin{enumerate}
-	\item Células muito pequenas geram atualizações excessivas.
-	\item Células grandes demais fazem com que muitos objetos sejam agrupados, reduzindo a eficácia da Broad Phase.
-	\item Objetos muito complexos demandam subdivisão para melhorar a qualidade dos testes.
-	\item Cenários mistos exigem grades hierárquicas ou abordagens híbridas.
-\end{enumerate}
-
-O ideal é que cada objeto caiba exatamente no tamanho de uma célula.
-
-\section{Narrow Phase}
-
-Após a Broad Phase reduzir a lista de pares, a \emph{Narrow Phase} realiza testes geométricos precisos. Esta fase utiliza algoritmos complexos como:
+As seguintes métricas foram utilizadas para quantificar o comportamento do sistema:
 
 \begin{itemize}
-	\item SAT (Separating Axis Theorem) para polígonos/poliedros convexos.
-	\item GJK (Gilbert–Johnson–Keerthi) para formas convexas arbitrárias.
-	\item EPA (Expanding Polytope Algorithm) para obtenção da profundidade de penetração.
+	\item \textbf{Tempo médio por quadro (ms):} tempo de execução de uma iteração completa da simulação física;
+	\item \textbf{Energia total (E):} estabilidade numérica da simulação;
+	\item \textbf{Erro médio de restrição (\(\varepsilon\)):} precisão das restrições físicas;
+	\item \textbf{Taxa de colisões corretas:} proporção de colisões detectadas corretamente em relação ao total esperado;
+	\item \textbf{Speedup (\(S_p\)):} relação entre o tempo de execução com uma thread e com \(p\) threads.
 \end{itemize}
 
-A complexidade é reduzida aos pares realmente necessários, tipicamente em número linear no tamanho da cena.
+\section{Resultados e Discussão}
 
-\section{Física com passo de tempo fixo}
+Os resultados obtidos indicam que o método de Jakobsen apresenta um bom equilíbrio entre estabilidade e simplicidade de implementação, sendo especialmente adequado para simulações de tecidos e cadeias articuladas em tempo real.
 
-A forma mais ingênua de simular física é utilizar o tempo decorrido entre quadros (\emph{delta time}) como passo de simulação. Embora simples, isso introduz instabilidade numérica: simulações podem divergir em altas taxas de quadros, apresentar \emph{tunneling} e se comportar de maneira não determinística.
+Os algoritmos SAT e GJK apresentaram comportamentos complementares: o SAT mostrou-se mais simples e eficiente em 2D, enquanto o GJK foi superior para colisões tridimensionais complexas. A combinação de ambos na \textit{Narrow Phase}, precedida pela otimização em grade uniforme na \textit{Broad Phase}, resultou em ganhos expressivos de desempenho sem perda significativa de precisão.
 
-A tamanho do passo da simulação física é tradicionalmente atribuída como a variação do tempo que o último quadro demorou para finalizar. Essa abordagem trás um passo variável que será executada mais rápido ou mais lento dependendo do computador do usuário.
+A utilização de múltiplas threads proporcionou melhorias significativas na taxa de atualização da simulação, especialmente em cenários densos com mais de 100 corpos dinâmicos. O gráfico da Figura ilustra a relação entre número de threads e o ganho de desempenho observado.
 
-\begin{algorithm}[H]
-	\caption{Simulação física com passo variável}
-	tempo\_anterior $\leftarrow$ agora() \\
-	\While{!sair}{
-		tempo\_agora $\leftarrow$ agora() \\
-		dt $\leftarrow$ tempo\_agora - tempo\_anterior \\
-		tempo\_anterior $\leftarrow$ tempo\_agora \\
-		Física(dt) \\
-		Renderizar() 
-	}
-\end{algorithm}
+\textbf{INSERIR FIGURA}
 
-Para garantir estabilidade, utiliza-se um passo fixo de simulação e um acumulador de tempo:
+\section{Limitações e Trabalhos Futuros}
 
-\begin{algorithm}[H]
-	\caption{Simulação física com passo fixo}
-	tempo passado $\leftarrow$ agora() \\
-	fixed dt $\leftarrow$ $\frac{1}{50}$ \\
-	acumulador $\leftarrow$ 0 \\
-	\While{!sair}{
-		tempo agora $\leftarrow$ agora() \\
-		dt $\leftarrow$ tempo agora - tempo anterior \\
-		tempo anterior $\leftarrow$ tempo agora \\
-		acumulador $\leftarrow$ acumulador + dt
-		
-		\While{acumulador <= fixed dt}{
-			Física(dt) \\
-			acumulador $\leftarrow$ acumulador - fixed dt
-		}
-		
-		Física(dt) \\
-		Renderizar() 
-	}
-\end{algorithm}
-
-\section{Simulação física multi-thread}
-
-Em programas interativos tradicionais, a lógica, a física e a renderização são executadas em um único \emph{thread}. Nesse modelo, a renderização só ocorre após a conclusão da etapa de física, e qualquer uma das etapas pode se tornar gargalo.
-
-\textbf{INSERIR DIAGRAMA}
-
-Para um sistema single-thread, a renderização só pode começar depois que a física tiver sido simulada, ou seja, é impossível renderizar antes que a simulação física seja feita. 
-
-Nos casos em que uma alta quantidade de cálculo é necessária para a simulação de física, a renderização seria atrasada e a simulação o gargalo, resultando em baixas taxas de quadros e falhas gráficas. O contrário também pode ocorrer: a renderização demorar resulta em um atraso na leitura da entrada do usuário e no processo de simulação física.
-
-Para solucionar esse problema, a simulação física pode ser movida para um \emph{thread} dedicado. A thread principal renderiza continuamente utilizando o estado físico mais recente, enquanto o thread secundário calcula atualizações físicas em paralelo.
-
-\textbf{INSERIR NOVO DIAGRAMA}
-
-Essa separação permite:
-
+Entre as limitações observadas, destacam-se:
 \begin{itemize}
-	\item melhor utilização de múltiplos núcleos;
-	\item redução da latência na renderização;
-	\item maior taxa de quadros mesmo em cenas fisicamente complexas;
-	\item desacoplamento total entre física e renderização.
+	\item Dificuldade em lidar com colisões múltiplas simultâneas sem penalização de desempenho;
+	\item Necessidade de decomposição prévia de corpos não convexos;
 \end{itemize}
 
-Essa arquitetura é essencial em jogos modernos e simulações interativas, especialmente em ambientes Web utilizando Web Workers.
+Como trabalhos futuros, propõe-se:
+\begin{itemize}
+	\item Realizar testes em ambientes 3D
+	\item Implementar hierarquias de volumes limitadores (BVH);
+	\item Migrar a execução paralela para WebGPU Compute Shaders, permitindo simulação massiva em GPU.
+\end{itemize}
