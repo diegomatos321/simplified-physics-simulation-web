@@ -1,10 +1,6 @@
 \chapter{Experimentos}
 
-Este capítulo apresenta os experimentos realizados com o objetivo de avaliar o desempenho, a estabilidade e a precisão do sistema desenvolvido. O sistema é baseado no método de integração de Verlet proposto \citeonline{jakobsen2001advanced}, e em algoritmos clássicos de detecção de colisões, notadamente o \textit{Separating Axis Theorem} (SAT) e o \textit{Gilbert–Johnson–Keerthi} (GJK). 
-
-Os experimentos também investigam os impactos das otimizações aplicadas nas etapas de \textit{Broad Phase} (utilizando uma grade espacial uniforme), na \textit{Narrow Phase} (empregando SAT e GJK) e na paralelização do cálculo físico por meio de múltiplas threads. O objetivo é verificar a viabilidade dessas técnicas em um ambiente de execução web, onde o custo computacional e a responsividade são fatores críticos.
-
-\section{Ambiente de Teste}
+Este capítulo apresenta os experimentos realizados com o objetivo de avaliar o desempenho, a estabilidade e a precisão do sistema desenvolvido. Os experimentos também investigam os impactos das otimizações aplicadas nas etapas de \textit{Broad Phase} (utilizando uma grade espacial uniforme), na \textit{Narrow Phase} (empregando SAT e GJK) e na paralelização do cálculo físico por meio de múltiplas threads. O objetivo é verificar a viabilidade dessas técnicas em um ambiente de execução web, onde o custo computacional e a responsividade são fatores críticos.
 
 Os experimentos foram conduzidos em um computador com as seguintes especificações:
 
@@ -16,13 +12,11 @@ Os experimentos foram conduzidos em um computador com as seguintes especificaç�
 	\item \textbf{Implementação:} Typescript + Web Workers (multi-threading), Vuejs e p5js
 \end{itemize}
 
-A escolha do ambiente web teve como propósito demonstrar a aplicabilidade de um motor físico leve em contextos multiplataforma, utilizando exclusivamente tecnologias abertas e acessíveis.
-
 \section{Configuração dos Cenários}
 
 Três grupos de experimentos foram definidos, cada um com foco em um aspecto distinto do sistema proposto:
 
-\subsection{Experimento 1 - Integrador de Jakobsen}
+\subsection*{Experimento 1 - Integrador de Jakobsen}
 
 O primeiro experimento avaliou a estabilidade do método de Verlet em comparação com o integrador de Euler explícito. Foram criados sistemas de partículas conectadas por restrições lineares, representando tecidos e correntes.
 
@@ -32,7 +26,7 @@ Cada sistema foi submetido a diferentes passos de tempo ($\Delta t = 1/30s$, $1/
 
 O integrador de Verlet apresenta maior estabilidade sob altas iterações de restrição, ainda que introduza pequenas imprecisões de posição em sistemas altamente rígidos.
 
-\subsection{Experimento 2 — Detecção de Colisões Convexas (SAT e GJK)}
+\subsection*{Experimento 2 — Detecção de Colisões Convexas (SAT e GJK)}
 
 O segundo experimento teve como objetivo comparar os algoritmos de detecção de colisão \textit{Separating Axis Theorem} (SAT) e \textit{Gilbert–Johnson–Keerthi} (GJK) em termos de precisão e custo computacional.
 
@@ -46,7 +40,7 @@ Os tempos médios de detecção e a taxa de acertos foram medidos com e sem a ut
 	\item A introdução da \textit{Broad Phase} reduziu significativamente o número de pares testados na \textit{Narrow Phase}, resultando em ganho médio de até 65\% em desempenho.
 \end{itemize}
 
-\subsection{Experimento 3 — Simulação Multi-Threaded}
+\subsection*{Experimento 3 — Simulação Multi-Threaded}
 
 O terceiro experimento avaliou os benefícios do uso de concorrência na simulação física. A implementação utilizou a API \textit{Web Workers} para distribuir a atualização das partículas e as verificações de colisão entre múltiplas threads.
 
@@ -81,17 +75,3 @@ A utilização de múltiplas threads proporcionou melhorias significativas na ta
 
 \textbf{INSERIR FIGURA}
 
-\section{Limitações e Trabalhos Futuros}
-
-Entre as limitações observadas, destacam-se:
-\begin{itemize}
-	\item Dificuldade em lidar com colisões múltiplas simultâneas sem penalização de desempenho;
-	\item Necessidade de decomposição prévia de corpos não convexos;
-\end{itemize}
-
-Como trabalhos futuros, propõe-se:
-\begin{itemize}
-	\item Realizar testes em ambientes 3D
-	\item Implementar hierarquias de volumes limitadores (BVH);
-	\item Migrar a execução paralela para WebGPU Compute Shaders, permitindo simulação massiva em GPU.
-\end{itemize}

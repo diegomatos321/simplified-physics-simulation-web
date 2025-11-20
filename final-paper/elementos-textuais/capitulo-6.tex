@@ -4,7 +4,6 @@ A eficiência computacional é um dos fatores determinantes para o desempenho de
 
 Como qualquer objeto pode potencialmente colidir com qualquer outro, uma simulação contendo $n$ objetos requer $(n-1)+(n-2)+\dots+1 = n(n-1)/2 = O(n^2)$ testes de pares no pior caso. Devido à complexidade quadrática, testar ingenuamente cada par torna-se impraticável mesmo para valores moderados de $n$.
 
-
 Reduzir o custo associado ao teste de pares afetará o tempo de execução apenas linearmente. Para realmente acelerar o processo, o número de pares testados deve ser reduzido. Essa redução é realizada separando o tratamento de colisões de múltiplos objetos em duas fases: Narrow Phase e Broad Phase.
 
 Neste capítulo, descrevemos as estratégias clássicas de otimização aplicadas à detecção e resolução de colisões, com foco na divisão entre \emph{Broad Phase} e \emph{Narrow Phase}, no uso de estruturas espaciais, na adoção de passos temporais fixos e na execução multi-thread de simulações físicas.
@@ -31,7 +30,7 @@ Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como v
 
 \textbf{INSERIR IMAGENS COM TIPOS DIFERENTES FORMAS DE FECHO CONVEXO}
 
-\subsection{Caixa Delimitadora Alinhada ao Eixo Coordenado (AABB)}
+\subsection*{Caixa Delimitadora Alinhada ao Eixo Coordenado (AABB)}
 
 A caixa delimitadora mínima para um conjunto de pontos em $N$ dimensões é aquela que possui o menor volume possível e ainda assim contém todos os pontos. Notavelmente, a AABB mínima para um conjunto é a mesma que a AABB mínima de seu fecho convexo, fato útil em heurísticas para computação eficiente.
 
@@ -56,7 +55,7 @@ A caixa delimitadora alinhada aos eixos (Axis-Aligned Bounding Box, AABB) é um 
 
 AABBs são eficientes, porém perdem precisão quando o objeto sofre rotações, pois a caixa permanece alinhada aos eixos globais.
 
-\subsection{Caixa Orientada (OBB)}
+\subsection*{Caixa Orientada (OBB)}
 
 Uma Caixa Orientada (Oriented Bounding Box, OBB) é uma caixa retangular que pode estar arbitrariamente rotacionada em relação aos eixos do sistema de coordenadas. É definida por um ponto central $c$, por três vetores ortogonais $\hat{u}_i$ que compõem sua orientação e por semi-extensões $e_i$:
 
@@ -66,7 +65,7 @@ Uma Caixa Orientada (Oriented Bounding Box, OBB) é uma caixa retangular que pod
 
 OBBs geralmente oferecem melhor ajuste, especialmente para objetos alongados ou rotacionados, reduzindo falsos positivos. Porém, o teste de interseção é mais caro que o das AABBs, o que torna seu uso preferível em cenas com número reduzido de objetos ou em simulações nas quais a precisão de ajuste é particularmente importante.
 
-\subsection{Esferas e Elipsoides}
+\subsection*{Esferas e Elipsoides}
 
 As \textbf{esferas} constituem o volume delimitador mais simples, definidas apenas por um centro $c$ e um raio $r$:
 
@@ -76,7 +75,7 @@ As \textbf{esferas} constituem o volume delimitador mais simples, definidas apen
 
 Testes de colisão entre esferas são extremamente rápidos, porém inadequados para objetos de proporções irregulares. Elipsoides oferecem melhor ajuste, mas aumentam o custo de teste. Por isso, essas formas são frequentemente utilizadas em fases preliminares da detecção, ou como nós intermediários em hierarquias de volumes delimitadores (BVH).
 
-\subsection{Quickhull}
+\subsection*{Quickhull}
 
 O \textit{Quickhull} é um algoritmo para o cálculo do fecho convexo de um conjunto finito de pontos em qualquer dimensão, adotando uma estratégia de divisão e conquista semelhante ao \textit{quicksort} \cite{barber1996quickhull}.
 
@@ -125,7 +124,7 @@ Como objetos só podem colidir com outros que estejam fisicamente próximos, a B
 	\KwRet{pares\_contato}
 \end{algorithm}
 
-\subsection{Grade uniforme}
+\subsection*{Grade uniforme}
 
 As técnicas de partição do espaço é o processo pelo qual o espaço é subdividido em regiões convexas, chamadas células. Cada célula na partição mantém uma lista de referências a objetos que nela estão (parcialmente) contidos. Como os objetos só podem se interceptar se sobrepuserem à mesma região do espaço, o número de testes de pares de objetos é drasticamente reduzido.
 
@@ -161,9 +160,7 @@ A complexidade é reduzida aos pares realmente necessários, tipicamente em núm
 
 \section{Física com passo de tempo fixo}
 
-A forma mais ingênua de simular física é utilizar o tempo decorrido entre quadros (\emph{delta time}) como passo de simulação. Embora simples, isso introduz instabilidade numérica: simulações podem divergir em altas taxas de quadros, apresentar \emph{tunneling} e se comportar de maneira não determinística.
-
-A tamanho do passo da simulação física é tradicionalmente atribuída como a variação do tempo que o último quadro demorou para finalizar. Essa abordagem trás um passo variável que será executada mais rápido ou mais lento dependendo do computador do usuário.
+A forma mais ingênua de simular física é utilizar o tempo decorrido entre quadros (\emph{delta time}) como passo de simulação. Embora simples, isso introduz instabilidade numérica: simulações podem divergir em altas taxas de quadros, apresentar \emph{tunneling} e se comportar de maneira não determinística. Essa abordagem trás um passo variável que será executada mais rápido ou mais lento dependendo do computador do usuário.
 
 \begin{algorithm}[H]
 	\caption{Simulação física com passo variável}
@@ -202,13 +199,11 @@ Para garantir estabilidade, utiliza-se um passo fixo de simulação e um acumula
 
 \section{Simulação física multi-thread}
 
-Em programas interativos tradicionais, a lógica, a física e a renderização são executadas em um único \emph{thread}. Nesse modelo, a renderização só ocorre após a conclusão da etapa de física, e qualquer uma das etapas pode se tornar gargalo.
+Em programas interativos tradicionais a lógica, a física e a renderização são executadas em uma única \textbf{thread}. Nesse modelo, a renderização só ocorre após a conclusão da etapa de física, e qualquer uma das etapas pode se tornar gargalo.
 
 \textbf{INSERIR DIAGRAMA}
 
-Para um sistema single-thread, a renderização só pode começar depois que a física tiver sido simulada, ou seja, é impossível renderizar antes que a simulação física seja feita. 
-
-Nos casos em que uma alta quantidade de cálculo é necessária para a simulação de física, a renderização seria atrasada e a simulação o gargalo, resultando em baixas taxas de quadros e falhas gráficas. O contrário também pode ocorrer: a renderização demorar resulta em um atraso na leitura da entrada do usuário e no processo de simulação física.
+Para um sistema single-thread, a renderização só pode começar depois que a física tiver sido simulada, ou seja, é impossível renderizar antes que a simulação física seja feita. Nos casos em que uma alta quantidade de cálculo é necessária para a simulação de física, a renderização seria atrasada e a simulação o gargalo, resultando em baixas taxas de quadros e falhas gráficas. O contrário também pode ocorrer: a renderização demorar resulta em um atraso na leitura da entrada do usuário e no processo de simulação física.
 
 Para solucionar esse problema, a simulação física pode ser movida para um \emph{thread} dedicado. A thread principal renderiza continuamente utilizando o estado físico mais recente, enquanto o thread secundário calcula atualizações físicas em paralelo.
 
