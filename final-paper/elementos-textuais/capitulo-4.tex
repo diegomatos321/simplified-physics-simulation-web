@@ -1,203 +1,126 @@
-\chapter{Detecção de Colisões}
+\chapter{Resposta a colisão}
 
-A detecção de colisões é um componente fundamental em sistemas de simulação física e em animações baseadas em partículas. Esse processo identifica quando dois ou mais objetos entram em contato, determina pontos de interseção e, quando necessário, fornece informações como vetores de penetração e normais que servirão de entrada para a etapa subsequente de resposta física. Em contextos interativos em tempo real, a precisão geométrica absoluta costuma ser sacrificada em favor da eficiência computacional, desde que o comportamento resultante se mantenha visualmente verossímil.
+A resposta a colisões é uma etapa fundamental em qualquer sistema de simulação física interativa. Após detectar que dois corpos estão em interpenetração, torna-se necessário aplicar um conjunto de correções que restaurem a plausibilidade física do movimento, evitando instabilidades numéricas. 
 
-Este capítulo introduz os principais conceitos utilizados no âmbito deste trabalho, descrevendo as representações geométricas mais comuns para objetos convexos e apresentando dois algoritmos amplamente empregados em detecção de colisões: o Teorema do Eixo Separador (SAT) e o algoritmo Gilbert--Johnson--Keerthi (GJK). Ambos operam eficientemente em formas convexas e constituem a base de vários motores físicos modernos.
+Este capítulo discute os princípios clássicos e as formulações modernas de resposta a colisão, estabelecendo a relação entre os métodos geométricos de detecção — como o Vetor de Translação Mínima (MTV) — e a abordagem baseada em partículas e restrições proposta por \citeonline{jakobsen2001advanced}, que fundamenta este trabalho.
 
-\section{Polígonos convexos}
+\section{Métodos Dinâmicos na Simulação Física}
 
-Um objeto geométrico é definido como um conjunto não vazio, limitado e fechado de pontos. A propriedade de ser fechado implica que sua fronteira pertence ao próprio conjunto, enquanto a limitação garante que exista uma esfera de raio finito que contenha todos os seus pontos. Um plano, por exemplo, é fechado, mas não limitado.
+A resposta a colisões consiste, essencialmente, em duas operações principais:
 
-\textbf{(INSERIR IMAGEM DE FORMA CONVEXA E NÃO-CONVEXA)}
+\begin{enumerate}
+	\item \textbf{Correção de Posição}: eliminar a interpenetração entre dois corpos.
+	\item \textbf{Correção de Velocidade}: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
+\end{enumerate}
 
-Uma forma é considerada \textit{convexa} se, para quaisquer dois pontos contidos nessa forma, todo o segmento que os une também estiver contido nela. Uma consequência prática é que, para qualquer linha que atravesse o objeto, esta o intersecta em no máximo dois pontos. Formas não convexas podem ser tratadas como composições de múltiplas partes convexas, o que permite a aplicação direta de algoritmos especializados.
+A literatura apresenta diversas abordagens para modelar o movimento de corpos rígidos e deformáveis. Embora este trabalho se baseie no método simplificado de Jakobsen, é importante contextualizar outras categorias amplamente utilizadas em motores físicos modernos:
 
-\section{Teorema do Eixo Separador (SAT)}
-\label{sec:sat}
+\subsection*{Método do Impulso}
 
-O Teorema do Eixo Separador (\textit{Separating Axis Theorem}, SAT) é um dos métodos mais difundidos para detecção de colisão entre polígonos convexos. Além de identificar a presença ou ausência de interseção, o SAT também pode ser utilizado para calcular o \textit{vetor de translação mínima} (\textit{Minimum Translation Vector}, MTV), útil para correções geométricas e resposta física.
+O \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok e Bullet. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
 
-O SAT é um algoritmo genérico rápido que pode remover a necessidade de ter código de detecção de colisão para cada par tipo de forma, reduzindo assim o código e a manutenção. Ele se baseia no teorema geométrico que afirma:
+\subsection*{Método de Penalidades}
 
-\begin{teorema}
-	Dois polígonos convexos $A$ e $B$ não se intersectam se, e somente se, existir um eixo (reta) sobre o qual as projeções de $A$ e $B$ não se sobrepõem.
-	\label{theo:sat}
-\end{teorema}
+Nos \textit{Métodos de Penalidades}, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração alterando diretamente a aceleração. Essas forças geralmente seguem modelos de mola e amortecimento, trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
 
-\textbf{INSERIR IMAGEM POLIGONO SEPARADO E POLIGONO EM COLISÃO}
+\subsection*{Método Constraint-Based com Multiplicadores de Lagrange}
 
-Um \textit{plano de separação} (PS), definido por um vetor normal $v$ e um escalar $\delta$, é um hiperplano que separa $A$ e $B$. Em termos computacionais, o SAT testa um conjunto finito de eixos candidatos — tipicamente as normais às arestas dos polígonos — verificando se existe algum eixo que sirva como separador.
+Os métodos baseados em restrições formulam os contatos como equações que devem ser satisfeitas exatamente. São resolvidos usando multiplicadores de Lagrange, essa abordagem é robusta e adequada para sistemas complexos, mas exige a solução de sistemas lineares, tornando sua aplicação onerosa em plataformas Web.
 
-\subsection*{Projeção sobre um eixo}
+\section{Processo de Separação}
 
-Dado um eixo unitário $\hat{n}$ e um conjunto de vértices $\{ v_i \}$, a projeção escalar do polígono sobre $\hat{n}$ é dada pelos extremos:
-\begin{align}
-	\text{min}_A &= \min_i (\hat{n} \cdot v_i^A) \\
-	\text{max}_A &= \max_i (\hat{n} \cdot v_i^A)
-\end{align}
+A metodologia de \citeonline{jakobsen2001advanced} pode ser compreendida como uma precursora da moderna \textit{Position Based Dynamics} (PBD) \cite{muller2007position}. Diferentemente das abordagens que atuam sobre a velocidade ou aceleração, Jakobsen trata colisões como restrições geométricas adicionais que devem ser satisfeitas durante o processo iterativo de relaxação da simulação. Assim, objetos penetrando um ao outro são corrigidos exclusivamente por modificações de posição, de forma estável e sem oscilações numéricas.
 
-De forma análoga, para o segundo polígono $B$:
-\begin{align}
-	\text{min}_B &= \min_j (\hat{n} \cdot v_j^B) \\
-	\text{max}_B &= \max_j (\hat{n} \cdot v_j^B)
-\end{align}
+A resposta à colisão envolve dois passos principais. O primeiro consiste em separar os elementos geométricos (vértices, arestas ou faces) que se encontram em interpenetração, o que caracteriza um processo estritamente geométrico. O segundo passo corresponde a um processo iterativo de relaxamento, no qual os elementos afetados ajustam suas posições de acordo com as restrições impostas pelo sistema físico.
 
-Se os intervalos $[\text{min}_A, \text{max}_A]$ e $[\text{min}_B, \text{max}_B]$ não se sobrepõem em algum eixo $\hat{n}$, então os polígonos não colidem.
+Para dois objetos convexos $A$ e $B$ em colisão, o esquema de detecção de colisão deve retornar os pontos de contato de cada objeto e o tamanho da penetração. Com essas informações devemos tratar duas configurações possíveis: colisão vértice-vértice ou colisão vértice-aresta.
 
-\subsection*{Teste de interseção booleana}
+\textbf{INSERIR DIAGRAMA MOSTRANDO OS DOIS CASOS}
 
-O pseudocódigo abaixo resume o teste booleano de interseção via SAT:
+\subsection*{Colisão Vértice-Vértice}
 
-\begin{algorithm}[H]
-	\caption{Teste booleano de colisão via SAT}
-	\KwIn{Polígonos convexos $A$ e $B$}
-	\KwOut{Verdadeiro se houver interseção}
-	\ForEach{aresta $e$ de $A$ e $B$}{
-		$\hat{n} \leftarrow$ normal unitária de $e$ \\
-		$p_i \leftarrow$ Projeção de $A$ ao longo de $\hat{n}$ \\
-		$p_j \leftarrow$ Projeção de $B$ ao longo de $\hat{n}$ \\
-		\If{$p_i$ não sobrepõe $p_j$}{
-			\Return{False}
-		}
-	}
-	\Return{True}
-	\label{al:sat_1}
-\end{algorithm}
-
-O método possui complexidade linear no número de arestas e é bastante eficiente para polígonos convexos em 2D. Em 3D, entretanto, o número de eixos candidatos cresce significativamente, reduzindo sua praticidade em relação a alternativas como o GJK.
-
-\subsection*{Vetor de Translação Mínima (MTV)}
-
-Para aplicações que exigem resposta física também é necessário computar o deslocamento mínimo para separação dos objetos. Seja $\vec{d}$ o \textit{Minimum Translation Vector} (MTV), um vetor que representa a menor correção necessária para eliminar a interpenetração entre os objetos orientado do corpo $A$ em direção ao corpo $B$.
-
-\begin{algorithm}
-	\caption{SAT com cálculo do MTV}
-	\KwIn{Polígonos convexos $A$ e $B$}
-	\KwOut{$\vec{d}$ e $\delta$, ou falso}
-	$\vec{d} \leftarrow 0$ \\
-	$\delta \leftarrow \infty$ \\
-	\ForEach{aresta $e$ de A e B}{
-		$\hat{n} \leftarrow$ normal unitária de $e$ \\
-		$p_1 \leftarrow$ Projeção de $A$ \\
-		$p_2 \leftarrow$ Projeção de $B$ \\
-		$\Delta \leftarrow$ sobreposição entre $p_1$ e $p_2$ \\
-		\If{$\Delta \leq$ TOLERÂNCIA}{
-			\Return{False}
-		}
-		\If{$\Delta < \delta$}{
-			$\delta \leftarrow \Delta$ \\
-			$\vec{d} \leftarrow \hat{n}$
-		}
-	}
-	\Return{$\vec{d}$, $\delta$}
-	\label{al:sat_2}
-\end{algorithm}
-
-\section{Algoritmo Gilbert–Johnson–Keerthi (GJK)}
-
-O algoritmo de \citeonline{gjk} calcula a distância mínima entre dois conjuntos convexos utilizando apenas uma \textit{função de suporte} capaz de retornar o ponto mais distante de um conjunto em uma direção arbitrária. Esse algoritmo é particularmente eficiente em 3D e é amplamente adotado em motores físicos por sua robustez e excelente desempenho.
-
-\subsection*{Soma de Minkowski}
-
-O algoritmo GJK depende muito de um conceito chamado soma de Minkowski de dois objetos convexos A e B que é definida por:
+Se o contato ocorre pontualmente entre duas partículas $p$ e $q$, a correção é dividida igualmente (assumindo massas iguais):
 
 \begin{equation}
-	A + B = \{\vec{x} + \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
+	\Delta \vec{p} = -\frac{1}{2}\vec{d}, \qquad
+	\Delta \vec{q} = +\frac{1}{2}\vec{d}.
 \end{equation}
 
-O objeto A + B é o conjunto de pontos obtido por um processo de varredura que translada o centro de massa de B para cada ponto de A, ou seja, faz-se uma cópia do objeto B centrado em cada ponto de A
+\subsection*{Colisão Vértice-Aresta}
 
-(INSERIR FIGURA SOMA DE MINKOWSKI)
-
-Uma propriedade muito útil da soma de Minkowski é o fato de que a soma de dois objetos convexos é um objeto convexo. O algoritmo GJK se beneficia dessas propriedades usando uma operação informalmente chamada de \textit{diferença de Minkowski}
+Esta é a configuração mais comum. Um vértice $p$ de um corpo colide contra uma aresta definida pelas partículas $x_1$ e $x_2$ de outro corpo. O ponto de impacto $p$ cai entre dois vértices $x_1$ e $x_2$ e o nosso objetivo é corrigir as suas posições para uma configuração válida $x_1^*$, $x_2^*$, logo pela equação da reta $p$ pode ser descrito como uma interpolação linear
 
 \begin{equation}
-	A - B = \{\vec{x} - \vec{y} \mid \vec{x} \in A, \vec{y} \in B \},
+	p = (\alpha - 1) x_1 + \alpha x_2, \qquad 0 \leq \alpha \leq 1.
+	\label{eq:parametric_edge}
 \end{equation}
 
-A diferença de Minkowski pode ser pensado como um processo de varredura que calcula o vetor distancia para cada ponto de B em A. Essa operação continua sendo a soma de Minkowski (a soma da diferença) mas, neste trabalho, usaremos esse termo para referir a essa operação quando necessário. Dessa forma, caso a distância entre dois pontos seja zero (interseção), podemos confirmar há colisão entre os dois objetos. Esse vetor também coincide com a origem, logo elaboramos nosso próximo teorema:
+Durante a separação, a correção $\Delta \vec{p}$ deve alterar indiretamente $\vec{x}_1$ e $\vec{x}_2$ de forma proporcional a essa parametrização. A partir da Eq.~\ref{eq:parametric_edge}, derivamos o valor de $\alpha$ projetando o vetor $\vec{p} - \vec{x}_2$ sobre o vetor da aresta $\vec{x}_1 - \vec{x}_2$. Dessa forma Jakobsen computa as novas posições movendo as partículas proporcionalmente a $\alpha$:
 
-\begin{teorema}
-	Os conjuntos $A$ e $B$ colidem se, e somente se, o ponto de origem $(0, 0)$ estiver contido em $A - B$.
-\end{teorema}
+\begin{align}
+	x_1 += \alpha \Delta_p \\
+	x_2 += (1-\alpha) \Delta_p \\
+	\alpha
+	= 
+	\frac{
+		(\vec{p} - \vec{x}_2) \cdot (\vec{x}_1 - \vec{x}_2)
+	}{
+		\|\vec{x}_1 - \vec{x}_2\|^2
+	}.
+	\label{eq:alpha_projection}
+\end{align}
 
-Executar essa operação exige $|A| * |B| * 2$ subtrações. Isso é significativo porque uma forma é composta de um número infinito de pontos.  A grande coisa sobre GJK é que você realmente não precisa calcular a diferença de Minkowski para todos os vértices. Uma vez que ambas as formas são convexas e definidas por vértices só precisamos realizar esta operação nos vértices mais externos.
+Isso garante que a geometria original é preservada e que o ponto $\vec{p}$, definido implicitamente pelos vértices da aresta, é deslocado exatamente pela quantidade desejada.
 
-Dessa forma, não queremos calcular a diferença de Minkowski. Em vez disso, queremos apenas saber se a Diferença de Minkowski contém ou não a origem. Se isso acontecer, então sabemos que as formas estão se cruzando, se não o faz, então elas não são.
+\section{Algoritmo de Expansão de Politopos (EPA)}
 
-Isso é feito construindo iterativamente um polígono dentro da diferença de Minkowski que tenta incluir a origem. Se o polígono que construímos contém a origem, então podemos dizer que a Diferença de Minkowski contém a origem, e também que há interseção entre os dois objetos. Este polígono que queremos construir deve ser da forma mais elementar possível, no caso de 2D um triângulo, no caso de 3D um poliedro, por isso é chamado de Simplex.
+Enquanto o SAT fornece naturalmente o MTV, o algoritmo GJK apenas informa se há interseção (retornando um \textit{simplex} interno à Diferença de Minkowski). Para obter a profundidade e a normal da colisão necessárias para a resposta física, utiliza-se o \textbf{EPA} (\textit{Expanding Polytope Algorithm}).
 
-\subsection*{Função de Suporte}
-
-O algoritmo GJK começa com um simplex inicial e o refina iterativamente adicionando pontos encontrados usando a função de suporte em uma direção que aponta para a origem. Esse processo continua até que a origem seja encontrada dentro do simplex, indicando uma colisão, ou até que se determine que a origem não está contida, o que significa que não há colisão.
-
-A função de suporte deve retornar o ponto mais distante em uma direção dentro da Diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da diferença de Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
-
-\subsection*{Construção iterativa do simplex}
-
-O GJK constrói iterativamente um \textit{simplex} (ponto, segmento, triângulo ou tetraedro, dependendo da dimensão) que aproxima a origem dentro de $A - B$.  
-
-%Mesmo seguindo todos esses critérios ainda podemos não obter um Simplex que contém a origem nessas três etapas. Devemos criar iterativamente o Simplex de tal forma que o Simplex esteja se aproximando de conter a origem. Também precisamos verificar duas condições ao longo do caminho: 1) o simplex atual contém a origem? e 2) somos capazes de incluir a origem?
-
+O algoritmo expande o simplex final do GJK iterativamente até encontrar a fronteira da Diferença de Minkowski mais próxima da origem. A distância entre o ponto mais próximo com a origem é a profundidade de penetração. Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar o normal da face mais próxima da origem, porém um simplex não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
 
 \begin{algorithm}[H]
-	\caption{GJK}
-	\LinesNumbered
-	\KwIn{Polígonos convexos $A$ e $B$}
-	\KwOut{Verdadeiro se ocorreu colisão}
+	\caption{EPA}
+	\KwIn{Simplex}
+	\KwOut{$\hat{n}$, $\delta$}
 	
-	Escolhe-se uma direção inicial $\vec{d}$; \\
-	$p \leftarrow \text{support}(A - B,\ \vec{d})$ \\
-	\If{$p \cdot \vec{d} < 0$}{
-		\Return{False}
+	\While{iterações $<$ MAX\_ITER}{
+		e $\leftarrow$ Encontrar aresta mais próxima a origem \\
+		p $\leftarrow$ Calcular novo ponto de suporte na direção da normal de e \\
+		$\delta \leftarrow p \cdot normal(e)$ \\
+		\If{$|\delta - length(e)| < \epsilon$}{
+			\KwRet{normal(e), $\delta$}
+		}
+		
+		Adicionar ponto ao simplex
 	}
-	Atualiza-se o simplex com $p$ e calcula-se nova direção $\vec{d}$; \\
-	Itera-se até que o simplex contenha a origem ou seja possível concluir ausência de interseção.
 \end{algorithm}
 
-O GJK é eficiente e converge rapidamente na prática, sendo mais apropriado que o SAT em cenários tridimensionais e em motores físicos de uso geral.
+A tolerância $\epsilon$ (ex: $10^{-4}$) e o limite de iterações são cruciais para evitar loops infinitos em casos de precisão numérica flutuante ou formas curvas aproximadas.
 
-%\begin{algorithm}[H]
-%	\caption{GJK}
-%	\KwIn{Polígonos convexos A e B}
-%	\KwOut{Verdadeiro se ocorreu colisão}
-%	
-%	d $\leftarrow$ B - A \tcp{Direção inicial aponta para o centro de B}
-%	simplex $\leftarrow$ support(A, B, d) \\
-%	d $\leftarrow$ -d \tcp{Inverte a direção para próxima iteração}
-%	\For{$i \leftarrow 0$ \KwTo MAX\_INTERATION}{
-%		$a \leftarrow support(A, B, d)$ \\
-%		\If{$a \cdot d \leq 0$}{
-%			\KwRet{false}
-%		}
-%		
-%		simplex $\leftarrow$ a \\
-%		\If{simplex contém a origem}{
-%			\KwRet{true}
-%		}
-%		
-%		d $\leftarrow$ calcular próxima direção
-%	}
-%	
-%	\label{al:gjk}
-%\end{algorithm}
+\section{Limitações}
+\label{sec:limitacoes}
 
-%Podemos determinar onde está a origem com relação ao simplex através da realização de uma série de testes em plano (testes de linha para 2D) onde cada teste consiste em produtos de pontos simples. O primeiro caso que deve ser tratado é o caso do segmento de linha. Podemos determinar se o simplex contém a origem examinando as regiões de Voronoi
-%
-%\begin{algorithm}[H]
-%	\caption{Contém Origem}
-%	\KwIn{simplex}
-%	\KwOut{Boolean}
-%	
-%	\If{|simplex| == 4}{ \tcp{Caso 3D}
-%		\KwRet{TestePoliedro()}
-%	} \ElseIf{|simplex| == 3} { \tcp{Caso 2D}
-%		\KwRet{TesteTriangulo()}
-%	} \Else{
-%		\KwRet{TesteLinha()}
-%	}
-%\end{algorithm}
+Ao adotar métodos simplificados, abre-se mão de características essenciais de motores físicos completos. Entre as limitações mais relevantes estão:
 
-%\section{Polígonos côncavos}
-%
-%\section{Tratando casos degenerados}
+\begin{itemize}
+	\item \textbf{Ausência de conservação precisa de energia e momento}, o que reduz o realismo de certas interações.
+	\item \textbf{Incapacidade de simular materiais complexos} (ex.: fricção anisotrópica, torques realistas, elasticidade avançada).
+	\item \textbf{Dependência de parâmetros empíricos}, sem interpretação física clara.
+	\item \textbf{Menor robustez para geometrias arbitrárias}, especialmente polígonos concavos ou mal escalonados.
+	\item \textbf{Dificuldade de lidar com sistemas altamente conectados} (estruturas rígidas, máquinas, esqueletos).
+\end{itemize}
+
+Essas limitações não invalidam o uso das técnicas, mas reforçam a necessidade do uso da aplicação a cenários onde a prioridade é a responsividade, e não a precisão física.
+
+\subsection*{Jittering}
+
+Em sistemas baseados em posições a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
+
+\subsection*{Empilhamento}
+
+Métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a "escorregar" ou colapsar devido à falta de amortecimento numérico adequado.
+
+\subsection*{Tunneling}
+
+Ocorre quando objetos em alta velocidade atravessam outros sem detectar colisão. Métodos baseados exclusivamente em detecção discreta apresentam maior risco, especialmente quando o passo temporal é grande ou a geometria é fina.
+
