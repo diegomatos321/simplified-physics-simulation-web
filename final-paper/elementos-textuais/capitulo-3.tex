@@ -8,7 +8,13 @@ Este capítulo introduz os principais conceitos utilizados no âmbito deste trab
 
 Um objeto geométrico é definido como um conjunto não vazio, limitado e fechado de pontos. A propriedade de ser fechado implica que sua fronteira pertence ao próprio conjunto, enquanto a limitação garante que exista uma esfera de raio finito que contenha todos os seus pontos. Um plano, por exemplo, é fechado, mas não limitado.
 
-\textbf{(INSERIR IMAGEM DE FORMA CONVEXA E NÃO-CONVEXA)}
+% \textbf{(INSERIR IMAGEM DE FORMA CONVEXA E NÃO-CONVEXA)}
+\begin{figure}[ht]
+	\centering
+	\includesvg[width=0.6\linewidth]{poligono-convexo-concavo}
+	\caption{Comparação entre polígono convexo (à esquerda) e polígono côncavo (à direita).}
+	\label{fig:poligonos}
+\end{figure}
 
 Uma forma é considerada \textit{convexa} se, para quaisquer dois pontos contidos nessa forma, todo o segmento que os une também estiver contido nela. Uma consequência prática é que, para qualquer linha que atravesse o objeto, esta o intersecta em no máximo dois pontos. Formas não convexas podem ser tratadas como composições de múltiplas partes convexas, o que permite a aplicação direta de algoritmos especializados.
 

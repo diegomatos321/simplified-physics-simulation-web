@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="115.12381mm"
+   height="52.107918mm"
+   viewBox="0 0 115.12381 52.107918"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="poligono-convexo-concavo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.0233293"
+     inkscape:cx="348.43562"
+     inkscape:cy="459.88559"
+     inkscape:window-width="2560"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="115.12381"
+       height="52.107918"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Camada 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-48.194191,-86.576081)">
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-dasharray:none;stroke-opacity:1"
+       d="M 48.452055,112.80822 56.958904,93.205479 89.876711,88.027395 95.794519,113.17808 75.452054,134.63013 51.78082,135 Z"
+       id="path1"
+       inkscape:export-filename="poligono-convexo-concavo.svg"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <circle
+       style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-dasharray:none;stroke-opacity:1"
+       id="path4"
+       cx="60.514313"
+       cy="108.10375"
+       r="0.9807474" />
+    <circle
+       style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-dasharray:none;stroke-opacity:1"
+       id="path4-3"
+       cx="85.73365"
+       cy="108.10893"
+       r="0.9807474" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.3;stroke-dasharray:none;stroke-opacity:1"
+       d="m 60.456191,108.16982 25.663988,-0.16073"
+       id="path5"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none;stroke-opacity:1"
+       d="m 120.30502,102.12849 5.88448,-14.776588 24.19177,-0.523065 12.68434,17.391923 -0.65384,22.36104 -33.73771,11.76896 -1.96149,-11.37666 16.99962,-10.33055 -5.75372,-12.0305 z"
+       id="path6"
+       sodipodi:nodetypes="cccccccccc" />
+    <circle
+       style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-dasharray:none;stroke-opacity:1"
+       id="path4-1"
+       cx="129.7832"
+       cy="99.904404"
+       r="0.9807474" />
+    <circle
+       style="fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.1;stroke-dasharray:none;stroke-opacity:1"
+       id="path4-3-2"
+       cx="139.88438"
+       cy="125.01404"
+       r="0.9807474" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.3;stroke-dasharray:none;stroke-opacity:1"
+       d="m 129.72508,99.970473 10.12974,24.989947"
+       id="path5-7"
+       sodipodi:nodetypes="cc" />
+  </g>
+</svg>

@@ -179,7 +179,11 @@ O caso mais comum é a \textbf{restrição linear} (ou restrição de distância
 
 Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválidas (através de forças externas, por exemplo). Para corrigir sua distância devemos mover (projetar) elas de tal forma que satisfaça \ref{eq:linear_constraint}.
 
-\textbf{Inserir figura}
+\begin{figure}[h!]
+	\centering
+	\includesvg[width=0.7\linewidth]{restricao-linear}
+	\caption{Correção de posição inválida por projeção. Partículas na posição correta (à esquerda), muito distantes (centro) e muito próximas (à direita)}
+\end{figure}
 
 \begin{algorithm}[H]
 	\caption{Restrição Linear}
@@ -194,9 +198,13 @@ O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partícu
 
 \subsection*{Restrição de Revolução}
 
-Para permitir que uma partícula gire em torno de um ponto fixo podemos contruir um objeto que compartilhe a mesma partícula ou impor uma restrição de distância entre a partícula e um ponto-âncora.
+Para permitir que uma partícula gire em torno de um ponto fixo podemos construir um objeto que compartilhe a mesma partícula ou impor uma restrição de distância entre a partícula e um ponto-âncora.
 
-\textbf{(Inserir figura ilustrativa.)}
+\begin{figure}[h!]
+	\centering
+	\includesvg[width=0.2\linewidth]{restricao-revolucao}
+	\caption{A restrição de revolução é uma conexão entre dois corpos em um único ponto de ancoragem.}
+\end{figure}
 
 Uma forma equivalente é definir uma restrição linear com distância $d = 0$ entre duas partículas, fazendo com que uma permaneça colada à outra.
 
@@ -204,6 +212,12 @@ Uma forma equivalente é definir uma restrição linear com distância $d = 0$ e
 
 Para limitar o ângulo de rotação de articulações, pode-se utilizar restrições de distância auxiliares. Para garantir que o ângulo não exceda um limite, impõe-se que a distância entre as extremidades seja maior que um valor $d_{min}$:
 $$|\vec{x}_2 - \vec{x}_1| > d_{min}$$
+
+\begin{figure}[h!]
+	\centering
+	\includesvg[width=0.2\linewidth]{restricao-angular}
+	\caption{Duas restrições lineares e uma restrição angular}
+\end{figure}
 
 O algoritmo é análogo ao da restrição linear, porém a correção é aplicada apenas se a condição de desigualdade for violada.
 
