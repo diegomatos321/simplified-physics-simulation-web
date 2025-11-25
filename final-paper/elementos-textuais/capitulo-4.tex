@@ -35,7 +35,12 @@ A resposta à colisão envolve dois passos principais. O primeiro consiste em se
 
 Para dois objetos convexos $A$ e $B$ em colisão, o esquema de detecção de colisão deve retornar os pontos de contato de cada objeto e o tamanho da penetração. Com essas informações devemos tratar duas configurações possíveis: colisão vértice-vértice ou colisão vértice-aresta.
 
-\textbf{INSERIR DIAGRAMA MOSTRANDO OS DOIS CASOS}
+\begin{figure}[h]
+	\centering
+	\includesvg[width=0.6\linewidth]{processo-separacao}
+	\caption{Processo de separação caso colisão vértice-vértice. Correção das posição para configuração válida. Perceba que como $p$ está mais próximo de $x_1$, esse vértice é movido mais}
+	\label{fig:processo-separacao}
+\end{figure}
 
 \subsection*{Colisão Vértice-Vértice}
 
@@ -51,7 +56,7 @@ Se o contato ocorre pontualmente entre duas partículas $p$ e $q$, a correção 
 Esta é a configuração mais comum. Um vértice $p$ de um corpo colide contra uma aresta definida pelas partículas $x_1$ e $x_2$ de outro corpo. O ponto de impacto $p$ cai entre dois vértices $x_1$ e $x_2$ e o nosso objetivo é corrigir as suas posições para uma configuração válida $x_1^*$, $x_2^*$, logo pela equação da reta $p$ pode ser descrito como uma interpolação linear
 
 \begin{equation}
-	p = (\alpha - 1) x_1 + \alpha x_2, \qquad 0 \leq \alpha \leq 1.
+	p = \alpha x_1 + (1-\alpha) x_2, \qquad 0 \leq \alpha \leq 1.
 	\label{eq:parametric_edge}
 \end{equation}
 

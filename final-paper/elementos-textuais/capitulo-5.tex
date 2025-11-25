@@ -16,7 +16,12 @@ Em sistemas de simulação física e detecção de colisões, a representação 
 
 A principal motivação para o uso de volumes delimitadores é que formas mais simples (como caixas ou esferas) permitem testes de sobreposição muito mais baratos do que a geometria original que envolvem. Dessa forma, o FC atua como um primeiro filtro: apenas quando o teste de interseção entre volumes delimitadores retorna positivo é que se procede para verificações mais detalhadas na geometria original. Em muitos casos, o próprio volume delimitador já é suficiente para caracterizar uma colisão.
 
-\textbf{INSERIR FIGURA DO FECHO CONVEXO DE OBJETOS EM INTERSECÇÃO E SEM INTERSECÇÃO}
+\begin{figure}[h]
+	\centering
+	\includesvg[width=0.8\linewidth]{fecho-convexo-interseccao}
+	\caption{As figuras à esquerda não tem intersecção de seus volumes delimitadores, logo não podem estar em colisão. Já as figuras da direita estão se sobrepondo, logo \textbf{podem} estar em colisão.}
+	\label{fig:fecho-convexo-interseccao}
+\end{figure}
 
 Segundo \citeonline{moller2018}, nem todos os objetos geométricos servem como volumes delimitadores eficazes. As propriedades desejáveis para volumes delimitadores incluem:
 
