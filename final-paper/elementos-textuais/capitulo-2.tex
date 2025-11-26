@@ -2,7 +2,7 @@
 
 A animação baseada em física é uma abordagem de geração de movimento que aparenta seguir princípios físicos básicos, mesmo que as equações envolvidas sejam tratadas de forma aproximada ou altamente simplificada. Diferentemente da animação tradicional, na qual o animador define manualmente posições e rotações ao longo do tempo (\textit{keyframe animation}), a animação física permite que o comportamento dos objetos emerja naturalmente das forças, restrições e interações entre os corpos simulados.
 
-Nesse contexto, a animação física simplificada busca um equilíbrio entre precisão e desempenho: modelos matemáticos são utilizados como guia, mas a prioridade está na estabilidade visual e na resposta interativa. Diferentemente da simulação científica, onde precisão e correção numérica são cruciais, na animação para fins gráficos ou interativos \textbf{o objetivo não é obter resultados fisicamente corretos, mas sim verossimilhança visual (plausibilidade)}. O foco está em transmitir sensação de peso, inércia e colisões de maneira convincente ao usuário, mesmo quando obtidos por heurísticas.
+Nesse contexto, a animação física simplificada busca um equilíbrio entre precisão e desempenho: modelos matemáticos são utilizados como guia, mas a prioridade está na estabilidade visual e na resposta interativa. Diferentemente da simulação científica, onde precisão e correção numérica são cruciais, na animação para fins gráficos ou interativos o objetivo não é obter resultados fisicamente corretos, mas sim verossimilhança visual (plausibilidade). O foco está em transmitir sensação de peso, inércia e colisões de maneira convincente ao usuário, mesmo quando obtidos por heurísticas.
 
 \section{Conceitos e Definições}
 
@@ -16,9 +16,10 @@ O objetivo central da animação baseada em física é resolver numericamente as
 \begin{quote}
 	\textbf{Segunda lei de Newton (Princípio Fundamental da Dinâmica):}
 	Para um corpo de massa constante $m$ submetido a uma força $\vec{F}$, o movimento é descrito por:
-	\begin{equation}
-		\vec{F} = m\vec{a} = m\frac{d\vec{v}}{dt} = m\frac{d^2\vec{x}}{dt^2}.
-	\end{equation}
+	$$
+		\vec{F} = m\vec{a} = m\frac{d\vec{v}}{dt} = m\frac{d^2\vec{x}}{dt^2},
+	$$
+    onde $\vec{x}$ é a posição do corpo, $\vec{v}$ é sua velocidade e $t$ é o tempo.
 \end{quote}
 
 \begin{quote}
@@ -27,7 +28,6 @@ O objetivo central da animação baseada em física é resolver numericamente as
 \end{quote}
 
 Em implementações simplificadas, efeitos complexos como atrito, restituição e deformação são aproximados por modelos empíricos. De maneira geral, o ciclo de uma simulação física engloba:
-
 \begin{enumerate}
 	\item coleta e soma das forças aplicadas (gravidade, vento, atrito etc.);
 	\item integração temporal das equações de movimento;
@@ -35,191 +35,162 @@ Em implementações simplificadas, efeitos complexos como atrito, restituição 
 	\item atualização das posições e posterior renderização.
 \end{enumerate}
 
-
 \section{Dinâmica de Partículas}
 
-A \textbf{dinâmica de partículas} é uma abordagem na qual o sistema é composto por partículas independentes. Cada partícula possui posição, velocidade e massa, e suas interações são modeladas por forças (como gravidade ou molas) ou por restrições geométricas (como manter distâncias constantes).
+A dinâmica de partículas é uma abordagem na qual o sistema é composto por partículas independentes. Cada partícula possui posição, velocidade e massa, e suas interações são modeladas por forças (como gravidade ou molas) ou por restrições geométricas (como manter distâncias constantes). 
 
 O estado de uma particula no instante $t$ é dado por:
-\[
+$$
 X(t) =
 \begin{pmatrix}
-	x(t) \\
-	v(t)
+	\vec{x}(t) \\
+	\vec{v}(t)
 \end{pmatrix}.
-\]
-
+$$
 Seja $F(t)$ a soma das forças que atuam sobre a partícula e $m$ sua massa. O movimento pode ser descrito por:
-\begin{equation}
+$$
 	\frac{d}{dt} X(t)
 	=
 	\frac{d}{dt}
 	\begin{pmatrix}
-		x(t) \\
-		v(t)
+		\vec{x}(t) \\
+		\vec{v}(t)
 	\end{pmatrix}
 	=
 	\begin{pmatrix}
-		v(t) \\
+		\vec{v}(t) \\
 		\dfrac{F(t)}{m}
 	\end{pmatrix}.
-\end{equation}
-
+$$
 Esta abordagem é flexível e serve como base para simular sistemas complexos, como tecidos, fluidos e corpos deformáveis, onde o comportamento macroscópico emerge da interação coletiva das partículas.
 
 \section{Representação de Corpos Rígidos}
 
-Um \textbf{corpo rígido} é um objeto cuja forma e volume permanecem invariáveis durante a simulação. Em termos matemáticos, a distância entre quaisquer dois pontos do corpo é constante, independentemente das forças aplicadas. Essa suposição simplifica o problema, permitindo representar o corpo apenas por grandezas globais: posição, orientação e velocidades linear e angular.
+Um corpo rígido é um objeto cuja forma e volume permanecem invariáveis durante a simulação. Em termos matemáticos, a distância entre quaisquer dois pontos do corpo é constante, independentemente das forças aplicadas. Essa suposição simplifica o problema, permitindo representar o corpo apenas por grandezas globais: posição, orientação e velocidades linear e angular.
 
 A representação matemática de um corpo rígido é dada por:
 \begin{itemize}
 	\item \textbf{Posição} $\vec{p}$: coordenadas do centro de massa;
-	\item \textbf{Orientação} $R$: matriz de rotação ou quaternion;
+	\item \textbf{Orientação} $R$: matriz de rotação ou quatérnio;
 	\item \textbf{Velocidade linear} $\vec{v}$: variação temporal da posição;
 	\item \textbf{Velocidade angular} $\vec{\omega}$: variação temporal da orientação;
 	\item \textbf{Massa} $m$ e \textbf{tensor de inércia} $I$: medidas de resistência à aceleração.
 \end{itemize}
 
-A dinâmica translacional e rotacional é governada pelas equações:
-\begin{align}
-	m \cdot \frac{d\vec{v}}{dt} &= \sum \vec{F}, \\
-	I \cdot \frac{d\vec{\omega}}{dt} &= \sum \vec{\tau},
-\end{align}
-
-onde $\sum \vec{F}$ é o somatório das forças externas e $\sum \vec{\tau}$ o somatório dos torques. Em simulações mais simples — como tecidos, cordas ou partículas — a rotação é frequentemente ignorada, reduzindo a complexidade computacional.
+%A dinâmica translacional e rotacional é governada pelas equações:
+%$$
+%	m \cdot \frac{d\vec{v}}{dt} &= \sum \vec{F}, \\
+%	I \cdot \frac{d\vec{\omega}}{dt} &= \sum \vec{\tau},
+%$$
+%onde $\sum \vec{F}$ é o somatório das forças externas e $\sum \vec{\tau}$ o somatório dos torques. Em simulações mais simples como tecidos, cordas ou partículas, a rotação é frequentemente ignorada, reduzindo a complexidade computacional.
 
 \section{Simulação de Corpos Deformáveis}
 
-Enquanto a dinâmica de corpos rígidos assume que a distância entre os pontos constituintes do objeto permanece inalterada, a simulação de \textbf{corpos deformáveis} lida com objetos que alteram sua forma sob a ação de forças externas. Esta categoria abrange uma vasta gama de fenômenos físicos, desde o comportamento elástico de uma bola de borracha até a dinâmica complexa de tecidos, cabelos e fluidos.
+Enquanto a dinâmica de corpos rígidos assume que a distância entre os pontos constituintes do objeto permanece inalterada, a simulação de corpos deformáveis lida com objetos que alteram sua forma sob a ação de forças externas. Esta categoria abrange uma vasta gama de fenômenos físicos, desde o comportamento elástico de uma bola de borracha até a dinâmica complexa de tecidos, cabelos e fluidos.
 
-Na mecânica do contínuo, a deformação é descrita pela mudança na configuração métrica do material, gerando tensões internas que tendem a restaurar o objeto ao seu estado de repouso ou dissipar energia na forma de deformação plástica. No contexto da computação gráfica em tempo real, no entanto, modelos discretos simplificados são preferidos em relação aos complexos Métodos de Elementos Finitos (FEM), devido ao seu menor custo computacional.
+Na mecânica do contínuo, a deformação é descrita pela mudança na configuração métrica do material, gerando tensões internas que tendem a restaurar o objeto ao seu estado de repouso ou dissipar energia na forma de deformação plástica. No contexto da computação gráfica em tempo real, no entanto, modelos discretos simplificados, tipicamente baseados em partículas, são preferidos em relação a métodos mais complexos, como por exemplo os Métodos de Elementos Finitos (FEM).
 
 \subsection*{Sistemas Massa-Mola}
 
-A abordagem mais comum para simular deformações em jogos e aplicações interativas é o modelo \textbf{Massa-Mola} (\textit{Mass-Spring System}). Neste modelo, um objeto é discretizado em um conjunto de partículas pontuais com massa $m$, conectadas por molas ideais sem massa.
+A abordagem mais comum para simular deformações em jogos e aplicações interativas é o modelo Massa-Mola. Neste modelo, um objeto é discretizado em um conjunto de partículas pontuais com massa $m$, conectadas por molas ideais sem massa.
 
 A força interna exercida por uma mola entre duas partículas $i$ e $j$ é descrita pela Lei de Hooke:
-
-\begin{equation}
+$$
 	\vec{F}_{elastica} = -k_s (|\vec{x}_i - \vec{x}_j| - L_0) \frac{\vec{x}_i - \vec{x}_j}{|\vec{x}_i - \vec{x}_j|},
-\end{equation}
-
+$$
 onde $k_s$ é a constante de rigidez (stiffness), $L_0$ é o comprimento de repouso da mola e $\vec{x}$ são as posições das partículas. Para garantir a estabilidade numérica e simular a perda de energia, adiciona-se frequentemente um termo de amortecimento (\textit{damping}):
-
-\begin{equation}
-	\vec{F}_{amortecimento} = -k_d (\vec{v}_i - \vec{v}_j) \cdot \frac{\vec{x}_i - \vec{x}_j}{|\vec{x}_i - \vec{x}_j|},
-\end{equation}
-
+$$
+	\vec{F}_{amortecimento} = -k_d (\vec{v}_i - \vec{v}_j) \frac{\vec{x}_i - \vec{x}_j}{|\vec{x}_i - \vec{x}_j|},
+$$
 onde $k_d$ é o coeficiente de amortecimento e $\vec{v}$ são as velocidades.
 
 \subsection*{Estruturação Topológica para Tecidos}
 
-Para simular superfícies deformáveis, como tecidos, as partículas são organizadas em uma malha (\textit{grid}). A estabilidade e o comportamento visual do tecido dependem de como essas molas (ou restrições) são conectadas. Uma topologia robusta geralmente emprega três tipos de conexões:
-
+Para simular superfícies deformáveis, como tecidos, as partículas são organizadas em uma grade. A estabilidade e o comportamento visual do tecido dependem de como essas molas (ou restrições) são conectadas. Uma topologia robusta geralmente emprega três tipos de conexões:
 \begin{enumerate}
-	\item \textbf{Molas Estruturais (\textit{Structural}):} Conectam partículas vizinhas diretas (horizontal e verticalmente). Elas resistem à tração e compressão básicas, mantendo a integridade da malha.
-	\item \textbf{Molas de Cisalhamento (\textit{Shear}):} Conectam partículas diagonalmente vizinhas. Sua função é impedir que o tecido se distorça ou "deslize" sobre si mesmo, mantendo a estabilidade dos quadriláteros da malha.
-	\item \textbf{Molas de Flexão (\textit{Bend}):} Conectam partículas alternadas (pulando um vizinho). Elas resistem à dobra do tecido, impedindo que ele se comporte como uma malha infinitamente flexível e conferindo-lhe uma certa rigidez à curvatura.
+	\item Molas Estruturais: Conectam partículas vizinhas diretas (horizontal e verticalmente). Elas resistem à tração e compressão básicas, mantendo a integridade da malha.
+	\item Molas de Cisalhamento: Conectam partículas diagonalmente vizinhas. Sua função é impedir que o tecido se distorça ou "deslize" sobre si mesmo, mantendo a estabilidade dos quadriláteros da malha.
+	\item Molas de Flexão: Conectam partículas alternadas (pulando um vizinho). Elas resistem à dobra do tecido, impedindo que ele se comporte como uma malha infinitamente flexível e conferindo-lhe uma certa rigidez à curvatura.
 \end{enumerate}
 
 \section{Métodos Numéricos em Simulação}
 
-A simulação de movimento depende da solução numérica das equações diferenciais que descrevem a dinâmica dos corpos.  
-Diversos métodos de integração podem ser utilizados, cada um com um equilíbrio distinto entre precisão, estabilidade e custo computacional.
+A simulação de movimento depende da solução numérica das equações diferenciais que descrevem a dinâmica dos corpos. Diversos métodos de integração podem ser utilizados, cada um com um equilíbrio distinto entre precisão, estabilidade e custo computacional.
 
 \subsection*{Método de Euler}
 
 O método de Euler explícito é o mais simples e intuitivo. Ele atualiza a posição e a velocidade de acordo com a aceleração atual:
-
-\begin{align}
-	\vec{v}_{t+\Delta t} &= \vec{v}_t + \vec{a}_t \Delta t \\
-	\vec{x}_{t+\Delta t} &= \vec{x}_t + \vec{v}_t \Delta t
-\end{align}
-
+\begin{align*}
+	\vec{v}_{t+\Delta t} &= \vec{v}_t + \vec{a}_t \Delta t, \\
+	\vec{x}_{t+\Delta t} &= \vec{x}_t + \vec{v}_t \Delta t.
+\end{align*}
 Apesar de sua simplicidade, o método de Euler tende a ser numericamente instável, especialmente em sistemas oscilatórios (como molas), pois o erro de integração cresce rapidamente ao longo do tempo.
 
 \subsection*{Método Semi-implícito de Euler}
 
 Uma variação estável do método de Euler consiste em atualizar primeiro a velocidade e depois a posição, utilizando a nova velocidade no cálculo:
-
-\begin{align}
-	\vec{v}_{t+\Delta t} &= \vec{v}_t + \vec{a}_t \Delta t \\
-	\vec{x}_{t+\Delta t} &= \vec{x}_t + \vec{v}_{t+\Delta t} \Delta t
-\end{align}
-
+\begin{align*}
+	\vec{v}_{t+\Delta t} &= \vec{v}_t + \vec{a}_t \Delta t, \\
+	\vec{x}_{t+\Delta t} &= \vec{x}_t + \vec{v}_{t+\Delta t} \Delta t.
+\end{align*}
 Essa pequena modificação melhora a conservação de energia e reduz a instabilidade numérica, sendo amplamente adotado em motores como o Box2D.
 
 \subsection*{Integração de Verlet}
 
 A Integração de Verlet é a base do método de Jakobsen. É um método de segunda ordem que não armazena explicitamente a velocidade. A nova posição é calculada com base na posição atual, na posição anterior e na aceleração:
-
-\begin{equation}
-	\vec{x}_{t+\Delta t} = 2\vec{x}_t - \vec{x}_{t-\Delta t} + \vec{a}_t \Delta t^2
-\end{equation}
+$$
+	\vec{x}_{t+\Delta t} = 2\vec{x}_t - \vec{x}_{t-\Delta t} + \vec{a}_t \Delta t^2.
+$$
 
 A velocidade, quando necessária para cálculos de amortecimento ou jogabilidade, é derivada implicitamente:
-\begin{equation}
-	\vec{v}_t \approx \frac{\vec{x}_{t+\Delta t} - \vec{x}_{t-\Delta t}}{2\Delta t}
-\end{equation}
+$$
+	\vec{v}_t \approx \frac{\vec{x}_{t+\Delta t} - \vec{x}_{t-\Delta t}}{2\Delta t}.
+$$
 
-O método de Verlet é estável e eficiente, especialmente em sistemas sujeitos a restrições geométricas além de eliminar a necessidade de armazenar explicitamente a velocidade, utilizando as posições atual e anterior para estimar a nova posição:
+O método de Verlet é estável e eficiente, especialmente em sistemas sujeitos a restrições geométricas além de eliminar a necessidade de armazenar explicitamente a velocidade, utilizando as posições atual e anterior para estimar a nova posição.
 
 \section{Restrições Geométricas}
 
-\citeonline{jakobsen2001advanced} utiliza de restrições geométricas simples para compor estruturas complexas.  Objetos físicos são representados como conjuntos de \textbf{partículas} conectadas por \textbf{restrições}, que impõem relações a serem satisfeitas a cada passo de simulação.
+\citeonline{jakobsen2001advanced} utiliza restrições geométricas simples para compor estruturas complexas.  Objetos físicos são representados como conjuntos de partículas conectadas por restrições, que impõem relações a serem satisfeitas a cada passo de simulação.
 
 \subsection*{Restrição Linear}
 
-O caso mais comum é a \textbf{restrição linear} (ou restrição de distância), que mantém uma distância fixa $d$ entre duas partículas $i$ e $j$. Dessa forma o conjunto de partículas devem satisfazer a todo instante uma coleção de inequações unilaterais representadas na forma:
-
+O caso mais comum é a restrição linear (ou restrição de distância), que mantém uma distância fixa $d$ entre duas partículas $i$ e $j$. Dessa forma o conjunto de partículas devem satisfazer a todo instante uma coleção de equações forma:
 \begin{equation}
-	|\vec{x_i} - \vec{x_j}| - d = 0
-	\label{eq:linear_constraint}
+   |\vec{x_i} - \vec{x_j}| = d.
+   \label{eq:linear_constraint}
 \end{equation}
 
-Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválidas (através de forças externas, por exemplo). Para corrigir sua distância devemos mover (projetar) elas de tal forma que satisfaça \ref{eq:linear_constraint}.
-
-\begin{figure}[h!]
+Mesmo que as posições das partículas estejam inicialmente corretas, depois de um passo de simulação a distância entre elas pode se tornar inválida (devido a forças externas, por exemplo). Para corrigir sua distância devemos movê-las (projeção) de forma a satisfazer \ref{eq:linear_constraint}, como ilustrado na figura~\ref{fig:correcao}.
+\begin{figure}[htb]
 	\centering
 	\includesvg[width=0.7\linewidth]{restricao-linear}
 	\caption{Correção de posição inválida por projeção. Partículas na posição correta (à esquerda), muito distantes (centro) e muito próximas (à direita)}
+    \label{fig:correcao}
 \end{figure}
-
-\begin{algorithm}[H]
-	\caption{Restrição Linear}
-	$\vec{\delta} \leftarrow \vec{x}_2 - \vec{x}_1$ \\
-	$c \leftarrow \frac{\|\vec{\delta}\| - d}{\|\vec{\delta}\|}$ \\
-	$\vec{x}_1 \leftarrow \vec{x}_1 - \epsilon \, \vec{\delta} \, c$ \\
-	$\vec{x}_2 \leftarrow \vec{x}_2 + \epsilon \, \vec{\delta} \, c$
-	\label{al:linear_constraint}
-\end{algorithm}
-
-O pseudocódigo \ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distancia $d$. Deve-se encontrar o movimento mínimo que satisfaça a restrição. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas. Quando $\epsilon = 0.5$, as partículas se movem proporcionalmente, valores maiores simulam uma haste mais rígida. 
 
 \subsection*{Restrição de Revolução}
 
-Para permitir que uma partícula gire em torno de um ponto fixo podemos construir um objeto que compartilhe a mesma partícula ou impor uma restrição de distância entre a partícula e um ponto-âncora.
-
-\begin{figure}[h!]
+Para permitir que uma partícula gire em torno de um ponto fixo podemos construir um objeto que compartilhe a mesma partícula ou impor uma restrição de distância entre a partícula e um ponto-âncora como ilustrado na figura~\ref{fig:restricao-revolucao}.
+\begin{figure}[htb]
 	\centering
 	\includesvg[width=0.2\linewidth]{restricao-revolucao}
 	\caption{A restrição de revolução é uma conexão entre dois corpos em um único ponto de ancoragem.}
+	\label{fig:restricao-revolucao}
 \end{figure}
-
 Uma forma equivalente é definir uma restrição linear com distância $d = 0$ entre duas partículas, fazendo com que uma permaneça colada à outra.
 
 \subsection*{Restrição Angular}
 
 Para limitar o ângulo de rotação de articulações, pode-se utilizar restrições de distância auxiliares. Para garantir que o ângulo não exceda um limite, impõe-se que a distância entre as extremidades seja maior que um valor $d_{min}$:
 $$|\vec{x}_2 - \vec{x}_1| > d_{min}$$
-
-\begin{figure}[h!]
+O algoritmo é análogo ao da restrição linear, porém a correção é aplicada apenas se a condição de desigualdade for violada, como ilustrado na figura~\ref{fig:restricao-angular}.
+\begin{figure}[htb]
 	\centering
 	\includesvg[width=0.2\linewidth]{restricao-angular}
 	\caption{Duas restrições lineares e uma restrição angular}
+	\label{fig:restricao-angular}
 \end{figure}
-
-O algoritmo é análogo ao da restrição linear, porém a correção é aplicada apenas se a condição de desigualdade for violada.
 
 \section{Resolvendo restrições concorrentes por relaxamento}
 
@@ -237,6 +208,18 @@ Na prática, uma simulação pode conter muitas restrições de todos os tipos v
 	}
 	\label{al:satisfazer_restricoes}
 \end{algorithm}
+
+
+\begin{algorithm}[htb]
+	\caption{Restrição Linear}
+	$\vec{\delta} \leftarrow \vec{x}_2 - \vec{x}_1$ \\
+	$c \leftarrow \frac{\|\vec{\delta}\| - d}{\|\vec{\delta}\|}$ \\
+	$\vec{x}_1 \leftarrow \vec{x}_1 - \epsilon \, \vec{\delta} \, c$ \\
+	$\vec{x}_2 \leftarrow \vec{x}_2 + \epsilon \, \vec{\delta} \, c$
+	\label{al:linear_constraint}
+\end{algorithm}
+
+O pseudocódigo mostrado em Algoritmo~\ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distância $d$. Deve-se encontrar o movimento mínimo que satisfaça a restrição. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas. Quando $\epsilon = 0.5$, as partículas se movem proporcionalmente, valores maiores simulam uma haste mais rígida. 
 
 Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução e também a animação irá parecer mais rígida para o usuário.
 
