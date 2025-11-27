@@ -7,17 +7,15 @@ Este capítulo discute os princípios clássicos e as formulações modernas de 
 \section{Métodos Dinâmicos na Simulação Física}
 
 A resposta a colisões consiste, essencialmente, em duas operações principais:
-
 \begin{enumerate}
 	\item \textbf{Correção de Posição}: eliminar a interpenetração entre dois corpos.
 	\item \textbf{Correção de Velocidade}: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
 \end{enumerate}
-
 A literatura apresenta diversas abordagens para modelar o movimento de corpos rígidos e deformáveis. Embora este trabalho se baseie no método simplificado de Jakobsen, é importante contextualizar outras categorias amplamente utilizadas em motores físicos modernos:
 
 \subsection*{Método do Impulso}
 
-O \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok e Bullet. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
+O \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok~\cite{havok} e Bullet~\cite{bullet}. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
 
 \subsection*{Método de Penalidades}
 
@@ -29,23 +27,15 @@ Os métodos baseados em restrições formulam os contatos como equações que de
 
 \section{Processo de Separação}
 
-A metodologia de \citeonline{jakobsen2001advanced} pode ser compreendida como uma precursora da moderna \textit{Position Based Dynamics} (PBD) \cite{muller2007position}. Diferentemente das abordagens que atuam sobre a velocidade ou aceleração, Jakobsen trata colisões como restrições geométricas adicionais que devem ser satisfeitas durante o processo iterativo de relaxação da simulação. Assim, objetos penetrando um ao outro são corrigidos exclusivamente por modificações de posição, de forma estável e sem oscilações numéricas.
+A metodologia de \citeonline{jakobsen2001advanced} pode ser compreendida como uma precursora da moderna \textit{Position Based Dynamics} (PBD)~\cite{muller2007position}. Diferentemente das abordagens que atuam sobre a velocidade ou aceleração, \citeonline{jakobsen2001advanced} trata colisões como restrições geométricas adicionais que devem ser satisfeitas durante o processo iterativo de relaxação da simulação. Assim, objetos penetrando um ao outro são corrigidos exclusivamente por modificações de posição, de forma estável e sem oscilações numéricas.
 
 A resposta à colisão envolve dois passos principais. O primeiro consiste em separar os elementos geométricos (vértices, arestas ou faces) que se encontram em interpenetração, o que caracteriza um processo estritamente geométrico. O segundo passo corresponde a um processo iterativo de relaxamento, no qual os elementos afetados ajustam suas posições de acordo com as restrições impostas pelo sistema físico.
 
 Para dois objetos convexos $A$ e $B$ em colisão, o esquema de detecção de colisão deve retornar os pontos de contato de cada objeto e o tamanho da penetração. Com essas informações devemos tratar duas configurações possíveis: colisão vértice-vértice ou colisão vértice-aresta.
 
-\begin{figure}[h]
-	\centering
-	\includesvg[width=0.6\linewidth]{processo-separacao}
-	\caption{Processo de separação caso colisão vértice-vértice. Correção das posição para configuração válida. Perceba que como $p$ está mais próximo de $x_1$, esse vértice é movido mais}
-	\label{fig:processo-separacao}
-\end{figure}
-
 \subsection*{Colisão Vértice-Vértice}
 
 Se o contato ocorre pontualmente entre duas partículas $p$ e $q$, a correção é dividida igualmente (assumindo massas iguais):
-
 \begin{equation}
 	\Delta \vec{p} = -\frac{1}{2}\vec{d}, \qquad
 	\Delta \vec{q} = +\frac{1}{2}\vec{d}.
@@ -53,37 +43,41 @@ Se o contato ocorre pontualmente entre duas partículas $p$ e $q$, a correção 
 
 \subsection*{Colisão Vértice-Aresta}
 
-Esta é a configuração mais comum. Um vértice $p$ de um corpo colide contra uma aresta definida pelas partículas $x_1$ e $x_2$ de outro corpo. O ponto de impacto $p$ cai entre dois vértices $x_1$ e $x_2$ e o nosso objetivo é corrigir as suas posições para uma configuração válida $x_1^*$, $x_2^*$, logo pela equação da reta $p$ pode ser descrito como uma interpolação linear
+\begin{figure}[htb]
+	\centering
+	\includesvg[width=0.6\linewidth]{processo-separacao}
+	\caption{Processo de separação caso colisão vértice-vértice. Correção das posição para configuração válida. Perceba que como $p$ está mais próximo de $x_1$, esse vértice é movido mais}
+	\label{fig:processo-separacao}
+\end{figure}
 
+Esta é a configuração mais comum. Um vértice $p$ de um corpo colide contra uma aresta definida pelas partículas $\vec{x}_1$ e $\vec{x}_2$ de outro corpo. O ponto de impacto $p$ cai entre dois vértices $\vec{x}_1$ e $\vec{x}_2$ e o nosso objetivo é corrigir as suas posições para uma configuração válida $\vec{x}_1'$, $\vec{x}_2'$ de tal forma que garanta uma coerência geométrica, como mostra na figura~\ref{fig:processo-separacao}. Logo, pela equação da reta, $p$ pode ser descrito como uma interpolação linear
 \begin{equation}
-	p = \alpha x_1 + (1-\alpha) x_2, \qquad 0 \leq \alpha \leq 1.
+	p = \alpha \vec{x}_1 + (1-\alpha) \vec{x}_2, \qquad 0 \leq \alpha \leq 1,
 	\label{eq:parametric_edge}
 \end{equation}
+ou seja, quando $\alpha=0, p=x_2$, quando $\alpha=1, p=x_1$.
 
-Durante a separação, a correção $\Delta \vec{p}$ deve alterar indiretamente $\vec{x}_1$ e $\vec{x}_2$ de forma proporcional a essa parametrização. A partir da Eq.~\ref{eq:parametric_edge}, derivamos o valor de $\alpha$ projetando o vetor $\vec{p} - \vec{x}_2$ sobre o vetor da aresta $\vec{x}_1 - \vec{x}_2$. Dessa forma Jakobsen computa as novas posições movendo as partículas proporcionalmente a $\alpha$:
-
-\begin{align}
-	x_1 += \alpha \Delta_p \\
-	x_2 += (1-\alpha) \Delta_p \\
+Durante a separação, a correção $\Delta \vec{p}$ deve alterar indiretamente $\vec{x}_1$ e $\vec{x}_2$ de forma proporcional a essa parametrização. A partir da Eq.~\ref{eq:parametric_edge}, derivamos o valor de $\alpha$ calculando quanto o ponto de contato $p$ está "ao longo" da aresta que vai do ponto $\vec{x}_2 \rightarrow \vec{x}_1$. Dessa forma, \citeonline{jakobsen2001advanced} computa as novas posições movendo as partículas proporcionalmente a $\alpha$:
+\begin{align*}
+	\vec{x}_1 +&= \alpha \Delta_p \\
+	\vec{x}_2 +&= (1-\alpha) \Delta_p \\
 	\alpha
-	= 
+	&= 
 	\frac{
 		(\vec{p} - \vec{x}_2) \cdot (\vec{x}_1 - \vec{x}_2)
 	}{
 		\|\vec{x}_1 - \vec{x}_2\|^2
 	}.
 	\label{eq:alpha_projection}
-\end{align}
-
+\end{align*}
 Isso garante que a geometria original é preservada e que o ponto $\vec{p}$, definido implicitamente pelos vértices da aresta, é deslocado exatamente pela quantidade desejada.
 
 \section{Algoritmo de Expansão de Politopos (EPA)}
 
-Enquanto o SAT fornece naturalmente o MTV, o algoritmo GJK apenas informa se há interseção (retornando um \textit{simplex} interno à Diferença de Minkowski). Para obter a profundidade e a normal da colisão necessárias para a resposta física, utiliza-se o \textbf{EPA} (\textit{Expanding Polytope Algorithm}).
+Enquanto o SAT fornece naturalmente o MTV, o algoritmo GJK apenas informa se há interseção (retornando um \textit{simplex} interno à diferença de Minkowski). Para obter a profundidade e a normal da colisão necessárias para a resposta física, utiliza-se o Algoritmo de Expansão de Politopos (EPA).
 
-O algoritmo expande o simplex final do GJK iterativamente até encontrar a fronteira da Diferença de Minkowski mais próxima da origem. A distância entre o ponto mais próximo com a origem é a profundidade de penetração. Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar o normal da face mais próxima da origem, porém um simplex não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
-
-\begin{algorithm}[H]
+O algoritmo~\ref{alg:epa} expande o \textit{simplex} final do GJK iterativamente até encontrar a fronteira da iferença de Minkowski mais próxima da origem. A distância entre o ponto mais próximo com a origem é a profundidade de penetração. Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar a normal da face mais próxima da origem, porém um \textit{simplex} não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
+\begin{algorithm}[htb]
 	\caption{EPA}
 	\KwIn{Simplex}
 	\KwOut{$\hat{n}$, $\delta$}
@@ -98,32 +92,29 @@ O algoritmo expande o simplex final do GJK iterativamente até encontrar a front
 		
 		Adicionar ponto ao simplex
 	}
+	\label{alg:epa}
 \end{algorithm}
-
 A tolerância $\epsilon$ (ex: $10^{-4}$) e o limite de iterações são cruciais para evitar loops infinitos em casos de precisão numérica flutuante ou formas curvas aproximadas.
 
 \section{Limitações}
-\label{sec:limitacoes}
 
 Ao adotar métodos simplificados, abre-se mão de características essenciais de motores físicos completos. Entre as limitações mais relevantes estão:
-
 \begin{itemize}
-	\item \textbf{Ausência de conservação precisa de energia e momento}, o que reduz o realismo de certas interações.
-	\item \textbf{Incapacidade de simular materiais complexos} (ex.: fricção anisotrópica, torques realistas, elasticidade avançada).
-	\item \textbf{Dependência de parâmetros empíricos}, sem interpretação física clara.
-	\item \textbf{Menor robustez para geometrias arbitrárias}, especialmente polígonos concavos ou mal escalonados.
-	\item \textbf{Dificuldade de lidar com sistemas altamente conectados} (estruturas rígidas, máquinas, esqueletos).
+	\item Ausência de conservação precisa de energia e momento, o que reduz o realismo de certas interações.
+	\item Incapacidade de simular materiais complexos (ex.: fricção anisotrópica, torques realistas, elasticidade avançada).
+	\item Dependência de parâmetros empíricos, sem interpretação física clara.
+	\item Menor robustez para geometrias arbitrárias, especialmente polígonos concavos ou mal escalonados.
+	\item Dificuldade de lidar com sistemas altamente conectados (estruturas rígidas, máquinas, esqueletos).
 \end{itemize}
-
 Essas limitações não invalidam o uso das técnicas, mas reforçam a necessidade do uso da aplicação a cenários onde a prioridade é a responsividade, e não a precisão física.
 
 \subsection*{Jittering}
 
-Em sistemas baseados em posições a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textbf{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
+Em sistemas baseados em posições a estabilidade depende fortemente do processo de correção de posições. Um dos problemas mais recorrentes é o \textit{jitter}, um tremor ou oscilação indesejada no posicionamento dos corpos, especialmente perceptível quando múltiplas restrições são aplicadas simultaneamente ou quando o sistema é altamente rígido.
 
 \subsection*{Empilhamento}
 
-Métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a "escorregar" ou colapsar devido à falta de amortecimento numérico adequado.
+Métodos simplificados têm dificuldade em manter pilhas estáveis de objetos, principalmente quando as correções não são distribuídas de forma global e consistente. O empilhamento tende a "escorregar" ou colapsar devido à falta de precisão numérica adequado.
 
 \subsection*{Tunneling}
 

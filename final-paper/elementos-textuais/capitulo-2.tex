@@ -98,7 +98,7 @@ A força interna exercida por uma mola entre duas partículas $i$ e $j$ é descr
 $$
 	\vec{F}_{elastica} = -k_s (|\vec{x}_i - \vec{x}_j| - L_0) \frac{\vec{x}_i - \vec{x}_j}{|\vec{x}_i - \vec{x}_j|},
 $$
-onde $k_s$ é a constante de rigidez (stiffness), $L_0$ é o comprimento de repouso da mola e $\vec{x}$ são as posições das partículas. Para garantir a estabilidade numérica e simular a perda de energia, adiciona-se frequentemente um termo de amortecimento (\textit{damping}):
+onde $k_s$ é a constante de rigidez, $L_0$ é o comprimento de repouso da mola e $\vec{x}$ são as posições das partículas. Para garantir a estabilidade numérica e simular a perda de energia, adiciona-se frequentemente um termo de amortecimento:
 $$
 	\vec{F}_{amortecimento} = -k_d (\vec{v}_i - \vec{v}_j) \frac{\vec{x}_i - \vec{x}_j}{|\vec{x}_i - \vec{x}_j|},
 $$
@@ -151,7 +151,7 @@ O método de Verlet é estável e eficiente, especialmente em sistemas sujeitos 
 
 \section{Restrições Geométricas}
 
-\citeonline{jakobsen2001advanced} utiliza restrições geométricas simples para compor estruturas complexas.  Objetos físicos são representados como conjuntos de partículas conectadas por restrições, que impõem relações a serem satisfeitas a cada passo de simulação.
+\citeonline{jakobsen2001advanced} utiliza restrições geométricas simples para compor estruturas complexas. Objetos físicos são representados como conjuntos de partículas conectadas por restrições, que impõem relações a serem satisfeitas a cada passo de simulação.
 
 \subsection*{Restrição Linear}
 
@@ -171,14 +171,14 @@ Mesmo que as posições das partículas estejam inicialmente corretas, depois de
 
 \subsection*{Restrição de Revolução}
 
-Para permitir que uma partícula gire em torno de um ponto fixo podemos construir um objeto que compartilhe a mesma partícula ou impor uma restrição de distância entre a partícula e um ponto-âncora como ilustrado na figura~\ref{fig:restricao-revolucao}.
+Para permitir que uma partícula gire em torno de um ponto fixo podemos construir um objeto que compartilhe a mesma partícula como ilustrado na figura~\ref{fig:restricao-revolucao}.
 \begin{figure}[htb]
 	\centering
 	\includesvg[width=0.2\linewidth]{restricao-revolucao}
 	\caption{A restrição de revolução é uma conexão entre dois corpos em um único ponto de ancoragem.}
 	\label{fig:restricao-revolucao}
 \end{figure}
-Uma forma equivalente é definir uma restrição linear com distância $d = 0$ entre duas partículas, fazendo com que uma permaneça colada à outra.
+Uma forma equivalente é impor uma restrição de distância entre a partícula e um ponto-âncora com distância $d = 0$ entre elas, fazendo com que permaneçam coladas.
 
 \subsection*{Restrição Angular}
 
@@ -194,10 +194,9 @@ O algoritmo é análogo ao da restrição linear, porém a correção é aplicad
 
 \section{Resolvendo restrições concorrentes por relaxamento}
 
-Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas as inequações sequencialmente, como as restrições entre partículas são interdependentes, não é possível satisfazê-las todas simultaneamente de maneira exata em um único passo.
+Na prática, uma simulação pode conter muitas restrições de todos os tipos vistos anteriormente. Para satisfazer todas elas devemos resolver todas elas sequencialmente, como as restrições entre partículas são interdependentes, não é possível satisfazê-las todas simultaneamente de maneira exata em um único passo.
 
-\citeonline{jakobsen2001advanced} propõe um método iterativo de relaxamento, também conhecido como \textit{Gauss-Seidel relaxation}, para resolver as restrições de forma aproximada. É uma abordagem de solução indireta por iteração local que consiste em aplicar pequenas correções de posição para cada par de partículas conectado, repetindo o procedimento diversas vezes até que todas as restrições estejam aproximadamente satisfeitas. Cada iteração contribui para reduzir o erro acumulado, e a convergência ocorre rapidamente mesmo com poucas iterações (geralmente entre 3 e 5).
-
+\citeonline{jakobsen2001advanced} propõe um método iterativo de relaxamento, também conhecido como \textit{Gauss-Seidel relaxation}, para resolver as restrições de forma aproximada. É uma abordagem de solução indireta por iteração local que consiste em aplicar pequenas correções de posição para cada par de partículas conectado, repetindo o procedimento diversas vezes até que todas as restrições estejam aproximadamente satisfeitas como no algoritmo~\ref{al:satisfazer_restricoes}. Cada iteração contribui para reduzir o erro acumulado, e a convergência ocorre rapidamente mesmo com poucas iterações (geralmente entre 3 e 5).
 \begin{algorithm}
 	\caption{Satisfazer Restrições}
 	\KwIn{n: número de repetições}
@@ -209,7 +208,9 @@ Na prática, uma simulação pode conter muitas restrições de todos os tipos v
 	\label{al:satisfazer_restricoes}
 \end{algorithm}
 
+Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução ideal e também a animação irá parecer mais rígida para o usuário.
 
+Deve-se encontrar o movimento mínimo que satisfaça cada restrição, para restrição linear podemos fazer como no algoritmo~\ref{al:linear_constraint} que irá separar ou aproximar as partículas de tal forma que satisfaçam a distância $d$.
 \begin{algorithm}[htb]
 	\caption{Restrição Linear}
 	$\vec{\delta} \leftarrow \vec{x}_2 - \vec{x}_1$ \\
@@ -218,11 +219,6 @@ Na prática, uma simulação pode conter muitas restrições de todos os tipos v
 	$\vec{x}_2 \leftarrow \vec{x}_2 + \epsilon \, \vec{\delta} \, c$
 	\label{al:linear_constraint}
 \end{algorithm}
+Onde $\epsilon$ representa o tamanho de passo local para convergência para solução ideal. Quando $\epsilon=1$ as partículas são movidas imediatamente para posição correta. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas. 
 
-O pseudocódigo mostrado em Algoritmo~\ref{al:linear_constraint} irá separar ou aproximar as partículas de tal forma que satisfaçam a distância $d$. Deve-se encontrar o movimento mínimo que satisfaça a restrição. Essa situação é comparável a um sistema de molas interconectadas entre partículas de rigidez que tendem para o infinito ou a uma haste rígida separando as duas partículas. Quando $\epsilon = 0.5$, as partículas se movem proporcionalmente, valores maiores simulam uma haste mais rígida. 
-
-Apesar dessa abordagem parecer ingênua, ao resolver todas restrições localmente e repetir, o sistema global do sistema converge para uma configuração que satisfaça todas restrições. Quanto maior o número de iterações mais rápido o sistema irá convergir para solução e também a animação irá parecer mais rígida para o usuário.
-
-Além disso para o algoritmo \ref{al:linear_constraint} o valor e $\epsilon$ tem o efeito de aumentar o passo local de convergência para solução ideal. Fisicamente pode ser interpretado como um coeficiente de restituição. Pode ser usado para representar quão abrupto as partículas se aproximam ou afastam.
-
-Jakobsen utiliza um modelo baseado em partículas e restrições geométricas, evitando explicitamente a solução de equações diferenciais rígidas e instáveis. Em vez disso, correções iterativas são aplicadas diretamente às posições das partículas, proporcionando estabilidade numérica elevada e comportamento visualmente plausível mesmo sob passos de tempo grandes.
+\citeonline{jakobsen2001advanced} utiliza um modelo baseado em partículas e restrições geométricas, evitando explicitamente a solução de equações diferenciais rígidas e instáveis. Em vez disso, correções iterativas são aplicadas diretamente às posições das partículas, proporcionando estabilidade numérica elevada e comportamento visualmente plausível mesmo sob passos de tempo grandes.
