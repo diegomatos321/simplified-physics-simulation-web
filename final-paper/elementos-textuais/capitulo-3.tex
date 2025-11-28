@@ -119,7 +119,7 @@ Dessa forma, queremos apenas saber se a diferença de Minkowski contém ou não 
 
 O algoritmo GJK começa com um simplex inicial e o refina iterativamente adicionando pontos encontrados usando a função de suporte em uma direção que aponta para a origem. Esse processo continua até que a origem seja encontrada dentro do simplex, indicando uma colisão, ou até que se determine que a origem não está contida, o que significa que não há colisão.
 
-A função de suporte deve retornar o ponto mais distante em uma direção dentro da Diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da diferença de Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
+A função de suporte deve retornar o ponto mais distante em uma direção dentro da diferença de Minkowski. Isso cria um Simplex que contém uma área máxima, aumentando, portanto, a chance de que o algoritmo termine rapidamente. Além disso, podemos usar o fato de que todos os pontos retornados desta forma estão na borda da diferença de Minkowski e, portanto, se não pudermos adicionar um ponto além da origem ao longo de alguma direção, sabemos que a diferença de Minkowski não contém a origem. Isso aumenta as chances de o algoritmo sair rapidamente em casos de não interseção.
 
 \subsection*{Construção iterativa do simplex}
 

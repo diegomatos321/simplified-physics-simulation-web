@@ -2,24 +2,24 @@
 
 A resposta a colisões é uma etapa fundamental em qualquer sistema de simulação física interativa. Após detectar que dois corpos estão em interpenetração, torna-se necessário aplicar um conjunto de correções que restaurem a plausibilidade física do movimento, evitando instabilidades numéricas. 
 
-Este capítulo discute os princípios clássicos e as formulações modernas de resposta a colisão, estabelecendo a relação entre os métodos geométricos de detecção — como o Vetor de Translação Mínima (MTV) — e a abordagem baseada em partículas e restrições proposta por \citeonline{jakobsen2001advanced}, que fundamenta este trabalho.
+Este capítulo discute os princípios clássicos e as formulações modernas de resposta a colisão, estabelecendo a relação entre os métodos geométricos de detecção e a abordagem baseada em partículas e restrições proposta por \citeonline{jakobsen2001advanced}, que fundamenta este trabalho.
 
 \section{Métodos Dinâmicos na Simulação Física}
 
 A resposta a colisões consiste, essencialmente, em duas operações principais:
 \begin{enumerate}
-	\item \textbf{Correção de Posição}: eliminar a interpenetração entre dois corpos.
-	\item \textbf{Correção de Velocidade}: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
+	\item Correção de Posição: eliminar a interpenetração entre dois corpos.
+	\item Correção de Velocidade: remover ou ajustar componentes da velocidade que induziriam novo contato imediato.
 \end{enumerate}
-A literatura apresenta diversas abordagens para modelar o movimento de corpos rígidos e deformáveis. Embora este trabalho se baseie no método simplificado de Jakobsen, é importante contextualizar outras categorias amplamente utilizadas em motores físicos modernos:
+A literatura apresenta diversas abordagens para modelar o movimento de corpos rígidos e deformáveis. Embora este trabalho se baseie no método simplificado de \citeonline{jakobsen2001advanced}, é importante contextualizar outras categorias amplamente utilizadas em motores físicos modernos:
 
 \subsection*{Método do Impulso}
 
-O \textit{Método do Impulso} tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok~\cite{havok} e Bullet~\cite{bullet}. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
+O Método do Impulso tratam colisões aplicando impulsos instantâneos que alteram diretamente as velocidades dos corpos para preservar o momento linear e angular. Essa abordagem é utilizada em motores como Havok~\cite{havok} e Bullet~\cite{bullet}. O impulso é calculado em função da velocidade relativa no ponto de contato, resultando em um método eficiente para simulações em tempo real.
 
 \subsection*{Método de Penalidades}
 
-Nos \textit{Métodos de Penalidades}, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração alterando diretamente a aceleração. Essas forças geralmente seguem modelos de mola e amortecimento, trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
+Nos Métodos de Penalidades, colisões são tratadas como interpenetrações que geram forças de repulsão proporcionais à profundidade de penetração alterando diretamente a aceleração. Essas forças geralmente seguem modelos de mola e amortecimento, trata-se de um método simples, porém sensível à escolha dos parâmetros de rigidez, podendo causar instabilidade numérica.
 
 \subsection*{Método Constraint-Based com Multiplicadores de Lagrange}
 
@@ -76,7 +76,7 @@ Isso garante que a geometria original é preservada e que o ponto $\vec{p}$, def
 
 Enquanto o SAT fornece naturalmente o MTV, o algoritmo GJK apenas informa se há interseção (retornando um \textit{simplex} interno à diferença de Minkowski). Para obter a profundidade e a normal da colisão necessárias para a resposta física, utiliza-se o Algoritmo de Expansão de Politopos (EPA).
 
-O algoritmo~\ref{alg:epa} expande o \textit{simplex} final do GJK iterativamente até encontrar a fronteira da iferença de Minkowski mais próxima da origem. A distância entre o ponto mais próximo com a origem é a profundidade de penetração. Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar a normal da face mais próxima da origem, porém um \textit{simplex} não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
+O algoritmo~\ref{alg:epa} expande o \textit{simplex} final do GJK iterativamente até encontrar a fronteira da diferença de Minkowski mais próxima da origem. A distância entre o ponto mais próximo com a origem é a profundidade de penetração. Além disso, o vetor normal para o ponto mais próximo é a direção de separação (ponto de contato). A solução ingênua é usar a normal da face mais próxima da origem, porém um \textit{simplex} não precisa conter nenhuma das faces do polígono original, o quê pode acabar com uma normal incorreta.
 \begin{algorithm}[htb]
 	\caption{EPA}
 	\KwIn{Simplex}
